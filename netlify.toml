@@ -1,5 +1,8 @@
 [build]
   publish = "hub"
 
-# All mini-app routes use URL hash fragments and work in the static index.html.
-# No build step, external packages or paid service required.
+[functions]
+  directory = "netlify/functions"
+
+# A single origin hosts the miniapps, aggregate metrics endpoint and static summary.
+# Netlify Free only. Do not enable paid upgrades or automatic credit top-ups.
