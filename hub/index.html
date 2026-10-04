@@ -44,7 +44,7 @@ const premium=[
 ["Your relationship with alarms?","Five snoozes and a miracle","Backups for my backups","No alarm; I trust chaos"],
 ["Pick your final boss.","A sensible bedtime","An unanswered message","A completely normal Tuesday"]
 ];
-const panic={
+const panicLines={
 Work:["I am currently in a high-priority meeting with my remaining brain cell.","This decision has been escalated to the Department of Maybe.","I can do it after my coffee has approved the request.","I'm not late. I'm participating in a flexible timeline.","I have entered strategic spreadsheet contemplation."],
 Social:["My social battery is charging on an incompatible cable.","I would love to, but my blanket has other plans.","Please accept this emoji as my full participation: 🫡","I am attending in spirit, which has excellent Wi-Fi.","Let me consult my emotional support calendar."],
 Adulting:["Today's adulting quota was exceeded by making breakfast.","My laundry and I are in active negotiations.","I have filed this task under Future Me's Problem.","The house is clean if you lower your expectations enough.","I need a responsible adult. Unfortunately, I am the adult."],
@@ -80,7 +80,7 @@ const kind=kinds[total%3];[label,emoji,desc]=kind;extra='<div class="minirow"><s
 currentShare=title+" — "+label+". "+desc+" Play: "+location.href.split("#")[0]+"#"+id;
 wrapper(emoji,title,subtitle,id==="premium"?"COMPLETE PRODUCT DEMO · CHECKOUT NOT LIVE":"YOUR COMPLETELY UNSCIENTIFIC RESULT",'<div class="confetti" aria-hidden="true">✳ ✦ ✳</div><div class="resultsicon" aria-hidden="true">'+emoji+'</div><p class="resultlabel">YOUR RESULT</p><h2>'+label+'</h2><p class="resulttext">'+desc+'</p>'+extra+buttonRow(id));
 }
-function panic(){const topics=Object.keys(panic);wrapper("🚨","Panic Button for Adults","Real problems. Impressively questionable solutions.","FREE · ZERO PROFESSIONAL ADVICE",'<div class="small">SELECT YOUR EMERGENCY</div><div class="minirow">'+topics.map(t=>'<button data-topic="'+t+'" aria-pressed="'+(state.panicTopic===t)+'">'+t+'</button>').join("")+'</div><div class="output" id="panicOutput" aria-live="polite">Press the button. A terrible solution awaits.</div><div class="buttons"><button class="btn" data-action="generate">🚨 PANIC BUTTON</button><button class="btn secondary" data-action="copyPanic">COPY RESULT</button><a class="btn secondary" href="#home">MORE APPS →</a></div><p class="note">All results are fictional jokes. Please do not present these to your HR department as evidence.</p>');}
+function panic(){const topics=Object.keys(panicLines);wrapper("🚨","Panic Button for Adults","Real problems. Impressively questionable solutions.","FREE · ZERO PROFESSIONAL ADVICE",'<div class="small">SELECT YOUR EMERGENCY</div><div class="minirow">'+topics.map(t=>'<button data-topic="'+t+'" aria-pressed="'+(state.panicTopic===t)+'">'+t+'</button>').join("")+'</div><div class="output" id="panicOutput" aria-live="polite">Press the button. A terrible solution awaits.</div><div class="buttons"><button class="btn" data-action="generate">🚨 PANIC BUTTON</button><button class="btn secondary" data-action="copyPanic">COPY RESULT</button><a class="btn secondary" href="#home">MORE APPS →</a></div><p class="note">All results are fictional jokes. Please do not present these to your HR department as evidence.</p>');}
 function route(){const id=location.hash.slice(1)||"home";if(id==="battery"||id==="flag"||id==="premium")quiz(id);else if(id==="panic")panic();else home();document.title=(id==="home"?"KIVZUNO":(cards.find(c=>c.href==="#"+id)||{}).title||"KIVZUNO")+" — Tiny apps. Unexpected fun.";window.scrollTo({top:0,behavior:"instant"});}
 function toast(message){const t=document.getElementById("toast");t.textContent=message;t.hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.hidden=true,2500);}
 async function copyText(value){try{await navigator.clipboard.writeText(value);toast("Copied! Go spread the chaos.");}catch(e){window.prompt("Copy this text:",value);}}
@@ -91,8 +91,8 @@ const action=e.target.closest("[data-action]");if(!action)return;const id=action
 if(action.dataset.action==="restart"){state[id]=[];quiz(id);}
 if(action.dataset.action==="back"){state[id].pop();quiz(id);}
 if(action.dataset.action==="share"){const value=currentShare; if(navigator.share){navigator.share({title:"KIVZUNO",text:value,url:location.href}).catch(()=>{});}else copyText(value);}
-if(action.dataset.action==="generate"){const arr=panic[state.panicTopic];let i=Math.floor(Math.random()*arr.length);if(i===state.panicIndex)i=(i+1)%arr.length;state.panicIndex=i;const out=document.getElementById("panicOutput");out.style.animation="none";out.offsetHeight;out.style.animation="pop .3s";out.textContent="“"+arr[i]+"”";}
-if(action.dataset.action==="copyPanic"){const i=state.panicIndex;if(i<0){toast("Press PANIC first.");return;}copyText(panic[state.panicTopic][i]+" — KIVZUNO "+location.href);}
+if(action.dataset.action==="generate"){const arr=panicLines[state.panicTopic];let i=Math.floor(Math.random()*arr.length);if(i===state.panicIndex)i=(i+1)%arr.length;state.panicIndex=i;const out=document.getElementById("panicOutput");out.style.animation="none";out.offsetHeight;out.style.animation="pop .3s";out.textContent="“"+arr[i]+"”";}
+if(action.dataset.action==="copyPanic"){const i=state.panicIndex;if(i<0){toast("Press PANIC first.");return;}copyText(panicLines[state.panicTopic][i]+" — KIVZUNO "+location.href);}
 });
 window.addEventListener("hashchange",route);route();
 </script></body></html>
