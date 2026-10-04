@@ -1,0 +1,5 @@
+[build]
+  publish = "hub"
+
+# All mini-app routes use URL hash fragments and work in the static index.html.
+# No build step, external packages or paid service required.
