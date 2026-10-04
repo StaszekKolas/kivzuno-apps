@@ -1,0 +1,8 @@
+{
+  "name": "kivzuno-hub",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Static KIVZUNO hub and aggregate cookieless event counter",
+  "dependencies": { "@netlify/blobs": "11.1.1" }
+}
