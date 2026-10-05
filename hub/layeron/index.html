@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Layeron helps teams manage training, attendance, certificates and verification in one place." />
+  <title>Layeron — Training compliance without the paperwork</title>
+  <style>
+    :root{
+      --bg:#07111f; --bg2:#0b1730; --card:#0f1d36; --soft:#142441;
+      --text:#f5f7fb; --muted:#a9b6cc; --line:rgba(255,255,255,.10);
+      --brand:#6d7cff; --brand2:#38bdf8; --good:#4ade80;
+      --max:1180px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:
+      radial-gradient(900px 480px at 75% -5%,rgba(109,124,255,.22),transparent 65%),
+      radial-gradient(750px 420px at 12% 18%,rgba(56,189,248,.12),transparent 70%),
+      var(--bg);color:var(--text);line-height:1.55}
+    a{color:inherit;text-decoration:none}
+    .wrap{width:min(var(--max),calc(100% - 40px));margin:auto}
+    nav{position:sticky;top:0;z-index:20;background:rgba(7,17,31,.72);backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}
+    .nav{height:76px;display:flex;align-items:center;justify-content:space-between}
+    .brand{display:flex;align-items:center;gap:12px;font-weight:850;font-size:21px;letter-spacing:-.4px}
+    .mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:grid;place-items:center;box-shadow:0 8px 24px rgba(77,110,255,.28)}
+    .mark span{width:14px;height:14px;border:3px solid white;border-top-color:transparent;border-radius:5px;transform:rotate(45deg)}
+    .navlinks{display:flex;gap:28px;color:var(--muted);font-size:14px;font-weight:650}
+    .navlinks a:hover{color:white}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:12px 17px;font-weight:800;font-size:14px;transition:.2s}
+    .btn:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.22)}
+    .btn.primary{background:linear-gradient(135deg,var(--brand),#5365ff);border-color:transparent;box-shadow:0 12px 32px rgba(81,98,255,.28)}
+    .hero{padding:98px 0 72px;text-align:center}
+    .pill{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line);background:rgba(255,255,255,.045);border-radius:999px;padding:8px 13px;color:#cbd5e1;font-size:13px;font-weight:700}
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--good);box-shadow:0 0 0 5px rgba(74,222,128,.10)}
+    h1{font-size:clamp(48px,7vw,80px);line-height:.98;letter-spacing:-4px;max-width:950px;margin:25px auto 24px}
+    .grad{background:linear-gradient(90deg,#fff 10%,#a5b4fc 48%,#67e8f9 90%);-webkit-background-clip:text;background-clip:text;color:transparent}
+    .hero p{max-width:720px;margin:0 auto;color:var(--muted);font-size:19px}
+    .hero-actions{display:flex;gap:12px;justify-content:center;margin-top:32px;flex-wrap:wrap}
+    .micro{margin-top:16px;color:#72809a;font-size:12px}
+    .product{margin:58px auto 0;max-width:1080px;position:relative}
+    .glow{position:absolute;inset:-40px 10%;background:radial-gradient(circle,rgba(94,112,255,.23),transparent 65%);filter:blur(24px);z-index:-1}
+    .browser{background:#0a1529;border:1px solid rgba(255,255,255,.13);border-radius:18px;box-shadow:0 35px 90px rgba(0,0,0,.45);overflow:hidden;text-align:left}
+    .browserbar{height:44px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:7px;padding:0 14px}
+    .c{width:9px;height:9px;border-radius:50%;background:#334155}.c:nth-child(1){background:#fb7185}.c:nth-child(2){background:#fbbf24}.c:nth-child(3){background:#4ade80}
+    .dash{display:grid;grid-template-columns:190px 1fr;min-height:470px}
+    .sidebar{border-right:1px solid var(--line);padding:22px 16px;background:#091426}
+    .slogo{font-size:14px;font-weight:850;margin-bottom:28px}.slogo b{color:#8ea2ff}
+    .navitem{padding:10px 11px;border-radius:8px;color:#8696b1;font-size:12px;margin-bottom:5px}.navitem.active{background:#172744;color:white}
+    .main{padding:26px;background:linear-gradient(180deg,#0b1730,#091426)}
+    .main h3{margin:0;font-size:20px}.main .sub{color:#8090aa;font-size:12px;margin:4px 0 22px}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .stat{background:#101f39;border:1px solid var(--line);padding:16px;border-radius:12px}
+    .stat span{font-size:11px;color:#8290a8}.stat strong{display:block;font-size:24px;margin-top:5px}.up{font-size:10px;color:#61d994;margin-top:5px}
+    .panel{margin-top:14px;background:#101f39;border:1px solid var(--line);border-radius:12px;padding:17px}
+    .panelhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:12px;font-weight:800}
+    .row{display:grid;grid-template-columns:1.5fr .8fr .8fr .7fr;gap:10px;padding:11px 0;border-top:1px solid rgba(255,255,255,.06);font-size:11px;color:#c2ccda;align-items:center}
+    .tag{width:max-content;border-radius:999px;padding:4px 8px;background:rgba(74,222,128,.10);color:#6ee7a3}
+    section{padding:92px 0}
+    .eyebrow{color:#8396ff;font-size:12px;font-weight:900;letter-spacing:1.6px;text-transform:uppercase}
+    h2{font-size:clamp(34px,4.5vw,54px);line-height:1.05;letter-spacing:-2.1px;margin:12px 0 16px}
+    .lead{color:var(--muted);font-size:17px;max-width:680px}
+    .center{text-align:center}.center .lead{margin-left:auto;margin-right:auto}
+    .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-top:38px}
+    .feature{background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.028));border:1px solid var(--line);border-radius:16px;padding:24px}
+    .icon{width:42px;height:42px;border:1px solid rgba(255,255,255,.13);background:#13233e;border-radius:11px;display:grid;place-items:center;font-size:18px;margin-bottom:18px}
+    .feature h3{margin:0 0 8px;font-size:17px}.feature p{margin:0;color:var(--muted);font-size:14px}
+    .workflow{display:grid;grid-template-columns:.9fr 1.1fr;gap:50px;align-items:center}
+    .steps{display:grid;gap:11px;margin-top:28px}
+    .step{display:flex;gap:14px;align-items:flex-start;padding:15px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.025)}
+    .num{min-width:31px;height:31px;border-radius:9px;display:grid;place-items:center;background:rgba(109,124,255,.16);color:#b8c2ff;font-size:12px;font-weight:900}
+    .step b{display:block;font-size:14px}.step span{color:var(--muted);font-size:12px}
+    .cert{background:white;color:#0f172a;border-radius:16px;padding:30px;min-height:440px;box-shadow:0 28px 65px rgba(0,0,0,.3);position:relative;overflow:hidden}
+    .cert:before{content:"";position:absolute;width:270px;height:270px;border-radius:50%;background:#eef2ff;right:-80px;top:-90px}
+    .certtop{position:relative;display:flex;justify-content:space-between}.certbrand{font-weight:900;color:#334155}.verified{font-size:11px;background:#dcfce7;color:#15803d;padding:6px 9px;border-radius:999px;font-weight:800}
+    .cert h4{font-family:Georgia,serif;text-align:center;font-size:27px;margin:55px 0 8px}.cert p{text-align:center;color:#64748b;font-size:12px}.person{text-align:center;font-size:24px;font-weight:850;margin:28px 0 8px}.course{text-align:center;color:#334155;font-weight:750}
+    .certbottom{position:absolute;left:30px;right:30px;bottom:28px;display:flex;justify-content:space-between;align-items:end;border-top:1px solid #e2e8f0;padding-top:16px}.qr{width:66px;height:66px;background:repeating-conic-gradient(#0f172a 0 25%,white 0 50%) 50%/16px 16px;border:6px solid white;box-shadow:0 0 0 1px #cbd5e1}.cid{font-size:10px;color:#64748b}
+    .trust{background:linear-gradient(135deg,rgba(109,124,255,.12),rgba(56,189,248,.06));border:1px solid var(--line);border-radius:22px;padding:45px;display:grid;grid-template-columns:1.05fr .95fr;gap:45px;align-items:center}
+    .checks{display:grid;gap:12px}.check{display:flex;gap:12px;color:#cbd5e1;font-size:14px}.check i{font-style:normal;color:#70e5a0}
+    .cta{padding:85px 0 110px}.ctabox{text-align:center;background:linear-gradient(135deg,#182a53,#101f3d);border:1px solid rgba(255,255,255,.13);border-radius:24px;padding:64px 24px;position:relative;overflow:hidden}.ctabox:before{content:"";position:absolute;inset:-100px 25%;background:radial-gradient(circle,rgba(106,124,255,.30),transparent 60%)}.ctabox>*{position:relative}.ctabox h2{max-width:720px;margin:0 auto 16px}.ctabox p{color:var(--muted);margin:0 auto 26px;max-width:600px}
+    footer{border-top:1px solid var(--line);padding:28px 0 38px;color:#71809a;font-size:12px}.foot{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}.footlinks{display:flex;gap:18px}
+    @media(max-width:850px){
+      .navlinks{display:none}.hero{padding-top:72px}h1{letter-spacing:-2.7px}.dash{grid-template-columns:1fr}.sidebar{display:none}.stats{grid-template-columns:repeat(2,1fr)}.grid3{grid-template-columns:1fr}.workflow,.trust{grid-template-columns:1fr}.product{margin-top:42px}.cert{min-height:400px}
+    }
+    @media(max-width:520px){
+      .wrap{width:min(100% - 24px,var(--max))}.nav{height:68px}.nav>.btn{display:none}.hero p{font-size:16px}.hero-actions .btn{width:100%}.browser{border-radius:12px}.main{padding:16px}.stats{grid-template-columns:1fr 1fr}.stat{padding:12px}.stat strong{font-size:20px}.row{grid-template-columns:1.4fr .8fr}.row span:nth-child(2),.row span:nth-child(3){display:none}.trust{padding:28px 20px}.ctabox{padding:46px 18px}
+    }
+  </style>
+</head>
+<body>
+<nav>
+  <div class="wrap nav">
+    <a class="brand" href="#"><span class="mark"><span></span></span>Layeron</a>
+    <div class="navlinks">
+      <a href="#features">Features</a><a href="#workflow">How it works</a><a href="#security">Verification</a><a href="#trial">Free trial</a>
+    </div>
+    <a class="btn primary" href="#trial">Start free trial →</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="pill"><span class="dot"></span>Training records. Certificates. Verification.</div>
+    <h1><span class="grad">Training compliance</span><br/>without the paperwork.</h1>
+    <p>Layeron gives teams one clear place to manage courses, participants, attendance and certificates — with expiry tracking, QR verification and a complete audit history.</p>
+    <div class="hero-actions">
+      <a class="btn primary" href="#workflow">See how Layeron works →</a>
+      <a class="btn" href="#features">Explore features</a>
+    </div>
+    <div class="micro">14-day free trial · No paper certificates · Built for operational teams</div>
+
+    <div class="product">
+      <div class="glow"></div>
+      <div class="browser">
+        <div class="browserbar"><span class="c"></span><span class="c"></span><span class="c"></span></div>
+        <div class="dash">
+          <aside class="sidebar">
+            <div class="slogo"><b>◆</b> LAYERON</div>
+            <div class="navitem active">Overview</div><div class="navitem">Courses</div><div class="navitem">Sessions</div><div class="navitem">Participants</div><div class="navitem">Certificates</div><div class="navitem">Audit log</div>
+          </aside>
+          <main class="main">
+            <h3>Training overview</h3><div class="sub">Everything that needs your attention, in one place.</div>
+            <div class="stats">
+              <div class="stat"><span>Active courses</span><strong>12</strong><div class="up">All current</div></div>
+              <div class="stat"><span>Participants</span><strong>148</strong><div class="up">+8 this month</div></div>
+              <div class="stat"><span>Certificates</span><strong>326</strong><div class="up">312 valid</div></div>
+              <div class="stat"><span>Expiring soon</span><strong>14</strong><div class="up">Review required</div></div>
+            </div>
+            <div class="panel">
+              <div class="panelhead"><span>Recent training sessions</span><span style="color:#91a2bd">View all</span></div>
+              <div class="row"><b>Manual Handling</b><span>24 Sep</span><span>18 attendees</span><span class="tag">Completed</span></div>
+              <div class="row"><b>Line Clearance</b><span>29 Sep</span><span>12 attendees</span><span class="tag">Completed</span></div>
+              <div class="row"><b>Fire Safety</b><span>02 Oct</span><span>20 attendees</span><span class="tag">Completed</span></div>
+              <div class="row"><b>Induction</b><span>05 Oct</span><span>8 attendees</span><span class="tag">Scheduled</span></div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="features">
+  <div class="wrap">
+    <div class="center">
+      <div class="eyebrow">One system</div>
+      <h2>Everything needed to keep training organised.</h2>
+      <p class="lead">Replace scattered spreadsheets, folders and manual certificate tracking with a workflow your team can actually follow.</p>
+    </div>
+    <div class="grid3">
+      <div class="feature"><div class="icon">▦</div><h3>Courses & sessions</h3><p>Create repeatable training courses, schedule sessions and keep the training history together.</p></div>
+      <div class="feature"><div class="icon">✓</div><h3>Attendance records</h3><p>Record who attended and connect completion directly to the training session.</p></div>
+      <div class="feature"><div class="icon">◫</div><h3>Digital certificates</h3><p>Generate professional certificates from templates with unique certificate records.</p></div>
+      <div class="feature"><div class="icon">⌗</div><h3>QR verification</h3><p>Each issued certificate can be verified through its public verification record.</p></div>
+      <div class="feature"><div class="icon">◷</div><h3>Expiry & reminders</h3><p>Track certificate validity and surface training that is approaching expiry.</p></div>
+      <div class="feature"><div class="icon">≋</div><h3>Audit history</h3><p>Keep an accountable history of important actions across your organisation.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="workflow">
+  <div class="wrap workflow">
+    <div>
+      <div class="eyebrow">Simple workflow</div>
+      <h2>From training session to verifiable certificate.</h2>
+      <p class="lead">Layeron follows the real training process instead of forcing your team into a complicated LMS.</p>
+      <div class="steps">
+        <div class="step"><div class="num">01</div><div><b>Create the course</b><span>Set the training details and certificate validity.</span></div></div>
+        <div class="step"><div class="num">02</div><div><b>Add participants</b><span>Keep the people who need training organised.</span></div></div>
+        <div class="step"><div class="num">03</div><div><b>Record attendance</b><span>Capture the completed session and who attended.</span></div></div>
+        <div class="step"><div class="num">04</div><div><b>Issue certificates</b><span>Generate certificates and send them digitally.</span></div></div>
+        <div class="step"><div class="num">05</div><div><b>Verify by QR</b><span>Confirm an issued certificate against its live record.</span></div></div>
+      </div>
+    </div>
+    <div class="cert">
+      <div class="certtop"><div class="certbrand">LAYERON</div><div class="verified">✓ VERIFIED RECORD</div></div>
+      <h4>Certificate of Completion</h4>
+      <p>This certificate confirms that</p>
+      <div class="person">Alex Morgan</div>
+      <p>has successfully completed</p>
+      <div class="course">Manual Handling Essentials</div>
+      <div class="certbottom">
+        <div class="cid">Certificate ID<br/><b>LYR-2026-004821</b><br/><br/>Issued 05 October 2026</div>
+        <div class="qr"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="security">
+  <div class="wrap">
+    <div class="trust">
+      <div>
+        <div class="eyebrow">Built for accountability</div>
+        <h2>Know what was issued, when, and whether it is still valid.</h2>
+        <p class="lead">Layeron keeps the certificate record tied to your organisation, with verification and revocation controls built into the workflow.</p>
+      </div>
+      <div class="checks">
+        <div class="check"><i>●</i><span>Unique certificate records and numbers</span></div>
+        <div class="check"><i>●</i><span>Public QR certificate verification</span></div>
+        <div class="check"><i>●</i><span>Draft, issued and revoked certificate states</span></div>
+        <div class="check"><i>●</i><span>Organisation roles for owners, admins and trainers</span></div>
+        <div class="check"><i>●</i><span>Audit history for important actions</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta" id="trial">
+  <div class="wrap">
+    <div class="ctabox">
+      <div class="eyebrow">Layeron</div>
+      <h2>Make training records easier to manage — and easier to prove.</h2>
+      <p>Start with a 14-day trial and see how Layeron fits your training workflow.</p>
+      <a class="btn primary" href="#top" onclick="alert('Layeron trial access will be connected here next.')">Start free trial →</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <div>© 2026 Layeron. Training compliance, simplified.</div>
+    <div class="footlinks"><a href="#features">Product</a><a href="#security">Verification</a><a href="#trial">Free trial</a></div>
+  </div>
+</footer>
+</body>
+</html>
