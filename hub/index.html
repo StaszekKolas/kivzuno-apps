@@ -15,7 +15,7 @@ const main=document.getElementById("main");
 // No cookies, persistent browser storage or personal identifiers for analytics.
 // Our own endpoint receives only app/event/source from fixed allowlists.
 const sourceParam=new URLSearchParams(location.search).get("src");
-const source=["ig_reel","ig_story","ig_bio","ig_post"].includes(sourceParam)?sourceParam:"direct";
+const source=["ig_reel","ig_story","ig_bio","ig_post","fb_reel","fb_post","tiktok"].includes(sourceParam)?sourceParam:"direct";
 const visited=new Set();
 function track(event,app){
   if(navigator.globalPrivacyControl===true||navigator.doNotTrack==="1")return;
