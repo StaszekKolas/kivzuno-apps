@@ -2,7 +2,7 @@ import { getStore } from "@netlify/blobs";
 
 // Aggregate events only: no identifiers, no cookies, no quiz answers, no customer data.
 // Netlify's infrastructure may process request metadata under its own privacy terms.
-const apps = ["home", "battery", "flag", "panic", "premium"];
+const apps = ["home", "battery", "flag", "panic", "premium", "samebrain"];
 const sources = ["ig_reel", "ig_story", "ig_bio", "ig_post", "direct", "other"];
 const events = ["visit", "start", "complete", "premium_click"];
 const headers = { "cache-control": "no-store", "content-type": "application/json; charset=utf-8" };
