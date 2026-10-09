@@ -1,0 +1,71 @@
+name: KIVZUNO read-only Pet Walk social delivery check
+
+# No post creation or schedule. Exact three Buffer post IDs from launch run.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/kivzuno-check-pet-social.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Read statuses of 3 original Buffer posts only
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+        run: |
+          node --input-type=module <<'JS'
+          if(!process.env.BUFFER_API_KEY)throw Error('Buffer secret missing');
+          const ids={
+            instagram:'6ac93b3dbba9419ccbda97d6',
+            facebook:'6ac93b47d9cab260a79e1c60',
+            tiktok:'6ac93b51d9cab260a79e1dac'
+          };
+          const q=s=>JSON.stringify(s);
+          async function api(query){
+            const r=await fetch('https://api.buffer.com',{
+              method:'POST',
+              headers:{authorization:'Bearer '+process.env.BUFFER_API_KEY,'content-type':'application/json'},
+              body:JSON.stringify({query}),signal:AbortSignal.timeout(20000)
+            });
+            if(!r.ok)throw Error('Buffer read HTTP '+r.status);
+            const x=await r.json();
+            if(x.errors?.length||!x.data)throw Error('Buffer GraphQL read failed');
+            return x.data;
+          }
+          const account=await api('query { account { organizations { id } } }');
+          const orgs=account.account?.organizations||[];
+          const posts=[];
+          for(const org of orgs){
+            const channels=(await api('query { channels(input: { organizationId: '+
+              q(org.id)+' }) { id service name } }')).channels||[];
+            const idsForOrg=channels.filter(c=>/kivzuno/i.test(c.name||'')).map(c=>c.id);
+            if(!idsForOrg.length)continue;
+            let cursor=null;
+            for(let i=0;i<30;i++){
+              const data=await api('query { posts(first:100'+(cursor?',after:'+q(cursor):'')+
+                ',input:{organizationId:'+q(org.id)+',filter:{status:'+
+                '[draft,error,needs_approval,scheduled,sending,sent],channelIds:['+
+                idsForOrg.map(q).join(',')+']}}) { edges { node { id status } }'+
+                'pageInfo { hasNextPage endCursor } } }');
+              if(!data.posts?.edges||!data.posts.pageInfo)throw Error('Buffer read incomplete');
+              posts.push(...data.posts.edges.map(x=>x.node));
+              if(!data.posts.pageInfo.hasNextPage)break;
+              if(!data.posts.pageInfo.endCursor||i===29)throw Error('History truncated');
+              cursor=data.posts.pageInfo.endCursor;
+            }
+          }
+          for(const [service,id] of Object.entries(ids)){
+            const post=posts.find(p=>p?.id===id);
+            console.log(service.toUpperCase()+' '+id+': '+(post?.status||'NOT FOUND'));
+          }
+          console.log('This workflow is READ ONLY and cannot publish or retry content.');
+          JS
