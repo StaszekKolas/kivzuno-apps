@@ -8,6 +8,10 @@ Static source: `hub/index.html`. `netlify.toml` configures `publish = "hub"`; no
 
 The approved process, Netlify production-link checks and app release gates are documented in [docs/site-release-process.md](docs/site-release-process.md). The CI release gate checks HTML syntax, playable routes and analytics consistency without using secrets or publishing. After an approved merge, a manual read-only GitHub Action can check that the new app is actually present on public Netlify **before** Buffer marketing. Netlify production auto-deploy from `main` still requires verification in the owner's Netlify dashboard.
 
+## Buffer Free — approved-only recurring queue (proposed)
+
+A controlled daily Buffer queue, separate from the one-time 9 October Panic Button workflow, is documented at [docs/buffer-approved-queue.md](docs/buffer-approved-queue.md). It reads only `content/buffer/approved.json`; the initial manifest is **empty**. The queue cannot submit posts until the owner explicitly approves a campaign, merges that content, and separately enables `BUFFER_AUTOPUBLISH_ENABLED=true` as a GitHub repository variable. CI and an inspection-only mode can run without publishing.
+
 ## Built-in apps
 - Social Battery Diagnostics: https://kivzuno-hub.netlify.app/#battery
 - Red Flag or Just Tuesday?: https://kivzuno-hub.netlify.app/#flag

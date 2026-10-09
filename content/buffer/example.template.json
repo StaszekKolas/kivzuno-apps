@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "campaigns": [
+    {
+      "id": "2026-10-15-example-campaign",
+      "ownerApproved": false,
+      "approvalPr": "https://github.com/StaszekKolas/kivzuno-apps/pull/123",
+      "releaseVerified": false,
+      "productionCommit": "0000000000000000000000000000000000000000",
+      "appSlug": "panic",
+      "notBefore": "2026-10-15",
+      "notAfter": "2026-10-20",
+      "mediaType": "video",
+      "aiGenerated": true,
+      "services": [
+        "instagram",
+        "facebook",
+        "tiktok"
+      ],
+      "captions": {
+        "instagram": "Example text only. #KIVZUNO. https://kivzuno-hub.netlify.app/?src=ig_reel#panic",
+        "facebook": "Example text only. #KIVZUNO. https://kivzuno-hub.netlify.app/?src=fb_reel#panic",
+        "tiktok": "Example text only. #KIVZUNO. https://kivzuno-hub.netlify.app/?src=tiktok#panic"
+      },
+      "media": {
+        "instagram": "https://static.metricool.com/REPLACE_WITH_APPROVED.mp4",
+        "facebook": "https://static.metricool.com/REPLACE_WITH_APPROVED.mp4",
+        "tiktok": "https://static.metricool.com/REPLACE_WITH_APPROVED.mp4"
+      }
+    }
+  ]
+}
