@@ -1,0 +1,73 @@
+name: KIVZUNO approved Buffer queue
+
+# Scheduled trigger only on default branch. Publishing additionally requires
+# explicit repository variable BUFFER_AUTOPUBLISH_ENABLED=true.
+# 10:15 UTC = 11:15 BST / 10:15 GMT.
+on:
+  pull_request:
+    paths:
+      - 'scripts/buffer/queue-approved.mjs'
+      - 'scripts/buffer/validate-approved.mjs'
+      - 'scripts/check-live-kivzuno.mjs'
+      - 'tests/buffer-queue-approved.test.mjs'
+      - 'content/buffer/approved.json'
+      - '.github/workflows/kivzuno-buffer-queue.yml'
+  schedule:
+    - cron: '15 10 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'inspect is read-only; queue also requires owner-enabled repository variable'
+        required: true
+        type: choice
+        default: inspect
+        options:
+          - inspect
+          - queue
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kivzuno-buffer-free-approved-queue
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: CI - owner-approved manifest and syntax (no secrets)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Offline safety tests
+        run: |
+          node --check scripts/buffer/queue-approved.mjs
+          node --check scripts/buffer/validate-approved.mjs
+          node --check scripts/check-live-kivzuno.mjs
+          node --test tests/buffer-queue-approved.test.mjs
+      - name: Validate approval manifest
+        run: node scripts/buffer/validate-approved.mjs
+
+  sync:
+    name: Buffer Free queue (explicit activation required)
+    needs: validate
+    if: >-
+      ${{ github.event_name != 'pull_request' &&
+          (github.event_name == 'workflow_dispatch' ||
+           vars.BUFFER_AUTOPUBLISH_ENABLED == 'true') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Inspect or sync only approved and public content
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          BUFFER_AUTOPUBLISH_ENABLED: ${{ vars.BUFFER_AUTOPUBLISH_ENABLED }}
+          KIVZUNO_BUFFER_MODE: ${{ github.event_name == 'schedule' && 'queue' || inputs.mode }}
+        run: node scripts/buffer/queue-approved.mjs
