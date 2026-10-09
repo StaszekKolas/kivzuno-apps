@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#112f2f">
-  <meta name="robots" content="noindex,nofollow">
-  <title>Pet Walk Report — KIVZUNO prototype</title>
+  <meta name="description" content="Create a professional dog walk report in under a minute: local photos, printable PDF and WhatsApp share. Free preview, no account needed.">
+  <title>Pet Walk Report — Free PDF & WhatsApp updates | KIVZUNO</title>
   <style>
     :root{color-scheme:light;--ink:#143332;--mint:#dcf8e9;--green:#176f53;--warm:#fff9ee;--stroke:#d2e3dc;--muted:#637a70}
     *{box-sizing:border-box}
@@ -60,11 +60,11 @@
   </style>
 </head>
 <body>
-<header><div class="brand">KIVZUNO <span aria-hidden="true">✳</span></div><div class="tag">PROTOTYPE · NO PAYMENTS</div></header>
+<header><div class="brand">KIVZUNO <span aria-hidden="true">✳</span></div><div class="tag">FREE TOOL · PRO CONCEPT IN TEST</div></header>
 <main>
   <div class="intro">
     <h1>Give every dog a little adventure report. 🐕</h1>
-    <p class="lead">For independent dog walkers and pet sitters: make a polished walk summary in under a minute. Print as a PDF or share an update with the pet parent. No sign-up, no tracking, no uploads.</p>
+    <p class="lead">For independent dog walkers and pet sitters: make a polished walk summary in under a minute. Print as a PDF or share an update with the pet parent. No sign-up and no pet data uploaded. Optional anonymous usage counters help evaluate the idea.</p>
   </div>
   <div class="cols">
     <section class="panel edit-panel" aria-label="Create walk report">
@@ -90,6 +90,12 @@
           <button type="reset" class="secondary">Reset</button>
         </div>
         <div class="status" id="status" role="status" aria-live="polite"></div>
+        <div class="privacy" id="pro" style="background:#f0fff4;border:1px solid #b8dcc5">
+          <strong>Would branded reports be worth £9.99 once?</strong>
+          <p style="margin:6px 0 10px">We are exploring business logos, saved report templates and nicer PDF themes. This is a <strong>price test</strong>, not a purchase.</p>
+          <button type="button" id="proInterest" class="secondary">I'd consider the £9.99 Pro pack</button>
+          <p class="help" style="margin-bottom:0">No payment, no email collection, no obligation. One anonymous interest event only if analytics are permitted.</p>
+        </div>
       </form>
     </section>
     <section class="panel preview-panel" aria-label="Preview your report">
@@ -103,8 +109,8 @@
           <div class="signature" id="pSignature"></div>
         </div>
       </article>
-      <p class="privacy"><strong>Your data stays on your device.</strong> This demo never sends names, photos or notes to a server. Closing or reloading the page clears the report. Use your browser’s Print → Save as PDF to keep a copy.</p>
-      <p class="empty">KIVZUNO experiment: free working demo. No checkout is active. Branded report packs may be explored later if professionals find the tool valuable.</p>
+      <p class="privacy"><strong>Your data stays on your device.</strong> Names, photos and notes stay on this device and are never uploaded. KIVZUNO may count anonymous use and interest events (no personal report content), unless Do Not Track or Global Privacy Control is enabled. Closing or reloading the page clears the report. Use your browser’s Print → Save as PDF to keep a copy.</p>
+      <p class="empty">KIVZUNO experiment: free working demo. No checkout is active. We are testing whether independent pet professionals value a one-time branded report pack. This demo does not request or collect payments.</p>
     </section>
   </div>
 </main>
@@ -113,6 +119,26 @@
   'use strict';
   const $ = (id) => document.getElementById(id);
   const inputs = ['dog','walker','date','duration','mood','conditions','notes'];
+  // Anonymous funnel counters only: no dog names, notes, photographs, IDs or email.
+  const sourceValue = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('src') : null;
+  const sources = ['ig_reel','ig_story','ig_bio','ig_post','fb_reel','fb_post','tiktok'];
+  const source = sources.includes(sourceValue) ? sourceValue : 'direct';
+  const trackingAllowed = typeof location !== 'undefined' &&
+    location.hostname === 'kivzuno-hub.netlify.app' &&
+    navigator.globalPrivacyControl !== true && navigator.doNotTrack !== '1';
+  const counted = new Set();
+  function track(event,once=false) {
+    if (!trackingAllowed || !['visit','start','complete','premium_click'].includes(event)) return;
+    if (once && counted.has(event)) return;
+    if (once) counted.add(event);
+    const body = JSON.stringify({app:'petreport',event,source});
+    fetch('/.netlify/functions/metrics',{
+      method:'POST',headers:{'content-type':'application/json'},
+      credentials:'same-origin',keepalive:true,body
+    }).catch(() => {});
+  }
+  track('visit',true);
+
   let photoURL = null;
   const safe = (v, max) => String(v || '').trim().slice(0,max);
   const today = new Date();
@@ -184,14 +210,21 @@
     $('pPhoto').style.display = 'block';
     $('status').textContent = 'Photo added locally to the report.';
   });
-  inputs.forEach((id) => $(id).addEventListener('input', render));
+  inputs.forEach((id) => $(id).addEventListener('input', () => {
+    track('start',true);
+    render();
+  }));
   $('print').addEventListener('click', () => {
     if (!$('form').reportValidity()) return;
-    render(); window.print();
+    render(); track('complete',true); window.print();
   });
   $('share').addEventListener('click', async () => {
     if (!$('form').reportValidity()) return;
-    await shareText();
+    track('complete',true); await shareText();
+  });
+  $('proInterest').addEventListener('click', () => {
+    track('premium_click',true);
+    $('status').textContent = 'Interest noted if anonymous analytics are enabled. No purchase or signup took place.';
   });
   $('form').addEventListener('reset', () => {
     clearPhoto();
