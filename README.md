@@ -4,6 +4,10 @@ Live hub (Netlify): https://kivzuno-hub.netlify.app/
 
 Static source: `hub/index.html`. `netlify.toml` configures `publish = "hub"`; no build command or dependencies. If the existing Netlify site isn't connected to this GitHub repo, connect it once with production branch `main`, publish directory `hub`, then deploy.
 
+## Controlled releases: app → website → promotion
+
+The approved process, Netlify production-link checks and app release gates are documented in [docs/site-release-process.md](docs/site-release-process.md). The CI release gate checks HTML syntax, playable routes and analytics consistency without using secrets or publishing. After an approved merge, a manual read-only GitHub Action can check that the new app is actually present on public Netlify **before** Buffer marketing. Netlify production auto-deploy from `main` still requires verification in the owner's Netlify dashboard.
+
 ## Built-in apps
 - Social Battery Diagnostics: https://kivzuno-hub.netlify.app/#battery
 - Red Flag or Just Tuesday?: https://kivzuno-hub.netlify.app/#flag
