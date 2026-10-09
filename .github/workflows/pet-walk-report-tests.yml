@@ -1,0 +1,25 @@
+name: KIVZUNO pet report prototype tests
+
+# Prototype-only verification: no secrets, external API, or deployment.
+on:
+  pull_request:
+    paths:
+      - 'experiments/pet-walk-report/**'
+      - 'tests/pet-walk-report.test.mjs'
+      - '.github/workflows/pet-walk-report-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Offline test - no customer data or credentials
+        run: node --test tests/pet-walk-report.test.mjs
