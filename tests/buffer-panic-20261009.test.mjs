@@ -34,23 +34,26 @@ function harness({ existing = [], badMedia = false } = {}) {
   };
   return { request, queries, logs, log: (line) => logs.push(line) };
 }
-test('submits three approved videos with shareNow and network metadata', async () => {
+test('retries ONLY Facebook/TikTok; Instagram never re-submitted', async () => {
   const mock = harness();
   const result = await runCampaign({ token: 'synthetic-test-token', request: mock.request, log: mock.log, now: today });
-  assert.equal(result.created, 3);
+  assert.equal(result.created, 2);
   const mutations = mock.queries.filter((q) => q.includes('mutation CreateApprovedPost'));
-  assert.equal(mutations.length, 3);
+  assert.equal(mutations.length, 2);
   assert.ok(mutations.every((q) => q.includes('mode: shareNow') && q.includes('video: { url:')));
-  assert.ok(mutations.some((q) => q.includes('instagram: { type: reel')));
+  assert.ok(mutations.every((q) => !q.includes('instagram: {')));
+  assert.ok(mock.logs.some((l) => l.includes('instagram: NOT RETRIED')));
   assert.ok(mutations.some((q) => q.includes('facebook: { type: reel')));
+  assert.ok(mutations.every((q) => !q.includes('firstComment')));
+  assert.ok(mock.queries.some((q) => q.includes('status: [draft, error, needs_approval, scheduled, sending, sent]')));
   assert.ok(mutations.some((q) => q.includes('tiktok: { isAiGenerated: true')));
   assert.ok(mock.logs.every((l) => !l.includes('synthetic-test-token')));
 });
 test('prevents duplicate caption on its exact channel', async () => {
-  const mock = harness({ existing: [{ id: 'prior', channelId: 'ig1', text: CAMPAIGN[0].text, status: 'sent' }] });
+  const mock = harness({ existing: [{ id: 'prior', channelId: 'fb1', text: CAMPAIGN[1].text, status: 'sending' }] });
   const result = await runCampaign({ token: 'synthetic-test-token', request: mock.request, log: mock.log, now: today });
-  assert.equal(result.created, 2);
-  assert.ok(mock.logs.some((l) => l.includes('instagram: SKIPPED')));
+  assert.equal(result.created, 1);
+  assert.ok(mock.logs.some((l) => l.includes('facebook: SKIPPED')));
 });
 test('unavailable media aborts before any mutation', async () => {
   const mock = harness({ badMedia: true });
@@ -72,6 +75,6 @@ test('inspect mode never mutates', async () => {
   const mock = harness();
   const result = await runCampaign({ token: 'synthetic-test-token', request: mock.request, log: mock.log, now: today, mode: 'inspect' });
   assert.equal(result.created, 0);
-  assert.equal(result.remaining, 3);
+  assert.equal(result.remaining, 2);
   assert.equal(mock.queries.filter((q) => q.includes('mutation')).length, 0);
 });
