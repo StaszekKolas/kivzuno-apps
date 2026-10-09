@@ -20,6 +20,10 @@ jobs:
           node-version: '22'
       - name: Seven fail-closed synthetic campaign tests
         run: node --test tests/pet-report-social-launch.test.mjs
+      - name: Install open-source video encoder on runner
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ffmpeg fonts-dejavu-core
       - name: Validate original vertical promo video
         run: |
           bash -n scripts/buffer/render-pet-report-promo.sh
