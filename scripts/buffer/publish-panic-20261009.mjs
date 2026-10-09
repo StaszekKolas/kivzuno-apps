@@ -112,6 +112,11 @@ export async function runCampaign({
     }
   }
 
+  const originalInstagramId = '6ac8fd0a443de896598070b7';
+  const originalInstagram = history.find((post) => post?.id === originalInstagramId);
+  log('instagram: original Buffer post ' + originalInstagramId +
+    ' status=' + (originalInstagram?.status || 'NOT VISIBLE IN HISTORY (CHECK BUFFER)'));
+
   const pending = [];
   for (const post of selected) {
     // A previous actual API attempt accepted Instagram at 14:41 UTC.
