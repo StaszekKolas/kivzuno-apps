@@ -1,0 +1,86 @@
+name: KIVZUNO one-time Pet Walk Report social launch
+
+# Authorized by owner; only runs after main change to these launch scripts.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/buffer/publish-pet-report-launch.mjs'
+      - 'scripts/buffer/render-pet-report-promo.sh'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+concurrency:
+  group: kivzuno-one-time-pet-report-launch
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Verify that the public free app is reachable
+        run: |
+          node --input-type=module <<'JS'
+          const url='https://kivzuno-hub.netlify.app/pet-walk-report/';
+          let ok=false;
+          for(let i=0;i<18;i++){
+            try{
+              const r=await fetch(url+'?verified='+i,{signal:AbortSignal.timeout(12000)});
+              const html=await r.text();
+              if(r.ok && html.includes('Save / print PDF') && html.includes('No payment') &&
+                html.includes('id="report"')){ok=true;break;}
+            }catch(e){console.log('Waiting for public Netlify release: '+e.message);}
+            await new Promise(done=>setTimeout(done,10000));
+          }
+          if(!ok){console.error('STOP: public app not deployed; no post submitted');process.exit(1);}
+          console.log('PASS: public free app is live');
+          JS
+      - name: Install open-source video encoder on runner
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ffmpeg fonts-dejavu-core
+      - name: Generate and validate original 9:16 promo
+        run: |
+          node --test tests/pet-report-social-launch.test.mjs
+          bash scripts/buffer/render-pet-report-promo.sh
+          test -s hub/media/pet-walk-report-promo-20261009.mp4
+      - name: Host promo as static Netlify MP4
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add hub/media/pet-walk-report-promo-20261009.mp4
+          if git diff --cached --quiet; then
+            echo 'Promo media already committed'
+          else
+            git commit -m 'assets(kivzuno): add original Pet Walk Report promo'
+            git push origin HEAD:main
+          fi
+      - name: Verify MP4 is publicly accessible
+        run: |
+          node --input-type=module <<'JS'
+          const url='https://kivzuno-hub.netlify.app/media/pet-walk-report-promo-20261009.mp4';
+          let ok=false;
+          for(let i=0;i<24;i++){
+            try{
+              const r=await fetch(url,{method:'HEAD',signal:AbortSignal.timeout(12000)});
+              if(r.ok && (r.headers.get('content-type')||'').startsWith('video/mp4')){ok=true;break;}
+            }catch(e){console.log('Waiting for video: '+e.message);}
+            await new Promise(done=>setTimeout(done,10000));
+          }
+          if(!ok){console.error('STOP: video not public; no posting');process.exit(1);}
+          console.log('PASS: approved MP4 is public');
+          JS
+      - name: Send three approved free-app videos to Buffer
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+        run: |
+          node --input-type=module <<'JS'
+          import {run} from './scripts/buffer/publish-pet-report-launch.mjs';
+          const result=await run({token:process.env.BUFFER_API_KEY});
+          console.log('Buffer accepted '+result.accepted+' new platform posts.');
+          JS
