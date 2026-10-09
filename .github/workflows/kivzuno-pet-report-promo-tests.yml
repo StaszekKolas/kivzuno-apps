@@ -1,0 +1,27 @@
+name: KIVZUNO Pet Walk promo safety tests
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/buffer/publish-pet-report-launch.mjs'
+      - 'scripts/buffer/render-pet-report-promo.sh'
+      - 'tests/pet-report-social-launch.test.mjs'
+      - '.github/workflows/kivzuno-pet-report-promo-tests.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Seven fail-closed synthetic campaign tests
+        run: node --test tests/pet-report-social-launch.test.mjs
+      - name: Validate original vertical promo video
+        run: |
+          bash -n scripts/buffer/render-pet-report-promo.sh
+          bash scripts/buffer/render-pet-report-promo.sh
+          ffprobe -v error -show_entries stream=width,height,codec_name -of json hub/media/pet-walk-report-promo-20261009.mp4
