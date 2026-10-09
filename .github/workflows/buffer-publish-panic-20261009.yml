@@ -1,0 +1,33 @@
+name: Publish approved Panic Button campaign (2026-10-09)
+# ONE-TIME manual activation only. No cron/push triggers.
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type PUBLISH-APPROVED-2026-10-09'
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: kivzuno-panic-20261009
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.event.inputs.confirmation == 'PUBLISH-APPROVED-2026-10-09'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax and synthetic safety tests
+        run: |
+          node --check scripts/buffer/publish-panic-20261009.mjs
+          node --test tests/buffer-panic-20261009.test.mjs
+      - name: Send approved videos to Buffer and report actual API results
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          BUFFER_CAMPAIGN_MODE: publish
+        run: node scripts/buffer/publish-panic-20261009.mjs
