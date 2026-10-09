@@ -71,7 +71,7 @@ test('form is accessible and print media is supported',()=>{
   assert.match(html, /@media print/);
 });
 
-test('report initialises with default dog, duration and local date',()=>{
+test('report initialises with supplied test data and local date',()=>{
   const s=sandbox();
   assert.equal(s.el('pTitle').textContent,"Buddy's walk report");
   assert.equal(s.el('pDuration').textContent,'30 minutes');
@@ -151,4 +151,13 @@ test('server-side metric allowlist accepts petreport premium-interest event',()=
   const metrics=readFileSync('netlify/functions/metrics.mjs','utf8');
   assert.match(metrics,/const apps = .*"petreport"/);
   assert.match(metrics,/\["battery", "flag", "petreport"\]/);
+});
+
+
+test('form does not autofill fictional pet details',()=>{
+  assert.ok(html.includes('placeholder="e.g. Bella"'));
+  assert.ok(html.includes('Choose walk length'));
+  assert.ok(!html.includes('Buddy enjoyed a sniffy adventure'));
+  assert.ok(!html.includes('value="Buddy"'));
+  assert.ok(!html.includes('A lovely time outdoors!'));
 });
