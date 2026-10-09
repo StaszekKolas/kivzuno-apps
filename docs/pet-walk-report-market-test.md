@@ -1,6 +1,6 @@
 # KIVZUNO business experiment: Pet Walk Report
 
-**Status:** MVP in a separate, unmerged Draft PR. NOT public on the KIVZUNO production website, NOT a paid product, no payment integration.
+**Status:** Free MVP and price-interest test proposed in a Draft PR; after explicit merge it will be served at `https://kivzuno-hub.netlify.app/pet-walk-report/`, pending a confirmed Netlify Production deploy. There is no active paid product, checkout or payment integration.
 
 ## Hypothesis: who pays for what?
 
@@ -29,12 +29,16 @@
 4. Success threshold (hypothesis): 6/10 can create a report in under 60 seconds; at least 3 request a repeat visit; 2 or more explicitly request a paid feature and accept a clear price. Stronger proof requires actual paid conversions after payment is authorised.
 5. If no credible interest, **stop**. No sunk-cost expansion.
 
+## Free-to-Pro interest measurement
+
+The £9.99 one-time Pro pack is only a stated **hypothesis** (brand logo, reusable client templates and report themes), not yet available to buy. The free public demo contains a clearly labelled 'I'd consider the £9.99 Pro pack' button, recording an anonymous `premium_click` event (as well as `visit`, `start`, and export-intent `complete`) in the KIVZUNO Netlify metrics endpoint. The request contains only `{app:'petreport', event, source}` — never pet name, photo, notes, or a personal ID. Global Privacy Control / Do Not Track disables it. Never report clicks as verified demand, unique people, Stripe purchases or revenue. Compare aggregate funnel counts before asking permission for Stripe Live.
+
 ## Metrics and constraints
 
 - Current Metricool KIVZUNO evidence retrieved 2026-10-09: TikTok Red Flag **890 views/6 likes/0 comments/0 shares**, Excuse-O-Matic **543 views/0 likes/0 comments/0 shares**, chaos quiz 10 views. Instagram Social Battery 226 views, Red Flag 21 views in same retrieved period. These are views, NOT site visits, customer leads or revenue. Buffer Panic Button was published later and is outside those social dataset rows.
 - The Netlify metrics function currently stores aggregate `visit`, `start`, `complete`, and `premium_click` counters, with no real transaction data. Metricool Website returned a row of zeros; do not conclude actual site traffic is zero without verifying whether website tracking is correctly configured. No evidence of paying customers yet.
 - Existing KIVZUNO content is entertainment-led. Distribution for this professional product needs **independent UK pet business audiences**, not only general viral reels.
-- This MVP makes **no external HTTP calls**. It saves nothing server-side; photo stays as browser object URL and is cleared on reload; share text works via browser native share/copy; PDF via native Print→Save as PDF. No Stripe, emails or visitor tracking.
+- The production demo makes **only same-origin anonymous KIVZUNO metrics calls**, and honours browser privacy controls. No dog name, notes, photo or client information is sent or stored server-side. Photos stay as browser object URLs and clear on reload; native share/copy and Print→Save as PDF. No Stripe, emails or customer tracking.
 - Not a legal form, medical record, prescription tracking app, GPS report or veterinary advice tool.
 - Competitors' prices and social data can change. Validate again before any public commercial positioning.
 
@@ -42,5 +46,5 @@
 
 - MVP standalone prototype: `experiments/pet-walk-report/index.html`.
 - Tests: `tests/pet-walk-report.test.mjs` and read-only GitHub PR CI.
-- Existing Netlify `netlify.toml` publishes only `hub/`. This experimental page is deliberately **not** linked or deployed at the KIVZUNO production URL.
-- Next gates: test synthetic inputs, manual iOS/Android gameplay, an explicit decision to pursue the idea, explicit approval before deploying a landing page, then small-scale discovery interviews. Don't announce sales or commit to pricing without evidence.
+- Existing Netlify `netlify.toml` publishes only `hub/`. The PR now contains a production-ready copy at `hub/pet-walk-report/index.html`, with a separate card for useful tools on the main hub. This copy will be deployed only after PR merge and Netlify production confirmation. The source experiment remains under `experiments/`.
+- Next gates: review synthetic CI and Preview, obtain production deploy confirmation, manually play through iOS/Android and print/share; then validate real use and price interest with dog walkers, without unsolicited outreach. Do not announce sales or commit to pricing without evidence.
