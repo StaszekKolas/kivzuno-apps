@@ -71,7 +71,7 @@ export async function runCampaign({
   for (const org of orgs) {
     if (typeof org.id !== 'string' || !org.id) throw new Error('Invalid Buffer organization');
     const data = await graphql('query GetChannels { channels(input: { organizationId: ' +
-      quoted(org.id) + ' }) { id service isDisconnected isLocked } }');
+      quoted(org.id) + ' }) { id name displayName service isDisconnected isLocked } }');
     if (!Array.isArray(data.channels)) throw new Error('Buffer channels unavailable');
     for (const channel of data.channels) channels.push({ ...channel, orgId: org.id });
   }
@@ -81,6 +81,10 @@ export async function runCampaign({
     const matches = channels.filter((c) => c.service?.toLowerCase() === post.service);
     if (matches.length !== 1) throw new Error(post.service + ': expected exactly one linked channel, got ' + matches.length);
     const channel = matches[0];
+    const identity = String(channel.name || '') + ' ' + String(channel.displayName || '');
+    if (!/kivzuno/i.test(identity)) {
+      throw new Error(post.service + ': connected channel identity does not match KIVZUNO');
+    }
     if (channel.isDisconnected || channel.isLocked) throw new Error(post.service + ': channel disconnected or locked');
     if (typeof channel.id !== 'string' || !channel.id) throw new Error(post.service + ': invalid channel ID');
     selected.push({ ...post, channel });
@@ -88,6 +92,7 @@ export async function runCampaign({
 
   const history = [];
   for (const org of orgs) {
+    if (!selected.some((p) => p.channel.orgId === org.id)) continue;
     let after;
     for (let page = 0; page < 20; page++) {
       const next = after ? ', after: ' + quoted(after) : '';
