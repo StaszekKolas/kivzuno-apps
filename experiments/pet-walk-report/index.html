@@ -71,18 +71,18 @@
       <h2>Walk details</h2>
       <form id="form" autocomplete="off">
         <div class="row">
-          <div class="field"><label for="dog">Dog's name *</label><input id="dog" name="dog" required maxlength="48" value="Buddy"></div>
+          <div class="field"><label for="dog">Dog's name *</label><input id="dog" name="dog" required maxlength="48" placeholder="e.g. Bella"></div>
           <div class="field"><label for="walker">Your business / name</label><input id="walker" name="walker" maxlength="60" placeholder="Your dog walking business"></div>
         </div>
         <div class="row">
           <div class="field"><label for="date">Date *</label><input id="date" type="date" required></div>
-          <div class="field"><label for="duration">Walk length</label><select id="duration"><option>15 minutes</option><option selected>30 minutes</option><option>45 minutes</option><option>60 minutes</option><option>90 minutes</option></select></div>
+          <div class="field"><label for="duration">Walk length</label><select id="duration" required><option value="" selected disabled>Choose walk length</option><option>15 minutes</option><option>30 minutes</option><option>45 minutes</option><option>60 minutes</option><option>90 minutes</option></select></div>
         </div>
         <div class="row">
-          <div class="field"><label for="mood">Mood</label><select id="mood"><option>Happy tail 🐕</option><option>Very energetic ⚡</option><option>Calm and relaxed 🍃</option><option>Curious explorer 🔎</option><option>Sleepy superstar 💤</option></select></div>
-          <div class="field"><label for="conditions">Weather</label><select id="conditions"><option>Fresh air 🌤️</option><option>Sunny ☀️</option><option>Cloudy ☁️</option><option>Rainy 🌧️</option><option>Cold ❄️</option></select></div>
+          <div class="field"><label for="mood">Mood</label><select id="mood"><option value="" selected>Choose mood (optional)</option><option>Happy tail 🐕</option><option>Very energetic ⚡</option><option>Calm and relaxed 🍃</option><option>Curious explorer 🔎</option><option>Sleepy superstar 💤</option></select></div>
+          <div class="field"><label for="conditions">Weather</label><select id="conditions"><option value="" selected>Choose weather (optional)</option><option>Fresh air 🌤️</option><option>Sunny ☀️</option><option>Cloudy ☁️</option><option>Rainy 🌧️</option><option>Cold ❄️</option></select></div>
         </div>
-        <div class="field"><label for="notes">Highlights and care notes</label><textarea id="notes" maxlength="500" placeholder="e.g. Played fetch, met two friendly dogs, had fresh water afterward.">Buddy enjoyed a sniffy adventure, walked beautifully and came home ready for a nap.</textarea><div class="help">Only add notes you're comfortable sending to the pet owner. Do not include emergency medical instructions or sensitive information.</div></div>
+        <div class="field"><label for="notes">Highlights and care notes</label><textarea id="notes" maxlength="500" placeholder="e.g. Played fetch, met two friendly dogs, had fresh water afterward."></textarea><div class="help">Only add notes you're comfortable sending to the pet owner. Do not include emergency medical instructions or sensitive information.</div></div>
         <div class="field"><label for="photo">Optional dog photo (not uploaded)</label><input id="photo" type="file" accept="image/png,image/jpeg,image/webp"><div class="help">Preview is local in this browser. Maximum 5 MB. Photos are never sent to KIVZUNO.</div></div>
         <div class="actions">
           <button type="button" id="print" class="primary">Save / print PDF</button>
@@ -151,17 +151,17 @@
     duration: $('duration').value,
     mood: $('mood').value,
     weather: $('conditions').value,
-    notes: safe($('notes').value,500) || 'A lovely time outdoors!',
+    notes: safe($('notes').value,500),
   });
 
   function render() {
     const data = snapshot();
     $('pTitle').textContent = data.dog + "'s walk report";
     $('pDate').textContent = data.date ? new Date(data.date + 'T12:00:00').toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric'}) : 'Date to be added';
-    $('pDuration').textContent = data.duration;
-    $('pMood').textContent = data.mood;
-    $('pConditions').textContent = data.weather;
-    $('pNotes').textContent = data.notes;
+    $('pDuration').textContent = data.duration || 'Not specified';
+    $('pMood').textContent = data.mood || 'Not recorded';
+    $('pConditions').textContent = data.weather || 'Not recorded';
+    $('pNotes').textContent = data.notes || 'No additional notes recorded.';
     $('pSignature').textContent = data.walker ? 'Prepared with care by ' + data.walker : 'A little adventure worth sharing · Made with KIVZUNO';
     return data;
   }
@@ -169,8 +169,9 @@
   async function shareText() {
     const d = render();
     const message = '🐾 ' + d.dog + "'s walk report (" + d.date + ')\n' +
-      '⏱ ' + d.duration + '\n' + '🐕 ' + d.mood + '\n' +
-      '🌦 ' + d.weather + '\n' + d.notes +
+      '⏱ ' + d.duration + '\n' + (d.mood ? '🐕 ' + d.mood + '\n' : '') +
+      (d.weather ? '🌦 ' + d.weather + '\n' : '') +
+      (d.notes ? d.notes : 'No additional notes recorded.') +
       (d.walker ? '\n— ' + d.walker : '');
     try {
       if (navigator.share) {
