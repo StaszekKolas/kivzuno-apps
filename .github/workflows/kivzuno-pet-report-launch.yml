@@ -40,6 +40,10 @@ jobs:
           if(!ok){console.error('STOP: public app not deployed; no post submitted');process.exit(1);}
           console.log('PASS: public free app is live');
           JS
+      - name: Install open-source video encoder on runner
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ffmpeg fonts-dejavu-core
       - name: Generate and validate original 9:16 promo
         run: |
           node --test tests/pet-report-social-launch.test.mjs
