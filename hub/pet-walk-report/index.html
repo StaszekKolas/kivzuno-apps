@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#112f2f">
+  <meta name="description" content="Create a professional dog walk report in under a minute: local photos, printable PDF and WhatsApp share. Free preview, no account needed.">
+  <title>Pet Walk Report — Free PDF & WhatsApp updates | KIVZUNO</title>
+  <style>
+    :root{color-scheme:light;--ink:#143332;--mint:#dcf8e9;--green:#176f53;--warm:#fff9ee;--stroke:#d2e3dc;--muted:#637a70}
+    *{box-sizing:border-box}
+    body{margin:0;font:16px/1.48 system-ui,-apple-system,Segoe UI,sans-serif;background:#f4f7f2;color:var(--ink)}
+    header{background:#103632;color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .brand{font-weight:850;letter-spacing:.09em;font-size:14px}
+    .tag{font-size:12px;padding:6px 9px;border-radius:50px;color:#bafcda;border:1px solid #5c9682}
+    main{max-width:1100px;margin:26px auto 52px;padding:0 18px}
+    h1{font-size:clamp(28px,5vw,48px);line-height:1.1;letter-spacing:-.035em;margin:0 0 12px}
+    .lead{max-width:700px;color:#4d665d;margin:0 0 25px}
+    .cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
+    .panel{background:white;border:1px solid var(--stroke);border-radius:18px;padding:22px;box-shadow:0 8px 30px #11312b09}
+    .panel h2{font-size:19px;margin:0 0 18px}
+    .field{margin:0 0 15px}
+    label{display:block;font-size:13px;font-weight:750;margin:0 0 6px}
+    input,textarea,select{font:inherit;color:var(--ink);width:100%;border:1px solid #b8d0c3;border-radius:10px;padding:11px 12px;background:#fff}
+    textarea{resize:vertical;min-height:88px}
+    input:focus,textarea:focus,select:focus,button:focus-visible{outline:3px solid #83d9ae;outline-offset:2px}
+    input[type=file]{padding:9px;background:#f7fbf8}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .help{font-size:12px;color:var(--muted);margin-top:4px}
+    .actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:15px}
+    button{border:0;border-radius:11px;font:inherit;font-weight:750;cursor:pointer;padding:12px 15px}
+    button.primary{background:#186b52;color:white}
+    button.secondary{background:var(--mint);color:var(--ink)}
+    .status{font-size:13px;color:#176f53;min-height:22px;margin-top:12px}
+    .report{background:var(--warm);border:1px solid #ebdfc9;border-radius:15px;overflow:hidden}
+    .report-top{padding:22px;background:var(--ink);color:white}
+    .eyebrow{color:#b1efd0;font-size:11px;letter-spacing:.13em;font-weight:900}
+    .report h3{font-size:30px;margin:8px 0 4px;letter-spacing:-.03em}
+    .report-body{padding:22px}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 20px}
+    .stat{background:#fff;border-radius:10px;padding:10px 8px;border:1px solid #e6dfcd}
+    .stat strong{display:block;font-size:15px;overflow-wrap:anywhere}
+    .stat span{display:block;color:#64746c;font-size:11px}
+    .quote{border-left:4px solid #8ac99b;padding:4px 0 4px 14px;margin:20px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+    .photo{max-width:100%;max-height:310px;object-fit:cover;border-radius:11px;display:none;margin:10px auto}
+    .signature{font-size:12px;color:#708078;border-top:1px solid #e1d6c0;margin-top:20px;padding-top:13px;overflow-wrap:anywhere}
+    .privacy{background:#e9f6ec;padding:13px 16px;border-radius:11px;font-size:13px;margin:18px 0}
+    .empty{color:#6c8279;font-size:12px}
+    @media(max-width:780px){.cols{grid-template-columns:1fr}.panel{padding:17px}.report h3{font-size:25px}}
+    @media print{
+      @page{size:A4;margin:14mm}
+      header,.intro,.edit-panel,.actions,.status,.privacy,.help{display:none!important}
+      body{background:white}
+      main{margin:0;padding:0;max-width:none}
+      .cols{display:block}.preview-panel{border:0;box-shadow:none;padding:0}
+      .preview-panel h2{display:none}
+      .report{break-inside:avoid;print-color-adjust:exact;-webkit-print-color-adjust:exact;border:0;border-radius:0}
+      .report-top{background:#103632!important;color:white!important}
+    }
+  </style>
+</head>
+<body>
+<header><div class="brand">KIVZUNO <span aria-hidden="true">✳</span></div><div class="tag">FREE TOOL · PRO CONCEPT IN TEST</div></header>
+<main>
+  <div class="intro">
+    <h1>Give every dog a little adventure report. 🐕</h1>
+    <p class="lead">For independent dog walkers and pet sitters: make a polished walk summary in under a minute. Print as a PDF or share an update with the pet parent. No sign-up and no pet data uploaded. Optional anonymous usage counters help evaluate the idea.</p>
+  </div>
+  <div class="cols">
+    <section class="panel edit-panel" aria-label="Create walk report">
+      <h2>Walk details</h2>
+      <form id="form" autocomplete="off">
+        <div class="row">
+          <div class="field"><label for="dog">Dog's name *</label><input id="dog" name="dog" required maxlength="48" value="Buddy"></div>
+          <div class="field"><label for="walker">Your business / name</label><input id="walker" name="walker" maxlength="60" placeholder="Your dog walking business"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label for="date">Date *</label><input id="date" type="date" required></div>
+          <div class="field"><label for="duration">Walk length</label><select id="duration"><option>15 minutes</option><option selected>30 minutes</option><option>45 minutes</option><option>60 minutes</option><option>90 minutes</option></select></div>
+        </div>
+        <div class="row">
+          <div class="field"><label for="mood">Mood</label><select id="mood"><option>Happy tail 🐕</option><option>Very energetic ⚡</option><option>Calm and relaxed 🍃</option><option>Curious explorer 🔎</option><option>Sleepy superstar 💤</option></select></div>
+          <div class="field"><label for="conditions">Weather</label><select id="conditions"><option>Fresh air 🌤️</option><option>Sunny ☀️</option><option>Cloudy ☁️</option><option>Rainy 🌧️</option><option>Cold ❄️</option></select></div>
+        </div>
+        <div class="field"><label for="notes">Highlights and care notes</label><textarea id="notes" maxlength="500" placeholder="e.g. Played fetch, met two friendly dogs, had fresh water afterward.">Buddy enjoyed a sniffy adventure, walked beautifully and came home ready for a nap.</textarea><div class="help">Only add notes you're comfortable sending to the pet owner. Do not include emergency medical instructions or sensitive information.</div></div>
+        <div class="field"><label for="photo">Optional dog photo (not uploaded)</label><input id="photo" type="file" accept="image/png,image/jpeg,image/webp"><div class="help">Preview is local in this browser. Maximum 5 MB. Photos are never sent to KIVZUNO.</div></div>
+        <div class="actions">
+          <button type="button" id="print" class="primary">Save / print PDF</button>
+          <button type="button" id="share" class="secondary">Share text update</button>
+          <button type="reset" class="secondary">Reset</button>
+        </div>
+        <div class="status" id="status" role="status" aria-live="polite"></div>
+        <div class="privacy" id="pro" style="background:#f0fff4;border:1px solid #b8dcc5">
+          <strong>Would branded reports be worth £9.99 once?</strong>
+          <p style="margin:6px 0 10px">We are exploring business logos, saved report templates and nicer PDF themes. This is a <strong>price test</strong>, not a purchase.</p>
+          <button type="button" id="proInterest" class="secondary">I'd consider the £9.99 Pro pack</button>
+          <p class="help" style="margin-bottom:0">No payment, no email collection, no obligation. One anonymous interest event only if analytics are permitted.</p>
+        </div>
+      </form>
+    </section>
+    <section class="panel preview-panel" aria-label="Preview your report">
+      <h2>Live report preview</h2>
+      <article class="report" id="report">
+        <div class="report-top"><div class="eyebrow">WALK COMPLETE · GOOD DOG ENERGY</div><h3 id="pTitle"></h3><div id="pDate"></div></div>
+        <div class="report-body">
+          <div class="stats"><div class="stat"><strong id="pDuration"></strong><span>WALK LENGTH</span></div><div class="stat"><strong id="pMood"></strong><span>MOOD</span></div><div class="stat"><strong id="pConditions"></strong><span>WEATHER</span></div></div>
+          <div class="eyebrow" style="color:#287359">TODAY'S HIGHLIGHTS</div><p class="quote" id="pNotes"></p>
+          <img id="pPhoto" class="photo" alt="Pet photo selected for the report">
+          <div class="signature" id="pSignature"></div>
+        </div>
+      </article>
+      <p class="privacy"><strong>Your data stays on your device.</strong> Names, photos and notes stay on this device and are never uploaded. KIVZUNO may count anonymous use and interest events (no personal report content), unless Do Not Track or Global Privacy Control is enabled. Closing or reloading the page clears the report. Use your browser’s Print → Save as PDF to keep a copy.</p>
+      <p class="empty">KIVZUNO experiment: free working demo. No checkout is active. We are testing whether independent pet professionals value a one-time branded report pack. This demo does not request or collect payments.</p>
+    </section>
+  </div>
+</main>
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const inputs = ['dog','walker','date','duration','mood','conditions','notes'];
+  // Anonymous funnel counters only: no dog names, notes, photographs, IDs or email.
+  const sourceValue = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('src') : null;
+  const sources = ['ig_reel','ig_story','ig_bio','ig_post','fb_reel','fb_post','tiktok'];
+  const source = sources.includes(sourceValue) ? sourceValue : 'direct';
+  const trackingAllowed = typeof location !== 'undefined' &&
+    location.hostname === 'kivzuno-hub.netlify.app' &&
+    navigator.globalPrivacyControl !== true && navigator.doNotTrack !== '1';
+  const counted = new Set();
+  function track(event,once=false) {
+    if (!trackingAllowed || !['visit','start','complete','premium_click'].includes(event)) return;
+    if (once && counted.has(event)) return;
+    if (once) counted.add(event);
+    const body = JSON.stringify({app:'petreport',event,source});
+    fetch('/.netlify/functions/metrics',{
+      method:'POST',headers:{'content-type':'application/json'},
+      credentials:'same-origin',keepalive:true,body
+    }).catch(() => {});
+  }
+  track('visit',true);
+
+  let photoURL = null;
+  const safe = (v, max) => String(v || '').trim().slice(0,max);
+  const today = new Date();
+  $('date').value = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+
+  const snapshot = () => ({
+    dog: safe($('dog').value,48) || 'Your dog',
+    walker: safe($('walker').value,60),
+    date: $('date').value,
+    duration: $('duration').value,
+    mood: $('mood').value,
+    weather: $('conditions').value,
+    notes: safe($('notes').value,500) || 'A lovely time outdoors!',
+  });
+
+  function render() {
+    const data = snapshot();
+    $('pTitle').textContent = data.dog + "'s walk report";
+    $('pDate').textContent = data.date ? new Date(data.date + 'T12:00:00').toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric'}) : 'Date to be added';
+    $('pDuration').textContent = data.duration;
+    $('pMood').textContent = data.mood;
+    $('pConditions').textContent = data.weather;
+    $('pNotes').textContent = data.notes;
+    $('pSignature').textContent = data.walker ? 'Prepared with care by ' + data.walker : 'A little adventure worth sharing · Made with KIVZUNO';
+    return data;
+  }
+
+  async function shareText() {
+    const d = render();
+    const message = '🐾 ' + d.dog + "'s walk report (" + d.date + ')\n' +
+      '⏱ ' + d.duration + '\n' + '🐕 ' + d.mood + '\n' +
+      '🌦 ' + d.weather + '\n' + d.notes +
+      (d.walker ? '\n— ' + d.walker : '');
+    try {
+      if (navigator.share) {
+        await navigator.share({ title:d.dog + "'s walk report", text:message });
+        $('status').textContent = 'Share sheet opened.';
+        return;
+      }
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(message);
+        $('status').textContent = 'Text copied. Paste it into WhatsApp or any message.';
+        return;
+      }
+      const textarea = document.createElement('textarea');
+      textarea.value = message; textarea.style.position = 'fixed';
+      textarea.style.opacity = '0'; document.body.append(textarea); textarea.select();
+      const copied = document.execCommand('copy'); textarea.remove();
+      $('status').textContent = copied ? 'Text copied to clipboard.' : 'Use Save / print PDF to share.';
+    } catch(error) {
+      $('status').textContent = error && error.name === 'AbortError' ? 'Share cancelled.' : 'Could not share. Try Save / print PDF.';
+    }
+  }
+
+  function clearPhoto() {
+    if (photoURL) URL.revokeObjectURL(photoURL);
+    photoURL = null; $('pPhoto').removeAttribute('src'); $('pPhoto').style.display = 'none';
+  }
+
+  $('photo').addEventListener('change', (e) => {
+    clearPhoto();
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    if (!['image/jpeg','image/png','image/webp'].includes(f.type) || f.size > 5*1024*1024) {
+      $('photo').value = ''; $('status').textContent = 'Choose a JPG, PNG or WebP image under 5 MB.'; return;
+    }
+    photoURL = URL.createObjectURL(f);
+    $('pPhoto').src = photoURL;
+    $('pPhoto').style.display = 'block';
+    $('status').textContent = 'Photo added locally to the report.';
+  });
+  inputs.forEach((id) => $(id).addEventListener('input', () => {
+    track('start',true);
+    render();
+  }));
+  $('print').addEventListener('click', () => {
+    if (!$('form').reportValidity()) return;
+    render(); track('complete',true); window.print();
+  });
+  $('share').addEventListener('click', async () => {
+    if (!$('form').reportValidity()) return;
+    track('complete',true); await shareText();
+  });
+  $('proInterest').addEventListener('click', () => {
+    track('premium_click',true);
+    $('status').textContent = 'Interest noted if anonymous analytics are enabled. No purchase or signup took place.';
+  });
+  $('form').addEventListener('reset', () => {
+    clearPhoto();
+    $('status').textContent = 'Report cleared.';
+    setTimeout(() => {
+      const resetDate = new Date();
+      $('date').value = resetDate.getFullYear() + '-' + String(resetDate.getMonth()+1).padStart(2,'0') + '-' + String(resetDate.getDate()).padStart(2,'0');
+      render();
+    }, 0);
+  });
+  window.addEventListener('beforeunload', clearPhoto);
+  render();
+})();
+</script>
+</body>
+</html>
