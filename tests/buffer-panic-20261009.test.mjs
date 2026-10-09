@@ -16,9 +16,9 @@ function harness({ existing = [], badMedia = false } = {}) {
     let data;
     if (query.includes('GetOrganizations')) data = { account: { organizations: [{ id: 'org1' }] } };
     else if (query.includes('GetChannels')) data = { channels: [
-      { id: 'ig1', service: 'instagram', isDisconnected: false, isLocked: false },
-      { id: 'fb1', service: 'facebook', isDisconnected: false, isLocked: false },
-      { id: 'tt1', service: 'tiktok', isDisconnected: false, isLocked: false },
+      { id: 'ig1', service: 'instagram', name: 'kivzuno', isDisconnected: false, isLocked: false },
+      { id: 'fb1', service: 'facebook', name: 'Kivzuno', isDisconnected: false, isLocked: false },
+      { id: 'tt1', service: 'tiktok', name: '.kivzuno', isDisconnected: false, isLocked: false },
     ] };
     else if (query.includes('GetPosts')) data = { posts: {
       edges: existing.map((x) => ({ node: x })),
