@@ -2,7 +2,7 @@ import { getStore } from "@netlify/blobs";
 
 // Aggregate events only: no identifiers, no cookies, no quiz answers, no customer data.
 // Netlify's infrastructure may process request metadata under its own privacy terms.
-const apps = ["home", "battery", "flag", "panic", "premium"];
+const apps = ["home", "battery", "flag", "panic", "premium", "petreport"];
 const sources = ["ig_reel", "ig_story", "ig_bio", "ig_post", "fb_reel", "fb_post", "tiktok", "direct", "other"];
 const events = ["visit", "start", "complete", "premium_click"];
 const headers = { "cache-control": "no-store", "content-type": "application/json; charset=utf-8" };
@@ -31,7 +31,7 @@ export default async (request) => {
       return reply({ error: "invalid event" }, 400);
     }
     if (app === "home" && event !== "visit") return reply({ error: "invalid combination" }, 400);
-    if (event === "premium_click" && !["battery", "flag"].includes(app)) {
+    if (event === "premium_click" && !["battery", "flag", "petreport"].includes(app)) {
       return reply({ error: "invalid combination" }, 400);
     }
     const key = ["v1", isoDay(new Date()), source, app, event].join("/");
