@@ -1,0 +1,55 @@
+name: KIVZUNO app release verification
+
+# No credentials, no deployment, no social posting; standard public-repo CI only.
+on:
+  pull_request:
+    paths:
+      - 'hub/**'
+      - 'netlify/**'
+      - 'netlify.toml'
+      - 'scripts/site-release-gate.mjs'
+      - 'scripts/check-live-kivzuno.mjs'
+      - 'tests/site-release-gate.test.mjs'
+      - '.github/workflows/kivzuno-release-validation.yml'
+  workflow_dispatch:
+    inputs:
+      verify_live:
+        description: 'Check live Netlify after deploying an approved app?'
+        required: true
+        default: false
+        type: boolean
+      app_slug:
+        description: 'App to verify on the public site'
+        required: true
+        type: choice
+        default: panic
+        options:
+          - panic
+          - battery
+          - flag
+          - premium
+          - samebrain
+          - lockin
+permissions:
+  contents: read
+jobs:
+  release-gate:
+    name: Validate release without deploying
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Source syntax and safety tests (no external calls)
+        run: |
+          node --check scripts/site-release-gate.mjs
+          node --check scripts/check-live-kivzuno.mjs
+          node --test tests/site-release-gate.test.mjs
+          node scripts/site-release-gate.mjs
+      - name: Verify public Netlify deployment (optional, read-only)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.verify_live == true }}
+        env:
+          APP_SLUG: ${{ inputs.app_slug }}
+        run: node scripts/check-live-kivzuno.mjs "$APP_SLUG"
