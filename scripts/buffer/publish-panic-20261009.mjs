@@ -15,7 +15,7 @@ export const CAMPAIGN = Object.freeze([
     service: 'facebook',
     text: '🚨 ADULTING EMERGENCY?\n\nChoose your crisis. Press PANIC. Receive a deeply questionable solution. 😂\n\nTry Panic Button for Adults — free, no login:\nhttps://kivzuno-hub.netlify.app/?src=fb_reel#panic\n\n#KIVZUNO #PanicButtonForAdults #AdultingHumor #MiniApps',
     media: 'https://static.metricool.com/planner/202610/7218358-file-9829500710376318212.mp4',
-    metadata: 'facebook: { type: reel, firstComment: "🚨 Play free: https://kivzuno-hub.netlify.app/?src=fb_reel#panic" }',
+    metadata: 'facebook: { type: reel }',
   },
   {
     service: 'tiktok',
@@ -98,7 +98,7 @@ export async function runCampaign({
       const next = after ? ', after: ' + quoted(after) : '';
       const data = await graphql('query GetPosts { posts(first: 100' + next +
         ', input: { organizationId: ' + quoted(org.id) +
-        ', filter: { channelIds: [' + selected.filter((p) => p.channel.orgId === org.id)
+        ', filter: { status: [draft, error, needs_approval, scheduled, sending, sent], channelIds: [' + selected.filter((p) => p.channel.orgId === org.id)
           .map((p) => quoted(p.channel.id)).join(',') + '] } }) {' +
         ' edges { node { id text channelId status createdAt dueAt } }' +
         ' pageInfo { hasNextPage endCursor } } }');
@@ -112,8 +112,20 @@ export async function runCampaign({
     }
   }
 
+  const originalInstagramId = '6ac8fd0a443de896598070b7';
+  const originalInstagram = history.find((post) => post?.id === originalInstagramId);
+  log('instagram: original Buffer post ' + originalInstagramId +
+    ' status=' + (originalInstagram?.status || 'NOT VISIBLE IN HISTORY (CHECK BUFFER)'));
+
   const pending = [];
   for (const post of selected) {
+    // A previous actual API attempt accepted Instagram at 14:41 UTC.
+    // Never re-submit this campaign to IG, irrespective of its later status.
+    // Even error status needs separate manual review: no automatic duplicate.
+    if (post.service === 'instagram') {
+      log('instagram: NOT RETRIED (accepted in run 37946005504; Buffer post 6ac8fd0a443de896598070b7)');
+      continue;
+    }
     // Exact approved caption comparison; ANY matching previous status blocks duplicates.
     const duplicate = history.find((h) =>
       h?.channelId === post.channel.id && h?.text?.trim() === post.text.trim());
