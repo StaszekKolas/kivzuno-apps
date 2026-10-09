@@ -47,7 +47,7 @@ function sandbox({ production = false, gpc = false } = {}) {
     return {ok:true,status:204};
   };
   const URL = {createObjectURL(){return 'blob:mock';},revokeObjectURL(){}};
-  runInNewContext(js,{document,window,navigator,location,fetch,URL,Date,setTimeout,console});
+  runInNewContext(js,{document,window,navigator,location,fetch,URL,URLSearchParams,Date,setTimeout,console});
   return {el,window,navigator,events,get printed(){return printed;},get clipboard(){return clipboard;}};
 }
 
