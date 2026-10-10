@@ -1,0 +1,45 @@
+name: KIVZUNO website analytics dashboard tests
+
+on:
+  pull_request:
+    paths:
+      - 'hub/stats.html'
+      - 'tests/kivzuno-dashboard.test.mjs'
+      - '.github/workflows/kivzuno-dashboard-tests.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Verify cookieless aggregate statistics dashboard
+        run: node --test tests/kivzuno-dashboard.test.mjs
+      - name: Read the deployed seven-day aggregate counter (diagnostic only)
+        continue-on-error: true
+        run: |
+          node --input-type=module <<'JS'
+          const url='https://kivzuno-hub.netlify.app/.netlify/functions/metrics?days=7';
+          const response=await fetch(url,{signal:AbortSignal.timeout(15000)});
+          const body=await response.text();
+          if(!response.ok){
+            console.log('LIVE_METRICS_UNAVAILABLE HTTP '+response.status+' '+body.slice(0,240));
+            process.exitCode=1;
+          }else{
+            const json=JSON.parse(body);
+            console.log('LIVE_METRICS_LAST_7_DAYS '+JSON.stringify({
+              generatedAt:json.generatedAt,
+              visits:json.byEvent?.visit||0,
+              homeVisits:json.byApp?.home?.visit||0,
+              petReportVisits:json.byApp?.petreport?.visit||0,
+              starts:json.byEvent?.start||0,
+              completions:json.byEvent?.complete||0,
+              proInterestClicks:json.byEvent?.premium_click||0,
+              sourceVisits:Object.fromEntries(Object.entries(json.bySource||{}).map(([source,counts])=>[source,counts.visit||0]))
+            }));
+          }
+          JS
