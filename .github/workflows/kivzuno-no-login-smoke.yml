@@ -1,0 +1,55 @@
+name: KIVZUNO no-account readiness smoke
+
+on:
+  pull_request:
+    paths:
+      - "netlify/functions/era-image-task.mjs"
+      - "netlify/functions/lemon-*.mjs"
+      - "hub/era-motion/**"
+      - "tests/no-login-lemon-pipeline.test.mjs"
+      - ".github/workflows/kivzuno-no-login-smoke.yml"
+permissions:
+  contents: read
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Verify both real Netlify services refuse unconfigured spending
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          node --input-type=module <<'JS'
+          const base="https://deploy-preview-"+process.env.PR_NUMBER+"--kivzuno-hub.netlify.app";
+          let last="";
+          for(let attempt=1;attempt<=14;attempt++){
+            try{
+              const page=await fetch(base+"/era-motion/",{signal:AbortSignal.timeout(10000)});
+              const html=await page.text();
+              if(!page.ok || !html.includes("no-login-studio.js") || !html.includes("lemon-status.js"))
+                throw new Error("new frontend is not yet deployed");
+              for(const path of ["era-image-task","lemon-readiness"]){
+                const res=await fetch(base+"/.netlify/functions/"+path,{
+                  method:"POST",
+                  headers:{"origin":base,"content-type":"application/json"},
+                  body:JSON.stringify({action:"capabilities"}),
+                  signal:AbortSignal.timeout(14000)
+                });
+                const data=await res.json();
+                if(!res.ok)throw new Error(path+" response "+res.status+" "+JSON.stringify(data));
+                if(path==="era-image-task" && (data.available!==false || data.billingActive!==false))
+                  throw new Error("image endpoint activated without owner approval");
+                if(path==="lemon-readiness" && (data.paymentActive!==false || data.checkoutReady!==false))
+                  throw new Error("unexpected live checkout");
+                console.log("VERIFIED_NO_CHARGE "+path+" configuration remains disabled");
+              }
+              process.exit(0);
+            }catch(e){last=String(e?.message||e);console.log("Attempt "+attempt+": "+last);}
+            if(attempt<14)await new Promise(resolve=>setTimeout(resolve,6000));
+          }
+          console.error("READINESS_UNVERIFIED: "+last);
+          process.exit(1);
+          JS
