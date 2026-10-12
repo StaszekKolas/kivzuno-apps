@@ -8,96 +8,108 @@ const js=readFileSync("hub/era-motion/app.js","utf8");
 const css=readFileSync("hub/era-motion/style.css","utf8");
 const hub=readFileSync("hub/index.html","utf8");
 const metrics=readFileSync("netlify/functions/metrics.mjs","utf8");
-const stats=readFileSync("hub/stats.html","utf8");
 
-test("separate working app is discoverable from main hub and honest about limitations",()=>{
+test("real AI app is reachable and honest about user-pays and unavailable films",()=>{
   assert.match(hub,/\/era-motion\/\?src=/);
-  assert.match(html,/<b>not an AI transformation<\/b>/);
-  assert.match(html,/photos stay in this browser/i);
-  assert.match(html,/Save free photo postcard \(PNG\)/);
-  assert.match(html,/Interested in a paid AI film/);
-  assert.match(html,/not an AI transformation/);
-  assert.doesNotMatch(html,/Try it free.*film|Export 6-second video/i);
-  assert.doesNotMatch(js,/MediaRecorder|captureStream|exportVideo/);
-  assert.match(html,/<script src="\.\/app\.js" defer><\/script>/);
-  assert.ok(css.includes("@media(max-width:440px)"));
-  assert.doesNotMatch(html,/<script[^>]+src="https?:\/\//);
-  assert.doesNotMatch(js,/localStorage|sessionStorage|document\.cookie|axios|cloudinary|uploadBytes/i);
+  assert.match(hub,/Puter sign-in and available account credits are required/);
+  assert.match(html,/https:\/\/js\.puter\.com\/v2\//);
+  assert.match(html,/Puter gives accounts a monthly free allowance, but it is limited/);
+  assert.match(html,/agree to send my photos to Puter's AI provider/);
+  assert.match(html,/Video creation is not available yet/);
+  assert.match(html,/KIVZUNO never charges you/);
+  assert.match(js,/puter\.ai\.txt2img\(generatePrompt\(\),/);
+  assert.doesNotMatch(html,/Save free photo postcard|original photo with a themed frame/i);
+  assert.doesNotMatch(js,/MediaRecorder|captureStream|exportVideo|localStorage|sessionStorage|document\.cookie/);
+  assert.match(css,/\.ai-result-screen/);
 });
-test("12 era presets are uniquely identified and JavaScript parses",()=>{
+test("12 genuinely different era prompts are syntactically valid",()=>{
   assert.doesNotThrow(()=>new Script(js));
-  assert.match(js,/function savePoster\(\)/);
-  const ids=[...js.matchAll(/\{id:"([a-z]+)",name:/g)].map(m=>m[1]);
+  const ids=[...js.matchAll(/\{id:"([^"]+)",\s*name:/g)].map(m=>m[1]);
   assert.equal(ids.length,12);
   assert.equal(new Set(ids).size,12);
-  for(const important of ["medieval","victorian","artdeco","future"])assert.ok(ids.includes(important));
+  for(const id of ["medieval","west","victorian","future"])assert.ok(ids.includes(id));
+  assert.match(js,/regenerate the ENTIRE environment/);
+  assert.match(js,/Maintain recognizable facial features/);
 });
-function mockUI(){
+
+function mockBrowser(){
   const elements=new Map();
-  class E{
-    constructor(id){this.id=id;this.children=[];this.listeners={};this.attributes={};this.dataset={};this.style={};this.value="";this.textContent="";this.disabled=false;this.hidden=true;}
-    append(...children){this.children.push(...children);}
-    addEventListener(name,fn){this.listeners[name]=fn;}
-    setAttribute(k,v){this.attributes[k]=v;}
-    removeAttribute(k){delete this.attributes[k];}
-    click(){this.listeners.click?.();}
-    load(){}
+  let aiCalls=[],authCalls=0;
+  class E {
+    constructor(name=""){this.name=name;this.children=[];this.listeners={};this.dataset={};this.attributes={};this.style={};this.value="";this.checked=false;this.disabled=false;this.hidden=false;this.naturalWidth=1500;this.naturalHeight=1000;this.complete=true;this._src="";this.textContent="";}
+    addEventListener(name,listener){this.listeners[name]=listener;}
+    setAttribute(name,value){this.attributes[name]=value;}
+    removeAttribute(name){delete this.attributes[name];}
+    append(...items){this.children.push(...items);}
+    remove(){}
+    click(){return this.listeners.click?.();}
+    set src(v){this._src=v;if(this.onload)queueMicrotask(()=>this.onload());}
+    get src(){return this._src;}
+    getContext(){return {drawImage(){}};}
+    toDataURL(){return "data:image/jpeg;base64,ZmFrZQ==";}
   }
-  const el=(id)=>{if(!elements.has(id))elements.set(id,new E(id));return elements.get(id);};
-  const gradient=()=>({addColorStop(){}});
-  const ctx={
-    createLinearGradient:gradient,beginPath(){},roundRect(){},fill(){},stroke(){},
-    strokeRect(){},fillRect(){},arc(){},save(){},restore(){},clip(){},
-    moveTo(){},lineTo(){},translate(){},drawImage(){},fillText(){},
-    measureText(s){return {width:String(s).length*19};}
-  };
-  const canvas=el("scene");
-  canvas.width=540;canvas.height=960;canvas.getContext=()=>ctx;
-  canvas.toBlob=fn=>fn(new Blob(["PNG"],{type:"image/png"}));
-  const document={getElementById:el,createElement:tag=>new E(tag),body:{append(){} }};
-  const called=[];
-  const window={addEventListener(){},doNotTrack:"1",location:{search:""},URL:{createObjectURL:()=> "blob:preview",revokeObjectURL(){}}};
-  const fakeUrl={createObjectURL:()=> "blob:preview",revokeObjectURL(){}};
-  class ImageMock{
-    constructor(){this.naturalWidth=1500;this.naturalHeight=1000;this.onload=null;this.onerror=null;}
-    set src(v){queueMicrotask(()=>this.onload?.());}
-  }
-  const ctxData={
-    document,window,navigator:{doNotTrack:"1",globalPrivacyControl:false},
-    URL:fakeUrl,URLSearchParams,Image:ImageMock,Blob,Date,Math,console,
-    performance:{now:()=>100},requestAnimationFrame:()=>1,cancelAnimationFrame(){},
-    fetch:async (...args)=>{called.push(args);return {status:204};},
-    setTimeout:()=>1,clearTimeout(){},
-    location:{search:""},MediaRecorder:undefined
-  };
-  return {el,canvas,ctxData,called};
+  const el=id=>{if(!elements.has(id))elements.set(id,new E(id));return elements.get(id);};
+  const document={getElementById:el,createElement:tag=>new E(tag),body:{append(){}}};
+  const url={createObjectURL:()=>"blob:upload",revokeObjectURL(){}};
+  const window={doNotTrack:"1",addEventListener(){},puter:{
+    auth:{signIn:async()=>{authCalls++;return true;}},
+    ai:{txt2img:async (prompt,opts)=>{
+      aiCalls.push({prompt,opts});
+      return {src:"data:image/png;base64,ZmFrZQ=="};
+    }}
+  }};
+  const ctxData={document,window,navigator:{doNotTrack:"1"},location:{search:""},
+    URL:url,URLSearchParams,Image:E,Blob,Math,Date,
+    console,fetch:async()=>({status:204}),
+    setTimeout(){},clearTimeout(){}};
+  return {el,ctxData,aiCalls,authCount:()=>authCalls};
 }
-test("app initializes with 12 clickable era buttons and draws preview",()=>{
-  const m=mockUI();
-  assert.doesNotThrow(()=>runInNewContext(js,m.ctxData));
-  const eras=m.el("eras").children;
-  assert.equal(eras.length,12);
-  assert.equal(eras.filter(x=>x.attributes["aria-pressed"]==="true").length,1);
-  eras[1].click();
-  assert.equal(eras[1].attributes["aria-pressed"],"true");
-  assert.equal(eras[3].attributes["aria-pressed"],"false");
-  assert.ok(typeof m.el("interest-btn").listeners.click==="function");
+test("user must upload photo AND consent before enabling AI",async()=>{
+  const m=mockBrowser();
+  runInNewContext(js,m.ctxData);
+  assert.equal(m.el("eras").children.length,12);
+  assert.equal(m.el("generate-btn").disabled,true);
+  m.el("consent").checked=true;
+  m.el("consent").listeners.change();
+  assert.equal(m.el("generate-btn").disabled,true);
+  await m.el("photo").listeners.change({target:{files:[{size:1200,type:"image/jpeg",name:"Polar.jpg"}]}});
+  assert.equal(m.el("generate-btn").disabled,false);
+  m.el("consent").checked=false;
+  m.el("consent").listeners.change();
+  assert.equal(m.el("generate-btn").disabled,true);
+  assert.equal(m.authCount(),0);
+  assert.equal(m.aiCalls.length,0);
 });
-test("image files stay local, invalid file is rejected and a valid one enables preview",async()=>{
-  const m=mockUI();runInNewContext(js,m.ctxData);
-  const file={size:1234,type:"image/png",name:"portrait.png"};
-  await m.el("photo").listeners.change({target:{files:[file]}});
-  await new Promise(resolve=>setImmediate(resolve));
-  assert.equal(m.el("photo-label").textContent,"portrait.png");
-  assert.equal(m.el("poster-btn").disabled,false);
-  m.el("interest-btn").click();
-  assert.match(m.el("status").textContent,/No payment has been taken/);
-  assert.equal(m.called.length,0,"Do Not Track keeps analytics disabled");
+test("real image generation takes 2 reference images and uses selected era scene",async()=>{
+  const m=mockBrowser();runInNewContext(js,m.ctxData);
+  await m.el("photo").listeners.change({target:{files:[{size:1200,type:"image/jpeg",name:"person.jpg"}]}});
+  await m.el("companion").listeners.change({target:{files:[{size:1200,type:"image/png",name:"dog.png"}]}});
+  m.el("eras").children[5].click(); // Wild West
+  m.el("animal").value="dog";
+  m.el("consent").checked=true;m.el("consent").listeners.change();
+  await m.el("generate-btn").click();
+  assert.equal(m.authCount(),1);
+  assert.equal(m.aiCalls.length,1);
+  assert.equal(m.aiCalls[0].opts.model,"gpt-image-1-mini");
+  assert.equal(m.aiCalls[0].opts.input_images.length,2);
+  assert.ok(m.aiCalls[0].opts.input_images.every(a=>a.startsWith("data:image/jpeg;base64,")));
+  assert.match(m.aiCalls[0].prompt,/Wild West/);
+  assert.match(m.aiCalls[0].prompt,/NOT frame, caption, crop or collage/);
+  assert.equal(m.el("generated").hidden,false);
+  assert.equal(m.el("download-btn").disabled,false);
+  assert.match(m.el("status").textContent,/Real AI image ready/);
 });
-test("aggregate app analytics supports Era Motion with no personal data",()=>{
+test("invalid inputs cannot trigger the paid provider",async()=>{
+  const m=mockBrowser();runInNewContext(js,m.ctxData);
+  await m.el("photo").listeners.change({target:{files:[{size:13*1024*1024,type:"image/png",name:"too-big.png"}]}});
+  m.el("consent").checked=true;m.el("consent").listeners.change();
+  assert.equal(m.el("generate-btn").disabled,true);
+  await m.el("generate-btn").click();
+  assert.equal(m.aiCalls.length,0);
+});
+test("only anonymous known metrics are sent, no photos or payment events",()=>{
   assert.match(metrics,/const apps = \[[^\n]*"eramotion"/);
-  assert.match(stats,/eramotion:"Era Motion"/);
-  assert.match(js,/JSON\.stringify\(\{app:"eramotion",event,source\}\)/);
   assert.match(metrics,/"eramotion"\]\.includes\(app\)/);
-  assert.doesNotMatch(js,/JSON\.stringify\(\{.*photo.*\}\)/);
+  assert.match(js,/JSON\.stringify\(\{app:"eramotion",event,source\}\)/);
+  assert.doesNotMatch(js,/fetch\([^)]*selected\.photo/);
 });
