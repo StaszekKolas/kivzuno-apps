@@ -30,7 +30,7 @@ jobs:
             try {
               const homepage = await fetch(base+"/era-motion/",{signal:AbortSignal.timeout(9000)});
               const html=await homepage.text();
-              if(!homepage.ok || !html.includes("runway-bridge.js"))throw new Error("new app not yet deployed");
+              if(!homepage.ok || !html.includes("studio-simple.js"))throw new Error("new app not yet deployed");
               const response = await fetch(base+"/.netlify/functions/runway-handoff",{
                 method:"POST",
                 headers:{"origin":base,"content-type":"application/json"},
