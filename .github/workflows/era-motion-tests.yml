@@ -27,7 +27,7 @@ jobs:
           node-version: "22"
       - name: Check JavaScript and run no-network app tests
         run: |
-          node --check hub/era-motion/app.js
+          node --check hub/era-motion/studio-simple.js
           node --check hub/era-motion/runway-bridge.js
           node --check netlify/functions/runway-handoff.mjs
           node --check netlify/functions/runway-handoff-core.mjs
