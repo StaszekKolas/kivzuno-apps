@@ -9,6 +9,8 @@
  const MAX_FILE=12*1024*1024;
  let dataUri="",busy=false,aiEnabled=false,generationVersion=0,quotaEligible=false,quotaNotice="",ownerKey="",videoBusy=false,imageJob=null;
  const videoButton=$("generate-video"),videoApproval=$("video-approval");
+ const productInputs=[...document.querySelectorAll('input[name="product"]')];
+ let productMode="photo",videoResultUrl="";
  function message(value,kind=""){msg.textContent=value;msg.dataset.kind=kind;}
  function resetLabel(resetAt){
    const when=typeof resetAt==="string"?new Date(resetAt):new Date(NaN);
@@ -35,22 +37,29 @@
    return note;
  }
  function state(){
+   $("photo-submit").hidden=productMode!=="photo";
+   $("video-submit").hidden=productMode!=="video";
+   generated.hidden=productMode!=="photo" || !generatedImg.getAttribute("src");
+   $("video-test").hidden=productMode!=="video";
    go.disabled=busy || videoBusy || !ownerKey || !dataUri || !consent.checked || (aiEnabled && !quotaEligible);
-   videoButton.disabled=busy || videoBusy || !imageJob || !videoApproval.checked;
+   videoButton.disabled=busy || videoBusy || !ownerKey || !dataUri || !consent.checked || !videoApproval.checked || !quotaEligible;
    era.disabled=busy || videoBusy;
    photo.disabled=busy || videoBusy;
    $("change-era").disabled=busy || videoBusy;
    go.textContent=busy ? (aiEnabled?"Creating your AI photo…":"Checking your photo…")
-     :aiEnabled?(quotaEligible?"Create my AI photo":"AI limit reached — try later"):"Check my photo — free";
+     :aiEnabled?(quotaEligible?"Create my AI photo · 2 credits":"Owner test unavailable"):"Check my photo — free";
+   videoButton.textContent=videoBusy?"Making your 5-second movie…":"Create my 5-second movie · 25 credits";
  }
  function clearResult(){
    generated.hidden=true;generatedImg.hidden=true;generatedImg.removeAttribute("src");
    $("generated-download").hidden=true;
    imageJob=null;
-   $("video-test").hidden=true;
+   videoResultUrl="";
+   $("video-test").hidden=productMode!=="video";
    $("finished-video").hidden=true;
    $("finished-video").removeAttribute("src");
    $("video-open").hidden=true;
+   $("video-message").textContent="Choose Video, upload a photo and explicitly approve one 25-credit film test.";
    videoApproval.checked=false;
  }
  function mode(enabled){
@@ -60,8 +69,8 @@
    if(aiEnabled){
      banner.textContent="PRIVATE OWNER TEST · Photos and 5-second films use existing Runway credits; no customer checkout.";
      label.textContent="I agree to send my photo to KIVZUNO and its AI provider for this transformation.";
-     $("action-hint").textContent="Private testing · 2 prepaid Runway credits per photo";
-     $("availability-detail").textContent="Owner-only photo and five-second video tests are available. No customer payments or public release.";
+     $("action-hint").textContent="Two independent products · 2 credits for a photo OR 25 credits for a five-second movie";
+     $("availability-detail").textContent="Separate products: photo AI (2 credits) OR video AI (25 credits). Owner testing uses existing credits; customers must pay for each chosen product once checkout is separately verified and approved.";
    } else {
      banner.textContent="PHOTO TEST MODE — Upload works today. Actual AI transformation and video creation are not active yet.";
      label.textContent="I agree to send my photo to KIVZUNO for a free image-format check. It will be discarded; no AI provider is called.";
@@ -166,7 +175,7 @@
    return data;
  }
  async function run(){
-   if(busy||videoBusy||!ownerKey||!dataUri||!consent.checked||(aiEnabled&&!quotaEligible))return;
+   if(productMode!=="photo"||busy||videoBusy||!ownerKey||!dataUri||!consent.checked||(aiEnabled&&!quotaEligible))return;
    busy=true;state();clearResult();
    const img=dataUri,chosen=era.value,version=generationVersion;
    try{
@@ -180,7 +189,6 @@
      }
      message("Sending your photo for one AI transformation. This may take a minute…");
      const task=await post("era-image-task",{action:"start",photo:img,era:chosen,consent:true});
-     const sourceJob={imageJobId:task.jobId,imageAccessToken:task.accessToken,era:chosen};
      if(task.status!=="SUBMITTED"||!task.jobId||!task.accessToken)throw Error("Generation did not start.");
      for(let attempt=0;attempt<60;attempt++){
        await new Promise(resolve=>setTimeout(resolve,5000));
@@ -197,7 +205,6 @@
            if(readyImage.complete && readyImage.naturalWidth>0)resolve();
          });
          if(version!==generationVersion)throw Error("Photo changed while loading result.");
-         imageJob=sourceJob;
          generatedImg.src=status.imageUrl;
          generatedImg.alt="Your photo transformed into "+era.options[era.selectedIndex].textContent;
          generatedImg.hidden=false;
@@ -205,8 +212,7 @@
          $("generated-era").textContent=era.options[era.selectedIndex].textContent;
          const link=$("generated-download");link.href=status.imageUrl;link.hidden=false;
          $("preview-tag").textContent="AI READY";
-         $("video-test").hidden=false;
-         $("video-message").textContent="Image ready. Tick approval to test an optional 5-second video for 25 prepaid credits.";
+         // Photo-only order; video is a separate product, not an upsell requiring this image.
          quotaEligible=true;
          quotaNotice="";
          banner.textContent="PRIVATE TEST · You can create more photos manually. Each uses 2 prepaid Runway credits.";
@@ -253,40 +259,44 @@
    }finally{$("owner-unlock").disabled=false;}
  }
  async function makeVideo(){
-   if(videoBusy||busy||!imageJob||!videoApproval.checked)return;
+   if(productMode!=="video"||videoBusy||busy||!ownerKey||!dataUri||!consent.checked||!videoApproval.checked||!quotaEligible)return;
    videoBusy=true;state();
-   $("video-message").textContent="Sending your existing AI image to Runway for one 5-second movie. Your approval uses 25 prepaid API credits…";
+   const photo=dataUri,chosenEra=era.value,currentVersion=generationVersion;
+   $("video-message").textContent="Submitting your uploaded photo directly for ONE 5-second film. This consumes 25 of your existing Runway credits.";
    try{
      const job=await post("era-owner-video",{
-       action:"start",imageJobId:imageJob.imageJobId,
-       imageAccessToken:imageJob.imageAccessToken,era:imageJob.era,
-       ownerApproval:true
+       action:"start",photo,era:chosenEra,ownerApproval:true
      });
      if(job.status!=="SUBMITTED"||!job.videoJobId||!job.videoAccessToken)
-       throw Error("Runway has not confirmed starting your video.");
-     $("video-message").textContent="Runway is making your 5-second movie. Keep this tab open; no extra video will be started.";
-     for(let attempt=0;attempt<100;attempt++){
-       await new Promise(resolve=>setTimeout(resolve,5000));
+       throw Error("Runway did not confirm starting the video task.");
+     $("video-message").textContent="Runway is creating your video. No separate AI photo was ordered or charged.";
+     for(let attempt=0;attempt<80;attempt++){
+       await new Promise(resolve=>setTimeout(resolve,9000));
+       if(currentVersion!==generationVersion)throw Error("Photo changed during processing.");
        const info=await post("era-owner-video",{
          action:"status",videoJobId:job.videoJobId,
          videoAccessToken:job.videoAccessToken
        });
        if(info.status==="FAILED"||info.status==="REVIEW_REQUIRED")
-         throw Error("Video was not completed. No retry has been started.");
+         throw Error("The video task did not finish. No automatic retry was started.");
        if(info.status==="SUCCEEDED"){
          if(typeof info.videoUrl!=="string"||!info.videoUrl.startsWith("https://"))
-           throw Error("The output video URL is missing.");
+           throw Error("Runway did not return a video link.");
+         videoResultUrl=info.videoUrl;
          const player=$("finished-video");
-         player.src=info.videoUrl;player.hidden=false;
-         const link=$("video-open");link.href=info.videoUrl;link.hidden=false;
-         $("video-message").textContent="✓ Video ready! Play it or open it to save. Runway links expire.";
+         player.src=videoResultUrl;player.hidden=false;
+         const link=$("video-open");
+         link.href=videoResultUrl;link.hidden=false;
+         $("video-message").textContent="✓ Your 5-second film is ready. Play or save it now; the Runway link expires.";
          return;
        }
      }
-     throw Error("The video is taking longer than expected. Do not retry; the task may still be running.");
+     throw Error("Video is taking longer than expected. Do not retry — it may still be processing.");
    }catch(err){
      $("video-message").textContent="Video test: "+String(err?.message||err).slice(0,150);
-   }finally{videoBusy=false;videoApproval.checked=false;state();}
+   }finally{
+     videoBusy=false;videoApproval.checked=false;state();
+   }
  }
  $("owner-unlock").addEventListener("click",unlockOwner);
  $("owner-key").addEventListener("keydown",event=>{
@@ -294,6 +304,15 @@
  });
  videoApproval.addEventListener("change",state);
  videoButton.addEventListener("click",makeVideo);
+ for(const input of productInputs)input.addEventListener("change",()=>{
+   if(busy||videoBusy)return;
+   productMode=productInputs.find(x=>x.checked)?.value==="video"?"video":"photo";
+   videoApproval.checked=false;
+   message(productMode==="video"
+     ?"You selected VIDEO ONLY · 25 prepaid credits. Upload your photo and approve the film test. No AI photo is generated first."
+     :"You selected PHOTO ONLY · 2 prepaid credits. Film generation is not included.","");
+   state();
+ });
  photo.addEventListener("change",()=>onSelect(photo.files?.[0]));
  era.addEventListener("change",()=>{
    if(aiEnabled&&!quotaEligible){
