@@ -3,66 +3,96 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {Script} from "node:vm";
 
-const backend=readFileSync("netlify/functions/era-image-task.mjs","utf8");
+const photo=readFileSync("netlify/functions/era-image-task.mjs","utf8");
+const video=readFileSync("netlify/functions/era-owner-video.mjs","utf8");
+const auth=readFileSync("netlify/functions/era-owner-test-core.mjs","utf8");
 const browser=readFileSync("hub/era-motion/studio-simple.js","utf8");
+const html=readFileSync("hub/era-motion/index.html","utf8");
 
-test("daily allowance check does not claim quota or run a paid provider call",()=>{
-  const start=backend.indexOf('if(action==="eligibility")');
-  const end=backend.indexOf('if(!["start","status"].includes(action))',start);
-  assert.ok(start>=0 && end>start);
-  const block=backend.slice(start,end);
-  assert.match(block,/await allowance\(request\)/);
-  assert.doesNotMatch(block,/runway\(|capacity\(|setJSON\(|action==="start"/);
-  const allowance=backend.slice(backend.indexOf("async function allowance(req)"),backend.indexOf("export default"));
-  assert.match(allowance,/q\.get\(/);
-  assert.doesNotMatch(allowance,/\.setJSON\(/);
-  assert.match(allowance,/one_image_per_day/);
-  assert.match(allowance,/daily_free_image_limit/);
-  assert.match(allowance,/remainingShared:remaining/);
-  assert.match(backend,/nextResetAt\(\)/);
-  assert.match(backend,/KIVZUNO_SERVER_IMAGE_ENABLED==="owner-approved"/);
-  assert.match(backend,/onlyIfNew:true/);
+test("owner must unlock studio and secret is never embedded in source",()=>{
+ assert.match(html,/id="owner-login"/);
+ assert.match(html,/id="owner-workspace"[^>]+hidden/);
+ assert.match(html,/id="owner-key" type="password"/);
+ assert.match(browser,/ownerKey=secret/);
+ assert.match(browser,/input\.value=""/);
+ assert.match(browser,/x-kivzuno-owner-key/);
+ assert.doesNotMatch(browser,/localStorage|sessionStorage|document\.cookie/);
+ assert.match(auth,/timingSafeEqual/);
+ assert.match(auth,/KIVZUNO_OWNER_TEST_ENABLED==="owner-approved"/);
+ assert.match(auth,/process\.env\.KIVZUNO_OWNER_TEST_SECRET\.length>=32/);
+ assert.match(auth,/provided\.length<32/);
 });
-test("browser tells users the next daily reset and does not pass through raw quota errors",()=>{
-  assert.match(browser,/action:"eligibility"/);
-  assert.match(browser,/quotaEligible=false/);
-  assert.match(browser,/aiEnabled && !quotaEligible/);
-  assert.match(browser,/aiEnabled&&!quotaEligible/);
-  assert.match(browser,/one_image_per_day/);
-  assert.match(browser,/daily_free_image_limit/);
-  assert.match(browser,/Europe\/London/);
-  assert.match(browser,/Try again from/);
-  assert.match(browser,/lockQuota\(err\.code,err\.resetAt\)/);
-  assert.match(browser,/The Generate button is paused|AI limit reached/);
-  assert.match(browser,/quotaNotice=note/);
-  assert.match(browser,/if\(aiEnabled&&!quotaEligible\)\{/);
-  assert.match(browser,/message\(quotaNotice\|\|/);
+test("any unauthenticated generation request is rejected before provider submission",()=>{
+ const p=photo.indexOf('if(!ownerAuthorized(request))return reply({error:"owner_access_required"},403);');
+ const claim=photo.indexOf('await claimOwnerTestSlot("image")');
+ assert.ok(p>=0 && claim>p);
+ const v=video.indexOf('if(!ownerAuthorized(request))return reply({error:"owner_access_required"},403);');
+ const started=video.indexOf('if(action==="start")');
+ assert.ok(v>=0 && started>v);
+ assert.match(photo,/available:enabled\(\) && ownerAuthorized\(request\)/);
+ assert.match(video,/videoAvailable:ownerConfigured\(\)&&ownerAuthorized\(request\)/);
 });
-test("browser shows quota used before any expensive photo request",async()=>{
-  const elements=new Map();
-  const element=id=>{
-    if(!elements.has(id))elements.set(id,{
-      id,disabled:false,checked:false,textContent:"",dataset:{},
-      addEventListener(){},removeAttribute(){},focus(){}
-    });
-    return elements.get(id);
-  };
-  const calls=[];
-  const fetch=async (_url,opts)=>{
-    const action=JSON.parse(opts.body).action;
-    calls.push(action);
-    if(action==="capabilities")return {ok:true,json:async()=>({available:true})};
-    if(action==="eligibility")return {ok:true,json:async()=>({eligible:false,reason:"one_image_per_day",resetAt:"2026-10-13T00:00:00.000Z"})};
-    throw Error("Billable call was attempted");
-  };
-  new Script(browser).runInNewContext({
-    document:{getElementById:element},fetch,
-    Intl,Date,console,
-    URL:{createObjectURL:()=>"",revokeObjectURL(){}}
+test("no one-a-day IP quota in private test, but lifetime credits remain capped",()=>{
+ assert.match(photo,/await claimOwnerTestSlot\("image"\)/);
+ assert.match(video,/await claimOwnerTestSlot\("video"\)/);
+ assert.doesNotMatch(photo,/try \{await capacity\(request\)/);
+ assert.match(auth,/MAX_TEST_IMAGES=40/);
+ assert.match(auth,/MAX_TEST_VIDEOS=4/);
+ assert.match(auth,/onlyIfNew:true/);
+ assert.match(video,/onlyIfNew:true/);
+ assert.match(video,/video_already_requested_for_photo/);
+ assert.match(video,/ownerApproval!==true/);
+ assert.match(video,/promptImage:imageUrl/);
+ assert.match(video,/model:MODEL/);
+ assert.match(video,/duration:DURATION/);
+ assert.match(video,/creditsPerAttempt:25/);
+});
+test("private video does not require re-uploading source photo or checkout",()=>{
+ assert.match(html,/id="video-approval"/);
+ assert.match(html,/id="generate-video"/);
+ assert.match(html,/id="finished-video"/);
+ assert.match(html,/id="video-open"/);
+ assert.match(browser,/imageJobId:imageJob\.imageJobId/);
+ assert.match(browser,/imageAccessToken:imageJob\.imageAccessToken/);
+ assert.match(browser,/ownerApproval:true/);
+ assert.doesNotMatch(video,/LEMON_SQUEEZY|checkout|stripe|receiptValid/);
+ assert.match(video,/imageTask\.status!=="SUCCEEDED"/);
+ assert.match(video,/j\.authHash!==sha\(body\.imageAccessToken\)/);
+ assert.match(video,/No automatic reattempt/);
+});
+test("owner login verifies access without using Runway credits",async()=>{
+ const elements=new Map();
+ const element=id=>{
+  if(!elements.has(id))elements.set(id,{
+   id,value:"",disabled:false,checked:false,textContent:"",dataset:{},
+   hidden:id==="owner-workspace"||id==="owner-note",
+   addEventListener(name,fn){this[name]=fn;},removeAttribute(){},focus(){}
   });
-  await new Promise(resolve=>setTimeout(resolve,20));
-  assert.deepEqual(calls,["capabilities","eligibility"]);
-  assert.equal(element("go").disabled,true);
-  assert.match(element("mode-banner").textContent,/13 Oct, 01:00 UK time/);
-  assert.match(element("go").textContent,/AI limit reached/);
+  return elements.get(id);
+ };
+ const calls=[];
+ const fetch=async (url,opts)=>{
+  const action=JSON.parse(opts.body).action;
+  const key=opts.headers["x-kivzuno-owner-key"];
+  calls.push({url,action,key});
+  assert.equal(key,"X".repeat(40));
+  if(action==="capabilities" && url.includes("era-owner-video"))
+   return {ok:true,json:async()=>({videoAvailable:true})};
+  if(action==="capabilities")
+   return {ok:true,json:async()=>({available:true,ownerTesting:true})};
+  if(action==="eligibility")
+   return {ok:true,json:async()=>({eligible:true})};
+  throw Error("Unexpected billable call");
+ };
+ new Script(browser).runInNewContext({
+  document:{getElementById:element},fetch,Intl,Date,console,
+  URL:{createObjectURL:()=>"",revokeObjectURL(){}}
+ });
+ element("owner-key").value="X".repeat(40);
+ await element("owner-unlock").click();
+ await new Promise(resolve=>setTimeout(resolve,20));
+ assert.deepEqual(calls.map(x=>x.action),["capabilities","capabilities","capabilities","eligibility"]);
+ assert.equal(element("owner-workspace").hidden,false);
+ assert.equal(element("owner-key").value,"");
+ assert.equal(element("go").disabled,true); // still needs photo+consent
 });
