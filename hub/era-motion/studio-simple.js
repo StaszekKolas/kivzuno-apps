@@ -7,7 +7,8 @@
  const msg=$("message"),banner=$("mode-banner"),label=$("consent-label");
  const preview=$("original"),empty=$("empty"),generated=$("generated-section"),generatedImg=$("generated-image");
  const MAX_FILE=12*1024*1024;
- let dataUri="",busy=false,aiEnabled=false,generationVersion=0,quotaEligible=false,quotaNotice="";
+ let dataUri="",busy=false,aiEnabled=false,generationVersion=0,quotaEligible=false,quotaNotice="",ownerKey="",videoBusy=false,imageJob=null;
+ const videoButton=$("generate-video"),videoApproval=$("video-approval");
  function message(value,kind=""){msg.textContent=value;msg.dataset.kind=kind;}
  function resetLabel(resetAt){
    const when=typeof resetAt==="string"?new Date(resetAt):new Date(NaN);
@@ -34,26 +35,33 @@
    return note;
  }
  function state(){
-   go.disabled=busy || !dataUri || !consent.checked || (aiEnabled && !quotaEligible);
-   era.disabled=busy;
-   photo.disabled=busy;
-   $("change-era").disabled=busy;
+   go.disabled=busy || videoBusy || !ownerKey || !dataUri || !consent.checked || (aiEnabled && !quotaEligible);
+   videoButton.disabled=busy || videoBusy || !imageJob || !videoApproval.checked;
+   era.disabled=busy || videoBusy;
+   photo.disabled=busy || videoBusy;
+   $("change-era").disabled=busy || videoBusy;
    go.textContent=busy ? (aiEnabled?"Creating your AI photo…":"Checking your photo…")
      :aiEnabled?(quotaEligible?"Create my AI photo":"AI limit reached — try later"):"Check my photo — free";
  }
  function clearResult(){
    generated.hidden=true;generatedImg.hidden=true;generatedImg.removeAttribute("src");
    $("generated-download").hidden=true;
+   imageJob=null;
+   $("video-test").hidden=true;
+   $("finished-video").hidden=true;
+   $("finished-video").removeAttribute("src");
+   $("video-open").hidden=true;
+   videoApproval.checked=false;
  }
  function mode(enabled){
    aiEnabled=Boolean(enabled);
    quotaEligible=false;
    quotaNotice="";
    if(aiEnabled){
-     banner.textContent="REAL AI PHOTO BETA · Limited testing: one image attempt per network each day, up to three total. No provider login.";
+     banner.textContent="PRIVATE OWNER TEST · Photos and 5-second films use existing Runway credits; no customer checkout.";
      label.textContent="I agree to send my photo to KIVZUNO and its AI provider for this transformation.";
-     $("action-hint").textContent="No sign-in · Limited daily free AI quota · Each new image uses an attempt";
-     $("availability-detail").textContent="Real AI photo transformations are available within a small shared daily quota. Please save your finished image promptly. Paid movies and checkout are not active.";
+     $("action-hint").textContent="Private testing · 2 prepaid Runway credits per photo";
+     $("availability-detail").textContent="Owner-only photo and five-second video tests are available. No customer payments or public release.";
    } else {
      banner.textContent="PHOTO TEST MODE — Upload works today. Actual AI transformation and video creation are not active yet.";
      label.textContent="I agree to send my photo to KIVZUNO for a free image-format check. It will be discarded; no AI provider is called.";
@@ -66,11 +74,11 @@
  async function checkMode(){
    try{
      const response=await fetch("/.netlify/functions/era-image-task",{
-       method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",
+       method:"POST",headers:{"content-type":"application/json","x-kivzuno-owner-key":ownerKey},credentials:"same-origin",
        body:JSON.stringify({action:"capabilities"})
      });
      const body=await response.json();
-     const available=response.ok && body.available===true;
+     const available=response.ok && body.available===true && body.ownerTesting===true;
      mode(available);
      if(available)await checkAllowance();
    }catch{mode(false);}
@@ -78,7 +86,7 @@
  async function checkAllowance(){
    try{
      const response=await fetch("/.netlify/functions/era-image-task",{
-       method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",
+       method:"POST",headers:{"content-type":"application/json","x-kivzuno-owner-key":ownerKey},credentials:"same-origin",
        body:JSON.stringify({action:"eligibility"})
      });
      const availability=await response.json();
@@ -146,7 +154,7 @@
  }
  async function post(path,body){
    const response=await fetch("/.netlify/functions/"+path,{
-     method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",
+     method:"POST",headers:{"content-type":"application/json","x-kivzuno-owner-key":ownerKey},credentials:"same-origin",
      body:JSON.stringify(body)
    });
    const data=await response.json().catch(()=>({error:"invalid_server_response"}));
@@ -158,7 +166,7 @@
    return data;
  }
  async function run(){
-   if(busy||!dataUri||!consent.checked||(aiEnabled&&!quotaEligible))return;
+   if(busy||videoBusy||!ownerKey||!dataUri||!consent.checked||(aiEnabled&&!quotaEligible))return;
    busy=true;state();clearResult();
    const img=dataUri,chosen=era.value,version=generationVersion;
    try{
@@ -172,6 +180,7 @@
      }
      message("Sending your photo for one AI transformation. This may take a minute…");
      const task=await post("era-image-task",{action:"start",photo:img,era:chosen,consent:true});
+     const sourceJob={imageJobId:task.jobId,imageAccessToken:task.accessToken,era:chosen};
      if(task.status!=="SUBMITTED"||!task.jobId||!task.accessToken)throw Error("Generation did not start.");
      for(let attempt=0;attempt<60;attempt++){
        await new Promise(resolve=>setTimeout(resolve,5000));
@@ -188,6 +197,7 @@
            if(readyImage.complete && readyImage.naturalWidth>0)resolve();
          });
          if(version!==generationVersion)throw Error("Photo changed while loading result.");
+         imageJob=sourceJob;
          generatedImg.src=status.imageUrl;
          generatedImg.alt="Your photo transformed into "+era.options[era.selectedIndex].textContent;
          generatedImg.hidden=false;
@@ -195,10 +205,12 @@
          $("generated-era").textContent=era.options[era.selectedIndex].textContent;
          const link=$("generated-download");link.href=status.imageUrl;link.hidden=false;
          $("preview-tag").textContent="AI READY";
-         quotaEligible=false; // Capacity gate already claimed today's attempt.
-         quotaNotice="Today's AI image attempt has been used. Another image is available only after the next daily reset (00:00 UTC).";
-         banner.textContent=quotaNotice;
-         $("action-hint").textContent="One AI attempt per network per UTC day";
+         $("video-test").hidden=false;
+         $("video-message").textContent="Image ready. Tick approval to test an optional 5-second video for 25 prepaid credits.";
+         quotaEligible=true;
+         quotaNotice="";
+         banner.textContent="PRIVATE TEST · You can create more photos manually. Each uses 2 prepaid Runway credits.";
+         $("action-hint").textContent="Owner only · Prepaid API credits";
          message("✓ Your new AI image is ready! Scroll down to see it and save it to Photos.","success");
          if(typeof generated.scrollIntoView==="function")generated.scrollIntoView({behavior:"smooth",block:"start"});
          return;
@@ -230,5 +242,5 @@
  });
  consent.addEventListener("change",state);
  form.addEventListener("submit",ev=>{ev.preventDefault();run();});
- checkMode();
+ state();
 })();
