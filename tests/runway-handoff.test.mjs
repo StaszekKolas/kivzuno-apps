@@ -4,8 +4,8 @@ import {readFileSync} from "node:fs";
 import {createHash} from "node:crypto";
 import {parseImage, ERAS, MODEL, RATIO, DURATION, promptForEra, signPaidOrder, verifyPaidOrder} from "../netlify/functions/runway-handoff-core.mjs";
 
-const frontend=readFileSync("hub/era-motion/runway-bridge.js","utf8");
-const script=readFileSync("hub/era-motion/app.js","utf8");
+const frontend=readFileSync("hub/era-motion/studio-simple.js","utf8");
+const script=readFileSync("hub/era-motion/studio-simple.js","utf8");
 const html=readFileSync("hub/era-motion/index.html","utf8");
 const backend=readFileSync("netlify/functions/runway-handoff.mjs","utf8");
 const validJpeg=Buffer.concat([Buffer.from([255,216,255,224]),Buffer.alloc(3000,42),Buffer.from([255,217])]);
@@ -44,18 +44,17 @@ test("Runway one-order signed entitlement fails closed unless signature, hash an
   assert.equal(verifyPaidOrder({...order,signature},order.imageHash,secret,now+24*3600_000),false);
   assert.equal(verifyPaidOrder({...order,expiresAt:now+3*86400_000,signature},order.imageHash,secret,now),false);
 });
-test("browser transfers actual Puter result with consent without a second upload control",()=>{
-  assert.match(html,/id="runway-consent"/);
-  assert.match(html,/id="runway-check"/);
-  assert.match(html,/runway-bridge\.js/);
-  assert.match(script,/kivzunoEraMotion = Object\.freeze/);
-  assert.match(script,/snapshot:\(\)=>\(\{image:generatedSrc,era:chosen,photo:selected\.photo,companion:selected\.companion\}\)/);
-  assert.match(frontend,/window\.kivzunoEraMotion\?\.snapshot/);
-  assert.match(frontend,/action:"preflight",image:payload,era/);
-  assert.match(frontend,/image\.naturalWidth/);
-  assert.match(frontend,/canvas\.toDataURL\("image\/jpeg",quality\)/);
-  assert.doesNotMatch(frontend,/RUNWAYML_API_SECRET|localStorage|sessionStorage/);
-  assert.doesNotMatch(html,/type="file" id="runway/);
+test("single-screen browser validates a selected photo before any billable provider call",()=>{
+  assert.match(html,/id="consent"/);
+  assert.match(html,/id="go"/);
+  assert.match(html,/studio-simple\\.js/);
+  assert.match(frontend,/action:"preflight",image:img,era:chosen/);
+  assert.match(frontend,/dataUri=""/);
+  assert.match(frontend,/result\\.charged!==false/);
+  assert.match(frontend,/!dataUri\\|\\|!consent\\.checked/);
+  assert.match(frontend,/canvas\\.toDataURL\\("image\\/jpeg",quality\\)/);
+  assert.doesNotMatch(frontend,/RUNWAYML_API_SECRET|localStorage|sessionStorage|puter/);
+  assert.equal((html.match(/type="file"/g)||[]).length,1);
 });
 test("server preflight cannot bill; actual generation has secret+owner approval+payment gates",()=>{
   assert.match(backend,/if\(action==="preflight"\)/);
@@ -70,5 +69,6 @@ test("server preflight cannot bill; actual generation has secret+owner approval+
   assert.match(backend,/status:"REVIEW_REQUIRED"/);
   assert.match(backend,/new URL\(request\.url\)\.origin/);
   assert.match(backend,/model:MODEL,promptImage:image\.dataUri/);
-  assert.doesNotMatch(frontend,/action:"start"/);
+  assert.match(frontend,/if\(!aiEnabled\)/);
+  assert.match(frontend,/action:"start",photo:img,era:chosen,consent:true/);
 });
