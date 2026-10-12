@@ -2,12 +2,14 @@ import { getStore } from "@netlify/blobs";
 import { randomUUID, randomBytes, createHash, createHmac } from "node:crypto";
 import {parseImage,ERAS,reply} from "./runway-handoff-core.mjs";
 import {createImagePrompt} from "./era-photo-prompts.mjs";
+import {requirePrivateOwner} from "./owner-session-core.mjs";
 
 // READY FOR OWNER'S FUTURE RUNWAY API KEY; ZERO SPEND WHILE DISABLED.
 // Images always go through KIVZUNO, with no Puter account, only after explicit upload consent.
 // Hard maximum 3 image jobs/day during initial controlled launch. No automatic retries.
 const API="https://api.dev.runwayml.com";
-const MAX_DAY=3;
+const MAX_DAY=3; // Public beta was 3/day; private owner runs a separate budget below.
+const OWNER_IMAGE_MAX_DAY=10; // No per-network limit; hard ceiling against unintended spend.
 const KEY="RUNWAYML_API_SECRET";
 const store=()=>getStore({name:"kivzuno-image-jobs-v1",region:"eu-central-1",consistency:"strong"});
 const quota=()=>getStore({name:"kivzuno-image-quota-v1",region:"eu-central-1",consistency:"strong"});
@@ -34,6 +36,14 @@ async function runway(method,path,body) {
 function idOk(x){return typeof x==="string" && /^[0-9a-f-]{36}$/i.test(x);}
 function tokenOk(x){return typeof x==="string" && /^[a-f0-9]{64}$/.test(x);}
 async function capacity(req) {
+  if(process.env.KIVZUNO_PRIVATE_BETA_ENABLED==="owner-approved"){
+    const day=new Date().toISOString().slice(0,10),q=quota();
+    for(let i=1;i<=OWNER_IMAGE_MAX_DAY;i++){
+      const claim=await q.setJSON("private-img/"+day+"/slot/"+i,{claimed:true},{onlyIfNew:true});
+      if(claim.modified)return;
+    }
+    throw new Error("private_image_budget_reached");
+  }
   const ip=req.headers.get("x-nf-client-connection-ip");
   if(!ip || !/^[0-9a-f:.]{2,80}$/i.test(ip))throw new Error("source_ip_unknown");
   const day=new Date().toISOString().slice(0,10);
@@ -57,6 +67,15 @@ function nextResetAt(day=quotaDay()){
   return new Date(Date.parse(day+"T00:00:00.000Z")+24*60*60*1000).toISOString();
 }
 async function allowance(req){
+  if(process.env.KIVZUNO_PRIVATE_BETA_ENABLED==="owner-approved"){
+    const day=quotaDay(),q=quota();
+    const slots=await Promise.all(Array.from({length:OWNER_IMAGE_MAX_DAY},(_,i)=>
+      q.get("private-img/"+day+"/slot/"+(i+1),{type:"json",consistency:"strong"})
+    ));
+    const remaining=slots.filter(x=>!x).length;
+    return remaining?{eligible:true,remainingShared:remaining,ownerMode:true,resetAt:nextResetAt(day)}
+      :{eligible:false,reason:"private_image_budget_reached",resetAt:nextResetAt(day)};
+  }
   const day=quotaDay();
   const resetAt=nextResetAt(day);
   const ip=req.headers.get("x-nf-client-connection-ip");
@@ -76,13 +95,15 @@ async function allowance(req){
 export default async function handler(request) {
   if(request.method!=="POST")return reply({error:"method"},405);
   if(!sameOrigin(request))return reply({error:"origin"},403);
+  const owner=requirePrivateOwner(request);
+  if(!owner.ok)return reply({error:owner.error},owner.status);
   let body;
   try {body=await parse(request);}catch {return reply({error:"invalid_body"},400);}
   const action=body?.action;
   // This capability check does not open accounts, charge credits, or expose a secret.
   if(action==="capabilities")return reply({
-    available:enabled(),provider:"Runway",model:"gen4_image_turbo",
-    loginRequired:false,customerPrice:0,limit:MAX_DAY,
+    available:enabled()&&owner.ok,provider:"Runway",model:"gen4_image_turbo",
+    loginRequired:false,customerPrice:0,limit:OWNER_IMAGE_MAX_DAY,ownerMode:true,
     reason:enabled()?"ready_for_limited_beta":"owner_api_configuration_required",
     billingActive:false, // image generation is funded by the owner (only after explicit owner approval)
     note:"Runway server-side API is disabled until credentials and owner-approved spend cap are configured."
