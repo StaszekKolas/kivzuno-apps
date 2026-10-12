@@ -1,0 +1,26 @@
+name: KIVZUNO Era Motion tests
+
+on:
+  pull_request:
+    paths:
+      - "hub/era-motion/**"
+      - "hub/index.html"
+      - "netlify/functions/metrics.mjs"
+      - "hub/stats.html"
+      - "tests/era-motion.test.mjs"
+      - ".github/workflows/era-motion-tests.yml"
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Check JavaScript and run no-network app tests
+        run: |
+          node --check hub/era-motion/app.js
+          node --test tests/era-motion.test.mjs
