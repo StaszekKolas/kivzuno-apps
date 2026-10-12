@@ -8,6 +8,8 @@ on:
       - "netlify/functions/metrics.mjs"
       - "hub/stats.html"
       - "tests/era-motion.test.mjs"
+      - "tests/runway-handoff.test.mjs"
+      - "netlify/functions/runway-handoff*.mjs"
       - ".github/workflows/era-motion-tests.yml"
 permissions:
   contents: read
@@ -23,4 +25,7 @@ jobs:
       - name: Check JavaScript and run no-network app tests
         run: |
           node --check hub/era-motion/app.js
-          node --test tests/era-motion.test.mjs
+          node --check hub/era-motion/runway-bridge.js
+          node --check netlify/functions/runway-handoff.mjs
+          node --check netlify/functions/runway-handoff-core.mjs
+          node --test tests/era-motion.test.mjs tests/runway-handoff.test.mjs
