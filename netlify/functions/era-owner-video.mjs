@@ -1,10 +1,9 @@
 import {getStore} from "@netlify/blobs";
 import {randomUUID,randomBytes,createHash} from "node:crypto";
-import {reply,ERAS,MODEL,RATIO,DURATION,promptForEra} from "./runway-handoff-core.mjs";
+import {reply,parseImage,ERAS,MODEL,RATIO,DURATION,promptForEra} from "./runway-handoff-core.mjs";
 import {ownerConfigured,ownerAuthorized,claimOwnerTestSlot,ownerPublicCapability} from "./era-owner-test-core.mjs";
 
 const API="https://api.dev.runwayml.com";
-const imageJobs=()=>getStore({name:"kivzuno-image-jobs-v1",region:"eu-central-1",consistency:"strong"});
 const videoJobs=()=>getStore({name:"kivzuno-private-video-jobs-v1",region:"eu-central-1",consistency:"strong"});
 const sha=x=>createHash("sha256").update(x).digest("hex");
 const idOk=x=>typeof x==="string"&&/^[a-f0-9-]{36}$/i.test(x);
@@ -23,9 +22,9 @@ async function runway(method,path,data){
 }
 async function json(request){
  const size=Number(request.headers.get("content-length")||0);
- if(size>2500)throw Error("input_too_large");
+ if(size>5_100_000)throw Error("input_too_large");
  const text=await request.text();
- if(text.length>2500)throw Error("input_too_large");
+ if(text.length>5_100_000)throw Error("input_too_large");
  return JSON.parse(text);
 }
 export default async function handler(request){
@@ -43,44 +42,35 @@ export default async function handler(request){
  if(!ownerConfigured())return reply({error:"owner_mode_not_ready"},503);
 
  if(action==="start"){
-  if(!idOk(body.imageJobId)||!accessOk(body.imageAccessToken)||
-    !Object.hasOwn(ERAS,body.era)||body.ownerApproval!==true)
-   return reply({error:"image_or_approval_required"},400);
-  let imageTask;
-  try{
-   const j=await imageJobs().get("image/"+body.imageJobId,{type:"json",consistency:"strong"});
-   if(!j || j.authHash!==sha(body.imageAccessToken) || !idOk(j.ownerTask) ||
-      j.era!==body.era || Date.now()-j.createdAt>24*60*60*1000)
-      return reply({error:"image_job_not_authorized"},403);
-   imageTask=await runway("GET","/v1/tasks/"+encodeURIComponent(j.ownerTask));
-   if(imageTask.status!=="SUCCEEDED")return reply({error:"photo_not_finished"},409);
-  }catch{return reply({error:"photo_unavailable"},503);}
-  const imageUrl=Array.isArray(imageTask.output)
-    ?imageTask.output.find(x=>typeof x==="string"&&x.startsWith("https://")):null;
-  if(!imageUrl)return reply({error:"photo_link_missing"},502);
-  // Claim the specific source image exactly once before a charge.
-  // Concurrent taps cannot create duplicate videos from one photo.
+  if(!Object.hasOwn(ERAS,body.era)||body.ownerApproval!==true)
+   return reply({error:"era_or_owner_approval_required"},400);
+  let image;
+  try{image=parseImage(body.photo);}
+  catch(e){return reply({error:String(e.message||"invalid_photo")},400);}
   const jobId=randomUUID(),accessToken=randomBytes(32).toString("hex"),jobs=videoJobs();
+  // One billable task per original photo and era, including parallel taps.
+  // Owner may test a different era, but never automatically retry a task.
+  const sourceHash=sha(image.sha256+"\\n"+body.era);
   try{
-   const claim=await jobs.setJSON("source/"+body.imageJobId,{jobId,claimedAt:Date.now()},{onlyIfNew:true});
-   if(!claim.modified)return reply({error:"video_already_requested_for_photo"},409);
+   const claim=await jobs.setJSON("source/"+sourceHash,{jobId,claimedAt:Date.now()},{onlyIfNew:true});
+   if(!claim.modified)return reply({error:"video_already_requested_for_photo_and_era"},409);
    await claimOwnerTestSlot("video");
   }catch{return reply({error:"video_test_budget_or_duplicate_claim"},429);}
   try{
    await jobs.setJSON("video/"+jobId,{accessHash:sha(accessToken),state:"RESERVED",
-     imageJobId:body.imageJobId,createdAt:Date.now()},{onlyIfNew:true});
+     imageHash:image.sha256,era:body.era,createdAt:Date.now()},{onlyIfNew:true});
    const task=await runway("POST","/v1/image_to_video",{
-     model:MODEL,promptImage:imageUrl,promptText:promptForEra(body.era),
+     model:MODEL,promptImage:image.dataUri,promptText:promptForEra(body.era),
      ratio:RATIO,duration:DURATION
    });
    if(!idOk(task?.id))throw Error("task_id_invalid");
    await jobs.setJSON("video/"+jobId,{accessHash:sha(accessToken),state:"SUBMITTED",
-     taskId:task.id,imageJobId:body.imageJobId,createdAt:Date.now()});
+     taskId:task.id,imageHash:image.sha256,era:body.era,createdAt:Date.now()});
    return reply({status:"SUBMITTED",videoJobId:jobId,videoAccessToken:accessToken,
       creditsPerAttempt:25,duration:DURATION},202);
   }catch{
    try{await jobs.setJSON("video/"+jobId,{accessHash:sha(accessToken),
-     state:"REVIEW_REQUIRED",imageJobId:body.imageJobId,createdAt:Date.now()});}catch{}
+     state:"REVIEW_REQUIRED",imageHash:image.sha256,era:body.era,createdAt:Date.now()});}catch{}
    return reply({error:"video_provider_or_storage_failed",message:"No automatic reattempt, to avoid duplicate spending."},502);
   }
  }
