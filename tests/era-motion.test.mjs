@@ -48,7 +48,7 @@ test("Javascript parses and API features are enabled only when confirmed by the 
   assert.match(script,/action:"status",jobId:task\.jobId,accessToken:task\.accessToken/);
   assert.match(script,/result\.charged!==false/);
   assert.match(script,/mode\(false\)/);
-  assert.match(script,/go\.disabled=busy \|\| !dataUri \|\| !consent\.checked/);
+  assert.match(script,/go\.disabled=busy \|\| videoBusy \|\| !ownerKey/);
   assert.doesNotMatch(script,/Puter|stripe|lemon|runwayml\.com|localStorage|sessionStorage/i);
 });
 test("photo is prepared locally, re-encoded and sent only after explicit consent",()=>{
@@ -56,7 +56,7 @@ test("photo is prepared locally, re-encoded and sent only after explicit consent
   assert.match(script,/canvas\.toDataURL\("image\/jpeg",quality\)/);
   assert.match(script,/JPEG|jpeg/i);
   assert.match(script,/URL\.revokeObjectURL/);
-  assert.match(script,/if\(busy\|\|!dataUri\|\|!consent\.checked\|\|\(aiEnabled&&!quotaEligible\)\)return/);
+  assert.match(script,/if\(busy\|\|videoBusy\|\|!ownerKey\|\|!dataUri/);
   assert.match(script,/body:JSON\.stringify\(body\)/);
   assert.doesNotMatch(script,/new Image\(\).*\.src="https/i);
 });
