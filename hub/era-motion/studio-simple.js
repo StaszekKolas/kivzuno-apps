@@ -11,6 +11,9 @@
  function message(value,kind=""){msg.textContent=value;msg.dataset.kind=kind;}
  function state(){
    go.disabled=busy || !dataUri || !consent.checked;
+   era.disabled=busy;
+   photo.disabled=busy;
+   $("change-era").disabled=busy;
    go.textContent=busy ? (aiEnabled?"Creating your AI photo…":"Checking your photo…")
      :aiEnabled?"Create my AI photo":"Check my photo — free";
  }
@@ -21,10 +24,10 @@
  function mode(enabled){
    aiEnabled=Boolean(enabled);
    if(aiEnabled){
-     banner.textContent="AI photo creation is available in a limited beta. No external account or customer payment.";
+     banner.textContent="REAL AI PHOTO BETA · One free image attempt per visitor each day, up to three in total per day. No provider login.";
      label.textContent="I agree to send my photo to KIVZUNO and its AI provider for this transformation.";
-     $("action-hint").textContent="No external login · Limited free quota";
-     $("availability-detail").textContent="AI photos are available during our limited test. Paid movies and checkout are not active.";
+     $("action-hint").textContent="No sign-in · Limited daily free AI quota · Each new image uses an attempt";
+     $("availability-detail").textContent="Real AI photo transformations are available within a small shared daily quota. Please save your finished image promptly. Paid movies and checkout are not active.";
    } else {
      banner.textContent="PHOTO TEST MODE — Upload works today. Actual AI transformation and video creation are not active yet.";
      label.textContent="I agree to send my photo to KIVZUNO for a free image-format check. It will be discarded; no AI provider is called.";
@@ -86,7 +89,7 @@
      preview.src=uri;preview.hidden=false;empty.hidden=true;
      $("upload-label").textContent=(file.name||"Your photo").slice(0,65);
      $("preview-tag").textContent="READY";
-     message("Photo ready. Choose an era, tick the box and tap the button.","success");
+     message("Photo ready. Choose an era, tick the box and tap Create my AI photo.","success");
    }catch(err){
      if(version!==generationVersion)return;
      $("upload-label").textContent="Choose a photo";
@@ -127,11 +130,23 @@
        if(status.status==="FAILED"||status.status==="REVIEW_REQUIRED")throw Error("Image generation failed. We did not retry or charge again.");
        if(status.status==="SUCCEEDED"){
          if(typeof status.imageUrl!=="string"||!/^https:\/\//.test(status.imageUrl))throw Error("Provider did not supply an image.");
+         const readyImage=new Image();
+         await new Promise((resolve,reject)=>{
+           readyImage.onload=resolve;
+           readyImage.onerror=()=>reject(Error("The image was generated, but could not be loaded. Its link may have expired."));
+           readyImage.src=status.imageUrl;
+           if(readyImage.complete && readyImage.naturalWidth>0)resolve();
+         });
+         if(version!==generationVersion)throw Error("Photo changed while loading result.");
          generatedImg.src=status.imageUrl;
+         generatedImg.alt="Your photo transformed into "+era.options[era.selectedIndex].textContent;
          generatedImg.hidden=false;
          generated.hidden=false;
+         $("generated-era").textContent=era.options[era.selectedIndex].textContent;
          const link=$("generated-download");link.href=status.imageUrl;link.hidden=false;
-         message("✓ Your new AI image is ready. Open or save it below.","success");
+         $("preview-tag").textContent="AI READY";
+         message("✓ Your new AI image is ready! Scroll down to see it and save it to Photos.","success");
+         if(typeof generated.scrollIntoView==="function")generated.scrollIntoView({behavior:"smooth",block:"start"});
          return;
        }
      }
@@ -141,7 +156,15 @@
    }finally{busy=false;state();}
  }
  photo.addEventListener("change",()=>onSelect(photo.files?.[0]));
- era.addEventListener("change",()=>{clearResult();message(dataUri?"Era selected. Ready when you are.":"Choose a photo to start.");});
+ era.addEventListener("change",()=>{
+   message(dataUri?"New era selected. The existing result stays visible until you choose to generate again.":"Choose a photo to start.");
+ });
+ $("change-era").addEventListener("click",()=>{
+   if(busy)return;
+   era.focus();
+   if(typeof era.scrollIntoView==="function")era.scrollIntoView({behavior:"smooth",block:"center"});
+   message("Choose an era above. Creating a new AI image requires a new attempt within the daily limit.");
+ });
  consent.addEventListener("change",state);
  form.addEventListener("submit",ev=>{ev.preventDefault();run();});
  checkMode();
