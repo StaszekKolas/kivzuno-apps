@@ -10,3 +10,16 @@
 .save-help{font-size:12px;line-height:1.7;color:#bfd0e6;background:#192740;border:1px solid #ffffff1b;border-radius:12px;padding:13px 15px;margin:15px 0 10px}
 .generated img{object-fit:contain;border:1px solid #ffffff21;background:#111c30}
 @media(max-width:750px){.generated-actions{flex-direction:column}.generated-actions a,.generated-actions button{flex:auto;width:100%}}
+
+/* Locked by default. Generated media and owner controls are never exposed to strangers. */
+.owner-login{max-width:590px;margin:36px auto 60px;padding:29px;border-radius:20px;background:#16213a;border:1px solid #a9f4ca55}
+.owner-login h2{font-size:26px;letter-spacing:-.04em;margin:7px 0}
+.owner-login p{color:#c4d1e4;line-height:1.6;font-size:14px}
+.owner-login>label{display:block;font-weight:700;font-size:13px;margin:20px 0 9px}
+.owner-login input{display:block;width:100%;min-height:54px;color:#fff;background:#0d192c;border:1px solid #9fb9dd80;border-radius:11px;padding:12px 14px;margin-bottom:15px}
+.video-test{border-top:1px solid #fff3;margin-top:24px;padding-top:22px}
+.video-test>p:not(.eyebrow){font-size:13px;color:#d2def0;line-height:1.6}
+.video-test .consent{margin-top:17px}
+.video-test video{width:100%;display:block;margin:18px 0 13px;border-radius:12px;background:#000;max-height:640px}
+.video-test .save-image{display:block;border-radius:12px;padding:14px;text-align:center;background:#bff0cd;color:#112138;font-weight:800;margin:13px 0}
+@media(max-width:750px){.owner-login{padding:20px;margin-top:20px}.video-test>p:not(.eyebrow){font-size:12px}}
