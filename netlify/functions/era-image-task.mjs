@@ -95,8 +95,8 @@ export default async function handler(request) {
     return reply({eligible:true,ownerTesting:true,photoCreditsPerAttempt:2,videoCreditsPerAttempt:25});
   }
   if(!["start","status"].includes(action))return reply({error:"action"},400);
-  if(!enabled() || !ownerConfigured())return reply({error:"owner_mode_not_ready"},503);
   if(!ownerAuthorized(request))return reply({error:"owner_access_required"},403);
+  if(!enabled() || !ownerConfigured())return reply({error:"owner_mode_not_ready"},503);
   if(action==="start"){
     if(!Object.hasOwn(ERAS,body.era)||body.consent!==true)return reply({error:"era_or_consent"},400);
     let main,companion;
