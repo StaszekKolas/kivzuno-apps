@@ -1,6 +1,6 @@
 "use strict";
 
-// KIVZUNO Era Motion v1: local-photo era-themed motion postcard.
+// KIVZUNO Era Motion v1: free local-photo postcard preview, paid AI films planned.
 // No image or image metadata leaves the browser; no claim of generative AI.
 const ERAS = [
   {id:"egypt",name:"Ancient Egypt",date:"c. 1300 BCE",icon:"☀️",colors:["#e7a44a","#32131b"],accent:"#f7d37f",motif:"DESERT DYNASTY"},
@@ -20,9 +20,8 @@ const $ = id => document.getElementById(id);
 const canvas = $("scene");
 const ctx = canvas.getContext("2d", {alpha:false});
 const MAX_BYTES = 12 * 1024 * 1024;
-const LEN = 6000;
 let chosen = "medieval", photo = null, companion = null, photoUrl = null, companionUrl = null;
-let playing = false, elapsed = 0, started = 0, raf = 0, recorder = null, outputUrl = null, rendering = false;
+let hasStarted = false;
 const cleanText = value => String(value || "").replace(/[\r\n]+/g," ").trim().slice(0,45);
 const era = () => ERAS.find(e => e.id === chosen) || ERAS[0];
 const noTrack = () => navigator.doNotTrack === "1" || window.doNotTrack === "1" || navigator.globalPrivacyControl === true;
@@ -30,7 +29,7 @@ const sourceParam = new URLSearchParams(location.search).get("src");
 const sources = ["ig_reel","ig_story","ig_bio","ig_post","fb_reel","fb_post","tiktok","direct","other"];
 const source = sources.includes(sourceParam) ? sourceParam : "direct";
 function track(event) {
-  if (noTrack() || !["visit","start","complete"].includes(event)) return;
+  if (noTrack() || !["visit","start","complete","premium_click"].includes(event)) return;
   fetch("/.netlify/functions/metrics",{
     method:"POST",
     headers:{"content-type":"application/json"},
@@ -61,8 +60,8 @@ function makeChoices() {
     btn.addEventListener("click",() => {
       chosen = entry.id;
       for (const node of grid.children) node.setAttribute("aria-pressed",String(node === btn));
-      drawFrame(elapsed / LEN);
-      if (photo && !rendering) setStatus("Selected: "+entry.name+". Preview or export your clip.");
+      drawFrame(.35);
+      if (photo) setStatus("Selected: "+entry.name+". Download the free image; AI film is coming later.");
     });
     grid.append(btn);
   }
@@ -92,12 +91,10 @@ async function loadPhoto(file, kind) {
       companionUrl = url;
       $("companion-label").textContent = file.name;
     }
-    $("preview-btn").disabled = !photo;
     $("poster-btn").disabled = !photo;
-    $("export-btn").disabled = !photo;
-    stopLoop();
-    drawFrame(0);
-    setStatus("Photo ready. Pick an era, then preview your clip.","success");
+    drawFrame(.35);
+    if (kind === "photo" && !hasStarted) {hasStarted = true; track("start");}
+    setStatus("Photo ready. Save a free image preview. The AI film product is not live.","success");
   } catch(e) {
     URL.revokeObjectURL(url);
     setStatus(e.message,"error");
@@ -227,33 +224,6 @@ function drawFrame(normalized) {
   text("YOUR PHOTO  ·  12 ERAS  ·  ONE STORY",W/2,906,14,"#ffffffce","800");
   ctx.fillStyle=e.accent;ctx.fillRect(135,925,270*p,4);
 }
-function tick(now) {
-  if (!playing) return;
-  elapsed=(now-started)%LEN;
-  drawFrame(elapsed/LEN);
-  $("timecode").textContent="00:"+String(Math.floor(elapsed/1000)).padStart(2,"0")+" / 00:06";
-  $("progress").style.width=(elapsed/LEN*100).toFixed(2)+"%";
-  raf=requestAnimationFrame(tick);
-}
-function startLoop() {
-  stopLoop();
-  started=performance.now();
-  elapsed=0;
-  playing=true;
-  raf=requestAnimationFrame(tick);
-}
-function stopLoop() {
-  playing=false;
-  cancelAnimationFrame(raf);
-  raf=0;
-}
-function resetOutput() {
-  if (outputUrl) URL.revokeObjectURL(outputUrl);
-  outputUrl=null;
-  $("video-wrap").hidden=true;
-  $("result-video").removeAttribute("src");
-  $("result-video").load();
-}
 function filename(extension) {
   return "kivzuno-"+chosen+"-"+new Date().toISOString().slice(0,10)+"."+extension;
 }
@@ -265,99 +235,27 @@ function downloadBlob(blob, name) {
   setTimeout(()=>URL.revokeObjectURL(url),30000);
 }
 function savePoster() {
-  if (!photo || rendering) return;
+  if (!photo) return;
   drawFrame(.35);
   canvas.toBlob(blob=>{
     if (!blob) {setStatus("Could not export the still image.","error");return;}
     downloadBlob(blob,filename("png"));
-    setStatus("PNG saved to your device.","success");
-  },"image/png");
-}
-function supportedVideoMime() {
-  if (!("MediaRecorder" in window) || !canvas.captureStream) return "";
-  for (const candidate of ["video/mp4;codecs=avc1.42E01E","video/mp4","video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm"]) {
-    if (MediaRecorder.isTypeSupported(candidate)) return candidate;
-  }
-  return "";
-}
-async function exportVideo() {
-  if (!photo || rendering) return;
-  const mime=supportedVideoMime();
-  if (!mime) {
-    setStatus("Video recording is unavailable in this browser. Save the PNG or try desktop Chrome / Safari.","error");
-    return;
-  }
-  resetOutput();
-  let stream;
-  try {
-    stream=canvas.captureStream(24);
-    recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:2600000});
-  } catch(e) {
-    if(stream)stream.getTracks().forEach(t=>t.stop());
-    setStatus("This browser cannot record the canvas. Save a PNG instead.","error");
-    return;
-  }
-  rendering=true;
-  $("export-btn").disabled=true;
-  $("preview-btn").disabled=true;
-  $("poster-btn").disabled=true;
-  const chunks=[];
-  recorder.ondataavailable=e=>{if(e.data && e.data.size)chunks.push(e.data);};
-  const failed=message=>{
-    rendering=false;
-    stream.getTracks().forEach(t=>t.stop());
-    $("export-btn").disabled=false;
-    $("preview-btn").disabled=false;
-    $("poster-btn").disabled=false;
-    setStatus(message,"error");
-  };
-  recorder.onerror=()=>failed("Recording failed. Try the PNG or another browser.");
-  recorder.onstop=()=>{
-    stream.getTracks().forEach(t=>t.stop());
-    rendering=false;
-    $("export-btn").disabled=false;
-    $("preview-btn").disabled=false;
-    $("poster-btn").disabled=false;
-    const blob=new Blob(chunks,{type:mime});
-    if(blob.size<1000) {setStatus("Recorder produced no usable video. Try the PNG.","error");return;}
-    const extension=mime.includes("mp4")?"mp4":"webm";
-    outputUrl=URL.createObjectURL(blob);
-    $("result-video").src=outputUrl;
-    $("video-wrap").hidden=false;
-    $("download-link").href=outputUrl;
-    $("download-link").download=filename(extension);
-    setStatus("Your "+extension.toUpperCase()+" clip is ready to download.","success");
+    setStatus("Free PNG postcard ready. AI photo transformation and paid films are not available yet.","success");
     track("complete");
-  };
-  // Recorder samples the live canvas; each animation frame is real.
-  startLoop();
-  try {
-    recorder.start(200);
-    track("start");
-    setStatus("Recording 6 seconds of your personalized clip…");
-    setTimeout(()=>{
-      if(recorder && recorder.state==="recording"){recorder.stop();stopLoop();drawFrame(1);}
-    },LEN+180);
-  } catch(e) {
-    stopLoop();failed("Could not start video recording in this browser.");
-  }
+  },"image/png");
 }
 $("photo").addEventListener("change",e=>loadPhoto(e.target.files[0],"photo"));
 $("companion").addEventListener("change",e=>loadPhoto(e.target.files[0],"companion"));
-$("animal").addEventListener("change",()=>drawFrame(elapsed/LEN));
-$("title").addEventListener("input",()=>drawFrame(elapsed/LEN));
-$("preview-btn").addEventListener("click",()=>{
-  if(!photo||rendering)return;
-  startLoop();
-  setStatus("Playing your animated era preview. The actual photo remains unchanged.","success");
-});
-$("replay-btn").addEventListener("click",()=>{
-  if(photo&&!rendering)startLoop();
-});
+$("animal").addEventListener("change",()=>drawFrame(.35));
+$("title").addEventListener("input",()=>drawFrame(.35));
 $("poster-btn").addEventListener("click",savePoster);
-$("export-btn").addEventListener("click",exportVideo);
+$("interest-btn").addEventListener("click",()=>{
+  track("premium_click");
+  setStatus("Thanks! Paid AI films are planned but not available yet. No payment has been taken.","success");
+});
 window.addEventListener("pagehide",()=>{
-  stopLoop();if(photoUrl)URL.revokeObjectURL(photoUrl);if(companionUrl)URL.revokeObjectURL(companionUrl);if(outputUrl)URL.revokeObjectURL(outputUrl);
+  if(photoUrl)URL.revokeObjectURL(photoUrl);
+  if(companionUrl)URL.revokeObjectURL(companionUrl);
 });
 makeChoices();
 drawFrame(0);

@@ -12,10 +12,13 @@ const stats=readFileSync("hub/stats.html","utf8");
 
 test("separate working app is discoverable from main hub and honest about limitations",()=>{
   assert.match(hub,/\/era-motion\/\?src=/);
-  assert.match(html,/does <b>not yet use generative AI<\/b>/);
+  assert.match(html,/<b>not an AI transformation<\/b>/);
   assert.match(html,/photos stay in this browser/i);
-  assert.match(html,/Save still image \(PNG\)/);
-  assert.match(html,/Export 6-second video/);
+  assert.match(html,/Save free photo postcard \(PNG\)/);
+  assert.match(html,/Interested in a paid AI film/);
+  assert.match(html,/not an AI transformation/);
+  assert.doesNotMatch(html,/Try it free.*film|Export 6-second video/i);
+  assert.doesNotMatch(js,/MediaRecorder|captureStream|exportVideo/);
   assert.match(html,/<script src="\.\/app\.js" defer><\/script>/);
   assert.ok(css.includes("@media(max-width:440px)"));
   assert.doesNotMatch(html,/<script[^>]+src="https?:\/\//);
@@ -23,7 +26,7 @@ test("separate working app is discoverable from main hub and honest about limita
 });
 test("12 era presets are uniquely identified and JavaScript parses",()=>{
   assert.doesNotThrow(()=>new Script(js));
-  assert.match(js,/const LEN = 6000/);
+  assert.match(js,/function savePoster\(\)/);
   const ids=[...js.matchAll(/\{id:"([a-z]+)",name:/g)].map(m=>m[1]);
   assert.equal(ids.length,12);
   assert.equal(new Set(ids).size,12);
@@ -78,7 +81,7 @@ test("app initializes with 12 clickable era buttons and draws preview",()=>{
   eras[1].click();
   assert.equal(eras[1].attributes["aria-pressed"],"true");
   assert.equal(eras[3].attributes["aria-pressed"],"false");
-  assert.equal(m.el("export-btn").disabled,false); // mocked elements need real initial disabled markup
+  assert.ok(typeof m.el("interest-btn").listeners.click==="function");
 });
 test("image files stay local, invalid file is rejected and a valid one enables preview",async()=>{
   const m=mockUI();runInNewContext(js,m.ctxData);
@@ -86,14 +89,15 @@ test("image files stay local, invalid file is rejected and a valid one enables p
   await m.el("photo").listeners.change({target:{files:[file]}});
   await new Promise(resolve=>setImmediate(resolve));
   assert.equal(m.el("photo-label").textContent,"portrait.png");
-  assert.equal(m.el("preview-btn").disabled,false);
   assert.equal(m.el("poster-btn").disabled,false);
-  assert.equal(m.el("export-btn").disabled,false);
+  m.el("interest-btn").click();
+  assert.match(m.el("status").textContent,/No payment has been taken/);
   assert.equal(m.called.length,0,"Do Not Track keeps analytics disabled");
 });
 test("aggregate app analytics supports Era Motion with no personal data",()=>{
   assert.match(metrics,/const apps = \[[^\n]*"eramotion"/);
   assert.match(stats,/eramotion:"Era Motion"/);
   assert.match(js,/JSON\.stringify\(\{app:"eramotion",event,source\}\)/);
+  assert.match(metrics,/"eramotion"\]\.includes\(app\)/);
   assert.doesNotMatch(js,/JSON\.stringify\(\{.*photo.*\}\)/);
 });
