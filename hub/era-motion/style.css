@@ -26,3 +26,13 @@ a{color:inherit}.shell{max-width:1280px;margin:0 auto;padding:20px clamp(18px,4v
 .ai-result-screen .placeholder strong{font-size:25px;line-height:1.1;letter-spacing:-.04em}
 .ai-result-screen .placeholder small{font-size:13px;color:#a8afc4}
 .ai-result-screen .preview-glass{z-index:2}
+
+/* Actual Puter AI video: never show empty player or download as a fake result. */
+.video-purchase{margin-top:20px;border:1px solid #ceff7050;border-radius:17px;padding:18px;background:linear-gradient(135deg,#313329,#181a25)}
+.video-purchase h3{font-size:22px;margin:10px 0;letter-spacing:-.035em}
+.video-purchase strong{color:#fff}
+.video-results{padding-top:18px;border-top:1px solid var(--line);margin-top:17px}
+.video-results video{display:block;width:100%;border-radius:14px;background:#080c14;max-height:540px;margin:12px auto}
+.video-results [hidden]{display:none!important}
+.video-results .outline{text-align:center;display:block}
+@media(max-width:440px){.video-purchase{padding:14px}.preview-pill{font-size:9px}}

@@ -18,7 +18,7 @@ const ERAS = [
 const $ = id => document.getElementById(id);
 const MAX_BYTES = 12 * 1024 * 1024;
 const selected = {photo:null, companion:null};
-let chosen = "medieval", generating = false, generatedSrc = "";
+let chosen = "medieval", generating = false, generatingVideo = false, generatedSrc = "", generatedVideoSrc = "";
 const sourceParam = new URLSearchParams(location.search).get("src");
 const allowedSources = ["ig_reel","ig_story","ig_bio","ig_post","fb_reel","fb_post","tiktok","direct","other"];
 const source = allowedSources.includes(sourceParam) ? sourceParam : "direct";
@@ -36,10 +36,23 @@ function status(message,kind="") {
   $("status").className="status"+(kind?" "+kind:"");
 }
 function refreshButtons() {
-  $("generate-btn").disabled=generating || !selected.photo || !$("consent").checked;
-  $("download-btn").disabled=!generatedSrc || generating;
+  $("generate-btn").disabled=generating || generatingVideo || !selected.photo || !$("consent").checked;
+  $("download-btn").disabled=!generatedSrc || generating || generatingVideo;
+  $("video-btn").disabled=generating || generatingVideo || !generatedSrc || !$("video-consent").checked;
+  $("video-download").hidden=!generatedVideoSrc;
+  $("video-btn").textContent=generatingVideo?"Creating your real AI film…":"🎬 Animate this photo (6 seconds)";
+}
+function resetVideo() {
+  generatedVideoSrc="";
+  $("generated-video").pause?.();
+  $("generated-video").removeAttribute("src");
+  $("generated-video").load?.();
+  $("generated-video").hidden=true;
+  $("video-download").hidden=true;
+  $("video-consent").checked=false;
 }
 function resetResult() {
+  resetVideo();
   generatedSrc="";
   $("generated").hidden=true;
   $("generated").removeAttribute("src");
@@ -57,7 +70,7 @@ function makeChoices() {
     const name=document.createElement("span");name.className="name";name.textContent=entry.name;
     button.append(sym,name);
     button.addEventListener("click",()=>{
-      if(generating)return;
+      if(generating || generatingVideo)return;
       chosen=entry.id;
       for(const node of grid.children)node.setAttribute("aria-pressed",String(node===button));
       resetResult();
@@ -91,7 +104,7 @@ async function encodeImage(file) {
 }
 async function onPhoto(file,kind) {
   if(!file)return;
-  if(generating)return;
+  if(generating || generatingVideo)return;
   try {
     status("Preparing your photo on this device…");
     const data=await encodeImage(file);
@@ -101,6 +114,7 @@ async function onPhoto(file,kind) {
       $("before").src=data;$("before").hidden=false;$("before-placeholder").hidden=true;
     }
     resetResult();
+    $("consent").checked=false;
     status("Photo ready. Select an era and tick the consent box.","success");
   } catch(e) {status(e.message || "Unable to open photo.","error");}
   refreshButtons();
@@ -123,6 +137,7 @@ function generatePrompt() {
 function humanError(error) {
   const code=String(error?.errorCode || error?.code || "");
   const msg=String(error?.message || error?.msg || error || "");
+  if (/model not found|unknown model|model_not_found/i.test(code+" "+msg))return "This Puter AI model is unavailable right now. No image was generated. Please share this error with KIVZUNO.";
   if (/insufficient_funds|subscription_required/i.test(code+" "+msg))return "Your Puter allowance is insufficient. KIVZUNO has not taken any payment. Do not buy credits unless you decide to.";
   if (/auth_window_closed|popup_blocked|unsupported_origin/i.test(code+" "+msg))return "Puter sign-in did not finish. Open KIVZUNO in Safari (not Facebook's built-in browser) and allow the login popup.";
   if (/moderation_flagged|content policy|safety/i.test(code+" "+msg))return "The model refused this edit. Try a different photograph or artistic description.";
@@ -143,7 +158,7 @@ async function generate() {
     const referenceImages=[selected.photo];
     if(selected.companion)referenceImages.push(selected.companion);
     const image=await window.puter.ai.txt2img(generatePrompt(),{
-      model:"gpt-image-1-mini",
+      model:"gpt-image-2",
       quality:"medium",
       ratio:{w:3,h:4},
       input_images:referenceImages
@@ -183,15 +198,67 @@ async function downloadResult() {
     status("Opened the generated image in a new tab — use Save Image in your browser.","success");
   }
 }
+
+function videoPrompt() {
+  const entry=ERAS.find(e=>e.id===chosen);
+  return [
+    "Animate the exact photograph supplied as the first video frame.",
+    "Create a six-second cinematic scene set in "+entry.scene+".",
+    "The camera slowly moves forward, with convincing natural motion, ambient light and realistic details.",
+    "Keep the subject's face, animal markings, clothing and appearance consistent with the reference image.",
+    "No morphing faces, no new subjects or limbs, no words, no logos, no subtitles.",
+    "Cinematic photorealism; natural subtle movement and film-quality continuity."
+  ].join(" ");
+}
+async function generateVideo() {
+  if (generating || generatingVideo || !generatedSrc || !$("video-consent").checked)return;
+  if(!window.puter || typeof window.puter.ai?.txt2vid!=="function"){
+    status("The Puter image-to-video service is not available. Open in Safari and refresh.","error");return;
+  }
+  // Explicit second user action before a credit-consuming request.
+  if (!window.confirm("REAL AI FILM: Puter may deduct your own AI credits or use your remaining allowance. KIVZUNO does not charge you or receive payment. Proceed with a 6-second film?"))return;
+  generatingVideo=true;
+  resetVideo();
+  $("video-consent").checked=true; // retain the separately confirmed explicit consent
+  refreshButtons();
+  try{
+    status("Puter is creating your real 6-second film. This may take several minutes; keep this page open.");
+    await window.puter.auth.signIn();
+    const clip=await window.puter.ai.txt2vid(videoPrompt(),{
+      model:"togetherai:google/veo-3.1-lite",
+      seconds:6,
+      input_reference:generatedSrc
+    });
+    const src=typeof clip?.src==="string" && clip.src ? clip.src
+      : typeof clip?.currentSrc==="string" && clip.currentSrc ? clip.currentSrc
+      : typeof clip?.querySelector==="function" ? clip.querySelector("source")?.src : "";
+    if (!src || !/^(https:\/\/|blob:|data:video\/)/i.test(src))
+      throw new Error("Puter returned a video without a playable source.");
+    generatedVideoSrc=src;
+    const player=$("generated-video");
+    player.src=src;
+    player.controls=true;
+    player.playsInline=true;
+    player.hidden=false;
+    player.load?.();
+    const link=$("video-download");
+    link.href=src;
+    link.hidden=false;
+    status("Your real AI video is ready. Play it below or open/save the clip.","success");
+  }catch(e){
+    resetVideo();
+    status("Video generation failed: "+humanError(e),"error");
+  }finally{
+    generatingVideo=false;refreshButtons();
+  }
+}
 $("photo").addEventListener("change",e=>onPhoto(e.target.files[0],"photo"));
 $("companion").addEventListener("change",e=>onPhoto(e.target.files[0],"companion"));
 $("animal").addEventListener("change",resetResult);
 $("title").addEventListener("input",resetResult);
 $("consent").addEventListener("change",refreshButtons);
+$("video-consent").addEventListener("change",refreshButtons);
 $("generate-btn").addEventListener("click",generate);
 $("download-btn").addEventListener("click",downloadResult);
-$("interest-btn").addEventListener("click",()=>{
-  track("premium_click");
-  status("Thanks! Real AI videos are not for sale yet; no money has been taken.","success");
-});
+$("video-btn").addEventListener("click",generateVideo);
 makeChoices();refreshButtons();track("visit");

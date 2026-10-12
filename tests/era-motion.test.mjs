@@ -9,15 +9,24 @@ const css=readFileSync("hub/era-motion/style.css","utf8");
 const hub=readFileSync("hub/index.html","utf8");
 const metrics=readFileSync("netlify/functions/metrics.mjs","utf8");
 
-test("real AI app is reachable and honest about user-pays and unavailable films",()=>{
+test("real AI app is reachable and transparently distinguishes Puter video beta from KIVZUNO checkout",()=>{
   assert.match(hub,/\/era-motion\/\?src=/);
   assert.match(hub,/Puter sign-in and available account credits are required/);
   assert.match(html,/https:\/\/js\.puter\.com\/v2\//);
   assert.match(html,/Puter gives accounts a monthly free allowance, but it is limited/);
   assert.match(html,/agree to send my photos to Puter's AI provider/);
-  assert.match(html,/Video creation is not available yet/);
+  assert.match(html,/OPTIONAL · REAL AI VIDEO BETA/);
+  assert.match(html,/Puter may charge your account/);
+  assert.match(html,/KIVZUNO earns £0 from this beta/);
+  assert.match(html,/id="video-consent"/);
+  assert.match(html,/id="generated-video"/);
+  assert.match(html,/id="video-download"/);
+  assert.doesNotMatch(html,/checkout is active|Try it free.*film/i);
   assert.match(html,/KIVZUNO never charges you/);
   assert.match(js,/puter\.ai\.txt2img\(generatePrompt\(\),/);
+  assert.match(js,/puter\.ai\.txt2vid\(videoPrompt\(\),/);
+  assert.match(js,/togetherai:google\/veo-3\.1-lite/);
+  assert.match(js,/model:"gpt-image-2"/);
   assert.doesNotMatch(html,/Save free photo postcard|original photo with a themed frame/i);
   assert.doesNotMatch(js,/MediaRecorder|captureStream|exportVideo|localStorage|sessionStorage|document\.cookie/);
   assert.match(css,/\.ai-result-screen/);
@@ -34,7 +43,7 @@ test("12 genuinely different era prompts are syntactically valid",()=>{
 
 function mockBrowser(){
   const elements=new Map();
-  let aiCalls=[],authCalls=0;
+  let aiCalls=[],videoCalls=[],authCalls=0,allowVideo=true;
   class E {
     constructor(name=""){this.name=name;this.children=[];this.listeners={};this.dataset={};this.attributes={};this.style={};this.value="";this.checked=false;this.disabled=false;this.hidden=false;this.naturalWidth=1500;this.naturalHeight=1000;this.complete=true;this._src="";this.textContent="";}
     addEventListener(name,listener){this.listeners[name]=listener;}
@@ -42,6 +51,8 @@ function mockBrowser(){
     removeAttribute(name){delete this.attributes[name];}
     append(...items){this.children.push(...items);}
     remove(){}
+    load(){}
+    pause(){}
     click(){return this.listeners.click?.();}
     set src(v){this._src=v;if(this.onload)queueMicrotask(()=>this.onload());}
     get src(){return this._src;}
@@ -51,18 +62,21 @@ function mockBrowser(){
   const el=id=>{if(!elements.has(id))elements.set(id,new E(id));return elements.get(id);};
   const document={getElementById:el,createElement:tag=>new E(tag),body:{append(){}}};
   const url={createObjectURL:()=>"blob:upload",revokeObjectURL(){}};
-  const window={doNotTrack:"1",addEventListener(){},puter:{
+  const window={doNotTrack:"1",addEventListener(){},confirm:()=>allowVideo,puter:{
     auth:{signIn:async()=>{authCalls++;return true;}},
     ai:{txt2img:async (prompt,opts)=>{
       aiCalls.push({prompt,opts});
       return {src:"data:image/png;base64,ZmFrZQ=="};
+    },txt2vid:async(prompt,opts)=>{
+      videoCalls.push({prompt,opts});
+      return {src:"https://media.example.org/rendered-video.mp4"};
     }}
   }};
   const ctxData={document,window,navigator:{doNotTrack:"1"},location:{search:""},
     URL:url,URLSearchParams,Image:E,Blob,Math,Date,
     console,fetch:async()=>({status:204}),
     setTimeout(){},clearTimeout(){}};
-  return {el,ctxData,aiCalls,authCount:()=>authCalls};
+  return {el,ctxData,aiCalls,videoCalls,authCount:()=>authCalls,allowVideo:v=>{allowVideo=v;}};
 }
 test("user must upload photo AND consent before enabling AI",async()=>{
   const m=mockBrowser();
@@ -73,6 +87,9 @@ test("user must upload photo AND consent before enabling AI",async()=>{
   m.el("consent").listeners.change();
   assert.equal(m.el("generate-btn").disabled,true);
   await m.el("photo").listeners.change({target:{files:[{size:1200,type:"image/jpeg",name:"Polar.jpg"}]}});
+  assert.equal(m.el("consent").checked,false,"Uploading a new photo should require renewed explicit consent");
+  assert.equal(m.el("generate-btn").disabled,true);
+  m.el("consent").checked=true;m.el("consent").listeners.change();
   assert.equal(m.el("generate-btn").disabled,false);
   m.el("consent").checked=false;
   m.el("consent").listeners.change();
@@ -90,7 +107,7 @@ test("real image generation takes 2 reference images and uses selected era scene
   await m.el("generate-btn").click();
   assert.equal(m.authCount(),1);
   assert.equal(m.aiCalls.length,1);
-  assert.equal(m.aiCalls[0].opts.model,"gpt-image-1-mini");
+  assert.equal(m.aiCalls[0].opts.model,"gpt-image-2");
   assert.equal(m.aiCalls[0].opts.input_images.length,2);
   assert.ok(m.aiCalls[0].opts.input_images.every(a=>a.startsWith("data:image/jpeg;base64,")));
   assert.match(m.aiCalls[0].prompt,/Wild West/);
@@ -98,6 +115,52 @@ test("real image generation takes 2 reference images and uses selected era scene
   assert.equal(m.el("generated").hidden,false);
   assert.equal(m.el("download-btn").disabled,false);
   assert.match(m.el("status").textContent,/Real AI image ready/);
+});
+
+test("a film cannot be generated without a real AI image and separate credit consent",async()=>{
+  const m=mockBrowser();runInNewContext(js,m.ctxData);
+  assert.equal(m.el("video-btn").disabled,true);
+  m.el("video-consent").checked=true;
+  m.el("video-consent").listeners.change();
+  assert.equal(m.el("video-btn").disabled,true);
+  await m.el("video-btn").click();
+  assert.equal(m.videoCalls.length,0);
+  assert.equal(m.authCount(),0);
+});
+test("real video uses generated AI image as starting frame only after separate confirmation",async()=>{
+  const m=mockBrowser();runInNewContext(js,m.ctxData);
+  await m.el("photo").listeners.change({target:{files:[{size:800,type:"image/jpeg",name:"Polar.jpg"}]}});
+  m.el("consent").checked=true;m.el("consent").listeners.change();
+  await m.el("generate-btn").click();
+  assert.equal(m.el("video-btn").disabled,true);
+  m.el("video-consent").checked=true;m.el("video-consent").listeners.change();
+  assert.equal(m.el("video-btn").disabled,false);
+  m.allowVideo(false);
+  await m.el("video-btn").click();
+  assert.equal(m.videoCalls.length,0,"User cancelled the credit spending confirmation");
+  m.allowVideo(true);
+  await m.el("video-btn").click();
+  assert.equal(m.videoCalls.length,1);
+  assert.equal(m.videoCalls[0].opts.model,"togetherai:google/veo-3.1-lite");
+  assert.equal(m.videoCalls[0].opts.seconds,6);
+  assert.equal(m.videoCalls[0].opts.input_reference,"data:image/png;base64,ZmFrZQ==");
+  assert.equal(m.el("generated-video").hidden,false);
+  assert.equal(m.el("video-download").hidden,false);
+  assert.equal(m.el("video-btn").disabled,false);
+  assert.match(m.el("status").textContent,/real AI video is ready/);
+});
+test("changing era removes video and requires renewed video consent",async()=>{
+  const m=mockBrowser();runInNewContext(js,m.ctxData);
+  await m.el("photo").listeners.change({target:{files:[{size:800,type:"image/jpeg",name:"Polar.jpg"}]}});
+  m.el("consent").checked=true;m.el("consent").listeners.change();
+  await m.el("generate-btn").click();
+  m.el("video-consent").checked=true;m.el("video-consent").listeners.change();
+  await m.el("video-btn").click();
+  m.el("eras").children[4].click();
+  assert.equal(m.el("video-download").hidden,true);
+  assert.equal(m.el("video-consent").checked,false);
+  assert.equal(m.el("video-btn").disabled,true);
+  assert.equal(m.el("generated").hidden,true);
 });
 test("invalid inputs cannot trigger the paid provider",async()=>{
   const m=mockBrowser();runInNewContext(js,m.ctxData);

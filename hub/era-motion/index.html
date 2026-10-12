@@ -19,7 +19,7 @@
 <span class="eyebrow">KIVZUNO / ERA MOTION</span>
 <h1>Your photo.<br><em>Another lifetime.</em></h1>
 <p>Upload your photo, pick a world, and let AI change your outfit, scenery and atmosphere. Your real dog can join the scene.</p>
-<div class="honest"><b>Real AI image editing is now connected via Puter.</b> Sign-in is required. Puter gives accounts a monthly free allowance, but it is limited; further generations can use your own Puter credits. KIVZUNO never charges you. Video creation is not available yet.</div>
+<div class="honest"><b>Real AI image editing is now connected via Puter.</b> Sign-in is required. Puter gives accounts a monthly free allowance, but it is limited; further generations can use your own Puter credits. KIVZUNO never charges you. Image-to-video is now available in testing via Puter and can consume your Puter account credits. KIVZUNO does not yet sell films or take payments.</div>
 </section>
 <section class="studio" aria-label="AI image transformation creator">
 <div class="controls">
@@ -54,23 +54,34 @@
 <button class="primary" id="generate-btn" disabled>✨ Generate real AI photo</button>
 <p class="explain">A Puter sign-in window may open. Free allowance depends on your account; no unlimited free generation is promised.</p>
 <button class="outline" id="download-btn" disabled>↓ Download my AI photo</button>
-<button class="outline" id="interest-btn">🎬 I'm interested in a paid AI video</button>
-<p class="explain">Real AI video, checkout and KIVZUNO payment are not available. This button only measures anonymous interest.</p>
+<div class="video-purchase" aria-label="AI video generation beta">
+<span class="eyebrow">OPTIONAL · REAL AI VIDEO BETA</span>
+<h3>Make the photo move. 🎬</h3>
+<p class="explain">Generate a real 6-second cinematic video from your AI photo. This uses <strong>your own Puter allowance or credits</strong>, not a KIVZUNO checkout. Puter may charge your account. KIVZUNO earns £0 from this beta; we are not selling films yet.</p>
+<div class="consent-row"><input type="checkbox" id="video-consent"><label for="video-consent">I understand that a real 6-second video may use or charge my Puter credits, and I want to request it. I will also confirm before the request is sent.</label></div>
+<button class="outline" id="video-btn" disabled>🎬 Animate this photo (6 seconds)</button>
+</div>
 <p class="status" id="status" role="status" aria-live="polite">Choose a photo and era, then generate.</p>
 </div>
 </div>
 <div class="result">
-<div class="preview-head"><div><span class="eyebrow">BEFORE → AFTER</span><h2>Watch the world change.</h2></div><span class="preview-pill">ACTUAL AI EDIT</span></div>
+<div class="preview-head"><div><span class="eyebrow">BEFORE → AFTER</span><h2>Watch the world change.</h2></div><span class="preview-pill">REAL AI EDIT + FILM BETA</span></div>
 <div class="screen ai-result-screen">
 <div class="placeholder" id="output-placeholder"><span>✨</span><strong>Your new era awaits.</strong><small>Real transformed image appears here after generation.</small></div>
 <img id="generated" alt="AI-generated historical transformation based on your photographs" hidden>
 <span class="preview-glass" id="output-stamp">KIVZUNO / REAL AI RESULT</span>
 </div>
-<p class="preview-caption">This is not a filter or frame. When a generation succeeds, the result comes from an actual image-to-image AI model, which may change details or likeness. Only upload photographs you are entitled to use.</p>
+<p class="preview-caption">AI alters the actual photograph. Results can vary and likeness is not guaranteed. Please only submit photos you are entitled to use.</p>
+<div class="video-results">
+  <span class="eyebrow">GENERATED VIDEO · AFTER AI IMAGE</span>
+  <video id="generated-video" controls playsinline preload="none" hidden></video>
+  <p class="explain">The film will appear here if Puter successfully generates it. Keep Safari open while waiting.</p>
+  <a id="video-download" class="outline" target="_blank" rel="noopener noreferrer" download="kivzuno-era-motion.mp4" hidden>⬇ Open / save the generated video</a>
+</div>
 </div>
 </section>
-<section class="about"><div><span class="eyebrow">COMMERCIAL MODEL</span><h2>Photo experiments first. Paid films later.</h2><p>KIVZUNO does not sell images here. Free trials currently depend on Puter's limited account allowance. We won't claim the future paid video service works until we actually implement and test it.</p></div><a class="secondary-link" href="/">More KIVZUNO ↗</a></section>
+<section class="about"><div><span class="eyebrow">COMMERCIAL MODEL</span><h2>Real images and films. No KIVZUNO checkout yet.</h2><p>Photo-to-photo AI editing and 6-second image-to-video are connected to Puter. Both depend on your Puter account’s allowance or credits and may incur charges there. The planned KIVZUNO business model is a free photo and a paid film, but commercial billing is not active and quality still needs real-device testing.</p></div><a class="secondary-link" href="/">More KIVZUNO ↗</a></section>
 </main>
-<footer>© KIVZUNO · AI images may contain errors · <a href="/">Home</a> · AI provider: <a href="https://puter.com" rel="noopener noreferrer" target="_blank">Puter</a></footer>
+<footer>© KIVZUNO · AI images may contain errors · <a href="/">Home</a> · Image &amp; video provider: <a href="https://puter.com" rel="noopener noreferrer" target="_blank">Puter</a></footer>
 </div>
 </body></html>
