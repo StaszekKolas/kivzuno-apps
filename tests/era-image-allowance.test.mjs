@@ -40,24 +40,28 @@ test("no one-a-day IP quota in private test, but lifetime credits remain capped"
  assert.match(auth,/MAX_TEST_VIDEOS=4/);
  assert.match(auth,/onlyIfNew:true/);
  assert.match(video,/onlyIfNew:true/);
- assert.match(video,/video_already_requested_for_photo/);
+ assert.match(video,/video_already_requested_for_photo_and_era/);
  assert.match(video,/ownerApproval!==true/);
- assert.match(video,/promptImage:imageUrl/);
+ assert.match(video,/promptImage:image.dataUri/);
  assert.match(video,/model:MODEL/);
  assert.match(video,/duration:DURATION/);
  assert.match(video,/creditsPerAttempt:25/);
 });
-test("private video does not require re-uploading source photo or checkout",()=>{
+test("independent photo and video choices, one original upload and no prerequisite image generation",()=>{
  assert.match(html,/id="video-approval"/);
  assert.match(html,/id="generate-video"/);
  assert.match(html,/id="finished-video"/);
  assert.match(html,/id="video-open"/);
- assert.match(browser,/imageJobId:imageJob\.imageJobId/);
- assert.match(browser,/imageAccessToken:imageJob\.imageAccessToken/);
+ assert.match(html,/name="product" value="photo" checked/);
+ assert.match(html,/name="product" value="video"/);
+ assert.match(html,/id="photo-submit"/);
+ assert.match(html,/id="video-submit"/);
+ assert.match(browser,/action:"start",photo,era:chosenEra,ownerApproval:true/);
  assert.match(browser,/ownerApproval:true/);
  assert.doesNotMatch(video,/LEMON_SQUEEZY|checkout|stripe|receiptValid/);
- assert.match(video,/imageTask\.status!=="SUCCEEDED"/);
- assert.match(video,/j\.authHash!==sha\(body\.imageAccessToken\)/);
+ assert.doesNotMatch(video,/imageTask|imageJobId|imageAccessToken/);
+ assert.match(video,/parseImage\(body\.photo\)/);
+ assert.match(video,/const sourceHash=sha\(image.sha256/);
  assert.match(video,/No automatic reattempt/);
 });
 test("owner login verifies access without using Runway credits",async()=>{
@@ -85,7 +89,10 @@ test("owner login verifies access without using Runway credits",async()=>{
   throw Error("Unexpected billable call");
  };
  new Script(browser).runInNewContext({
-  document:{getElementById:element},fetch,Intl,Date,console,
+  document:{getElementById:element,querySelectorAll:()=>[
+    {value:"photo",checked:true,addEventListener(){}},
+    {value:"video",checked:false,addEventListener(){}}
+  ]},fetch,Intl,Date,console,
   URL:{createObjectURL:()=>"",revokeObjectURL(){}}
  });
  element("owner-key").value="X".repeat(40);
