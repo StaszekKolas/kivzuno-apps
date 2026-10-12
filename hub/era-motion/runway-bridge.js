@@ -9,16 +9,17 @@
   const output=$("runway-status");
   if(!button || !consent || !output)return;
   let busy=false, checkedFor="";
+  const imageForTest=()=>{const state=snapshot();return state.image || state.photo || "";};
   const snapshot=()=>window.kivzunoEraMotion?.snapshot?.()||{image:"",era:""};
   const setMessage=(message)=>{output.textContent=message;};
   function refresh(){
-    const {image,era}=snapshot();
-    button.disabled=busy || !image || !era || !consent.checked;
+    const {era}=snapshot();
+    button.disabled=busy || !imageForTest() || !era || !consent.checked;
   }
   function imageChanged(){
     checkedFor="";
     consent.checked=false;
-    setMessage("Generate an AI image first. It will be transferred to KIVZUNO automatically when you request the test. No Runway task or payment will start.");
+    setMessage("Choose your photo above. You can check whether it reaches the KIVZUNO image server safely, even with zero Puter credits. This does not generate an AI image or a movie.");
     refresh();
   }
   async function toJpegDataUri(source) {
@@ -57,13 +58,14 @@
     } finally {URL.revokeObjectURL(objectUrl);}
   }
   async function verifyHandoff(){
-    const {image,era}=snapshot();
+    const {era}=snapshot();
+    const image=imageForTest();
     if(busy || !image || !consent.checked)return;
     busy=true;refresh();
-    setMessage("Transferring the AI image to KIVZUNO for a free Runway compatibility check…");
+    setMessage("Checking your image with the KIVZUNO server (no Puter login, no provider credits)…");
     try {
       const payload=await toJpegDataUri(image);
-      if(snapshot().image!==image || snapshot().era!==era)throw new Error("The selected AI image changed. Start again with the current result.");
+      if(imageForTest()!==image || snapshot().era!==era)throw new Error("The selected photo changed. Start again with the current image.");
       const res=await fetch("/.netlify/functions/runway-handoff",{
         method:"POST",credentials:"same-origin",
         headers:{"content-type":"application/json"},
@@ -72,11 +74,11 @@
       const data=await res.json();
       if(!res.ok || !data.ready || !data.photoTransferred)throw new Error("Transfer failed: "+String(data?.error||res.status));
       checkedFor=data.imageHash;
-      setMessage("✓ Automatic image transfer passed. KIVZUNO received your generated photo and validated it for Runway (5-second vertical film). The photo was NOT saved. No Runway generation was started and £0 was charged. Checkout/API activation is the remaining step.");
+      setMessage("✓ Image upload test PASSED. KIVZUNO received the same photo you selected, checked the format and discarded it. No Puter login, AI transformation, Runway generation or payment was used. Real AI image generation is not yet enabled.");
     }catch(e) {
       const message=String(e?.message||"unknown error");
       if(/Failed to fetch|CORS|network/i.test(message))
-        setMessage("The Puter image cannot be read automatically in this browser (CORS/network). No charge was made; we need a permitted provider transfer method.");
+        setMessage("The image could not be read in this browser (CORS/network). No charge was made. Try Safari.");
       else setMessage("Runway handoff check failed: "+message.slice(0,190)+". No Runway generation was started.");
     }finally {busy=false;refresh();}
   }
