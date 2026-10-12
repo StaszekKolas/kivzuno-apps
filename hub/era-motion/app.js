@@ -295,6 +295,23 @@ $("download-btn").addEventListener("click",downloadResult);
 $("video-btn").addEventListener("click",generateVideo);
 $("balance-btn").addEventListener("click",checkAllowance);
 window.kivzunoEraMotion = Object.freeze({
-  snapshot:()=>({image:generatedSrc,era:chosen})
+  snapshot:()=>({image:generatedSrc,era:chosen,photo:selected.photo,companion:selected.companion}),
+  acceptServerImage:async (imageUrl,era)=>{
+    if(typeof imageUrl!=="string" || !imageUrl.startsWith("https://") || era!==chosen)
+      throw new Error("Wrong image or era for this result.");
+    resetResult();
+    const img=$("generated");
+    generatedSrc=imageUrl;
+    await new Promise((resolve,reject)=>{
+      img.onload=resolve;img.onerror=()=>reject(new Error("The Runway image could not be loaded."));
+      img.src=imageUrl;
+      if(img.complete && img.naturalWidth>0)resolve();
+    });
+    img.hidden=false;$("output-placeholder").hidden=true;
+    status("Your real AI image from KIVZUNO is ready. No Puter login needed.","success");
+    track("complete");
+    window.dispatchEvent?.(new Event("kivzuno:result-change"));
+    refreshButtons();
+  }
 });
 makeChoices();refreshButtons();track("visit");
