@@ -28,7 +28,7 @@ test("private owner UI describes test credits and blocks public sales",()=>{
   assert.match(html,/id="owner-login"/);
   assert.match(html,/id="owner-workspace"[^>]+hidden/);
   assert.match(html,/PRIVATE TESTING/);
-  assert.match(html,/No new purchase or customer checkout/);
+  assert.match(html,/No public orders or customer checkout/);
   assert.match(html,/25 of my existing API credits/);
   assert.match(html,/id="generate-video"/);
   assert.match(html,/id="video-approval"/);
@@ -57,7 +57,7 @@ test("photo is prepared locally, re-encoded and sent only after explicit consent
   assert.match(script,/canvas\.toDataURL\("image\/jpeg",quality\)/);
   assert.match(script,/JPEG|jpeg/i);
   assert.match(script,/URL\.revokeObjectURL/);
-  assert.match(script,/if\(busy\|\|videoBusy\|\|!ownerKey\|\|!dataUri/);
+  assert.match(script,/if\(productMode!=="photo"\|\|busy\|\|videoBusy\|\|!ownerKey\|\|!dataUri/);
   assert.match(script,/body:JSON\.stringify\(body\)/);
   assert.doesNotMatch(script,/new Image\(\).*\.src="https/i);
 });
