@@ -8,6 +8,20 @@
  const preview=$("original"),empty=$("empty"),generated=$("generated-section"),generatedImg=$("generated-image");
  const MAX_FILE=12*1024*1024;
  let dataUri="",busy=false,aiEnabled=false,generationVersion=0,quotaEligible=false,quotaNotice="";
+ let lastImageJob=null,ownerVideoActive=false,remainingVideos=0,videoBusy=false,videoCreated=false;
+ const videoPanel=$("private-video"),videoConsent=$("video-consent"),makeVideo=$("make-video"),videoStatus=$("video-status");
+ function videoMessage(value,kind=""){videoStatus.textContent=value;videoStatus.dataset.kind=kind;}
+ function videoState(){
+   makeVideo.disabled=busy || videoBusy || videoCreated || !ownerVideoActive ||
+     remainingVideos<=0 || !lastImageJob || !videoConsent.checked;
+ }
+ function resetVideo(){
+   lastImageJob=null;videoCreated=false;videoConsent.checked=false;
+   videoPanel.hidden=true;$("video-result").hidden=true;
+   $("generated-video").removeAttribute("src");
+   $("video-download").hidden=true;
+   videoState();
+ }
  function message(value,kind=""){msg.textContent=value;msg.dataset.kind=kind;}
  function resetLabel(resetAt){
    const when=typeof resetAt==="string"?new Date(resetAt):new Date(NaN);
@@ -20,7 +34,8 @@
  function quotaText(reason,resetAt){
    const next=resetLabel(resetAt);
    if(reason==="one_image_per_day")return "You have already used today's free AI image attempt from this network. Try again from "+next+". Your photo and previous saved result are still yours.";
-   if(reason==="daily_free_image_limit")return "All three free AI image attempts have been used today. The next attempts open "+next+".";
+   if(reason==="daily_free_image_limit")return "The public photo quota has been used today. The next attempts open "+next+".";
+   if(reason==="private_image_budget_reached")return "The private safety ceiling of 10 image attempts has been reached. Try again from "+next+". No additional Runway request was made.";
    if(reason==="source_ip_unknown" || reason==="quota_check_unavailable")return "We cannot check today's AI allowance right now. Please try refreshing the page later. No credits were used.";
    return "AI image generation is temporarily unavailable. No credits were used.";
  }
@@ -38,6 +53,7 @@
    era.disabled=busy;
    photo.disabled=busy;
    $("change-era").disabled=busy;
+   videoState();
    go.textContent=busy ? (aiEnabled?"Creating your AI photo…":"Checking your photo…")
      :aiEnabled?(quotaEligible?"Create my AI photo":"AI limit reached — try later"):"Check my photo — free";
  }
@@ -50,10 +66,10 @@
    quotaEligible=false;
    quotaNotice="";
    if(aiEnabled){
-     banner.textContent="REAL AI PHOTO BETA · Limited testing: one image attempt per network each day, up to three total. No provider login.";
+     banner.textContent="OWNER-ONLY AI STUDIO · Private photo and video testing. No visitor payments or public launch.";
      label.textContent="I agree to send my photo to KIVZUNO and its AI provider for this transformation.";
-     $("action-hint").textContent="No sign-in · Limited daily free AI quota · Each new image uses an attempt";
-     $("availability-detail").textContent="Real AI photo transformations are available within a small shared daily quota. Please save your finished image promptly. Paid movies and checkout are not active.";
+     $("action-hint").textContent="Private beta · 10 owner image attempts per UTC day · Existing Runway credits";
+     $("availability-detail").textContent="Private owner beta. Image and video attempts use your existing Runway developer credits. Customers cannot use this studio until you approve public launch.";
    } else {
      banner.textContent="PHOTO TEST MODE — Upload works today. Actual AI transformation and video creation are not active yet.";
      label.textContent="I agree to send my photo to KIVZUNO for a free image-format check. It will be discarded; no AI provider is called.";
@@ -72,7 +88,7 @@
      const body=await response.json();
      const available=response.ok && body.available===true;
      mode(available);
-     if(available)await checkAllowance();
+     if(available){await Promise.all([checkAllowance(),checkVideoReadiness()]);}
    }catch{mode(false);}
  }
  async function checkAllowance(){
@@ -123,7 +139,7 @@
  }
  async function onSelect(file){
    const version=++generationVersion;
-   dataUri="";clearResult();preview.hidden=true;empty.hidden=false;
+   dataUri="";clearResult();resetVideo();preview.hidden=true;empty.hidden=false;
    consent.checked=false;
    state();
    if(!file){message("Choose a photo to start.");return;}
@@ -194,6 +210,13 @@
          generated.hidden=false;
          $("generated-era").textContent=era.options[era.selectedIndex].textContent;
          const link=$("generated-download");link.href=status.imageUrl;link.hidden=false;
+         lastImageJob={imageJobId:task.jobId,imageAccessToken:task.accessToken,era:chosen};
+         videoCreated=false;videoConsent.checked=false;
+         videoPanel.hidden=false;
+         videoMessage(ownerVideoActive?(remainingVideos>0
+           ?"Your AI photo can become a 5-second video. Please tick the credit consent box."
+           :"Today's private video test allowance has been used."):"Video test is locked until the owner enables it in Netlify.");
+         videoState();
          $("preview-tag").textContent="AI READY";
          quotaEligible=false; // Capacity gate already claimed today's attempt.
          quotaNotice="Today's AI image attempt has been used. Another image is available only after the next daily reset (00:00 UTC).";
@@ -214,6 +237,56 @@
      }
    }finally{busy=false;state();}
  }
+ async function checkVideoReadiness(){
+   try{
+     const availability=await post("owner-video-task",{action:"capabilities"});
+     ownerVideoActive=availability.available===true;
+     remainingVideos=Number(availability.remaining)||0;
+     if(!ownerVideoActive)videoMessage("Owner video tests are disabled until approved in Netlify.");
+     else if(remainingVideos<=0)videoMessage("Today's private video safety quota has been reached. Please try tomorrow.");
+     videoState();
+   }catch{
+     ownerVideoActive=false;videoMessage("Video generation is not configured yet.");
+     videoState();
+   }
+ }
+ async function startVideo(){
+   if(busy || videoBusy || videoCreated || !lastImageJob || !videoConsent.checked || !ownerVideoActive || remainingVideos<=0)return;
+   videoBusy=true;videoState();
+   videoMessage("Requesting ONE 5-second video. This uses existing Runway API credits…");
+   const videoInput={...lastImageJob};
+   try{
+     const task=await post("owner-video-task",{
+       action:"start",...videoInput,consent:true
+     });
+     if(task.status!=="SUBMITTED"||!task.videoJobId||!task.videoAccessToken)
+       throw Error("Video generation did not start.");
+     videoCreated=true;remainingVideos=Math.max(0,remainingVideos-1);
+     videoMessage("Runway is animating your photo. Keep this tab open…");
+     for(let i=0;i<80;i++){
+       await new Promise(resolve=>setTimeout(resolve,6000));
+       const result=await post("owner-video-task",{action:"status",videoJobId:task.videoJobId,
+         videoAccessToken:task.videoAccessToken});
+       if(result.status==="FAILED"||result.status==="REVIEW_REQUIRED")
+         throw Error("The provider could not finish this video. Do not retry automatically.");
+       if(result.status==="SUCCEEDED"){
+         if(typeof result.videoUrl!=="string" || !result.videoUrl.startsWith("https://"))
+           throw Error("Runway did not provide a downloadable film.");
+         const player=$("generated-video"),link=$("video-download");
+         player.src=result.videoUrl;
+         link.href=result.videoUrl;link.hidden=false;
+         $("video-result").hidden=false;
+         videoMessage("✓ Your 5-second Runway video is ready. Play it below and save it promptly.","success");
+         $("video-result").scrollIntoView?.({behavior:"smooth",block:"start"});
+         return;
+       }
+     }
+     throw Error("Runway is still processing. Do not retry a possibly billed task.");
+   }catch(e){
+     videoMessage("Video test status: "+String(e?.message||e).slice(0,145)+
+       " No extra video was started automatically.","error");
+   }finally{videoBusy=false;videoState();}
+ }
  photo.addEventListener("change",()=>onSelect(photo.files?.[0]));
  era.addEventListener("change",()=>{
    if(aiEnabled&&!quotaEligible){
@@ -228,6 +301,8 @@
    if(typeof era.scrollIntoView==="function")era.scrollIntoView({behavior:"smooth",block:"center"});
    message(aiEnabled&&!quotaEligible?(quotaNotice||"Daily AI allowance unavailable."):"Choose an era above. A new image requires another permitted daily attempt.",aiEnabled&&!quotaEligible?"error":"");
  });
+ videoConsent.addEventListener("change",videoState);
+ makeVideo.addEventListener("click",startVideo);
  consent.addEventListener("change",state);
  form.addEventListener("submit",ev=>{ev.preventDefault();run();});
  checkMode();
