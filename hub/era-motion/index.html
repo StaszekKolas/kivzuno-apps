@@ -51,8 +51,20 @@
 <label for="title" class="fieldlabel">Optional creative note</label>
 <input id="title" maxlength="45" type="text" placeholder="e.g. sunset, dramatic cinematic lighting">
 </div>
+<div class="step runway-handoff" aria-label="Free image compatibility test">
+  <span class="eyebrow">WORKING NOW · FREE IMAGE TEST</span>
+  <h3>04 · Test your photo upload — no login. <span aria-hidden="true">📸</span></h3>
+  <p class="explain">Choose your photo above and select any era. Use this free check to confirm that KIVZUNO can receive and process the same photo automatically — without Puter or another upload. This checks compatibility; <strong>it does not yet create an AI transformation or a movie</strong>.</p>
+  <div class="consent-row">
+    <input type="checkbox" id="runway-consent">
+    <label for="runway-consent">I agree to send my selected photograph (or an existing AI result) to KIVZUNO's server for this free compatibility test. It will be validated, then discarded; no Runway request will be made.</label>
+  </div>
+  <button class="primary" id="runway-check" type="button" disabled>✓ Test my photo — FREE (£0)</button>
+  <p class="explain" id="runway-status" role="status" aria-live="polite">First choose a photo, pick an era and tick the permission box. No provider account or credits needed for this test.</p>
+</div>
+
 <form class="step accountless-panel" id="accountless-image">
-  <div class="step-title"><span class="number">04</span><h2>KIVZUNO AI — no Puter account</h2></div>
+  <div class="step-title"><span class="number">05</span><h2>Future AI images — no login</h2></div>
   <span class="eyebrow">NEXT · AI IMAGE GENERATION NOT YET LIVE</span>
   <p>Use the photo you uploaded above. Our server will handle the AI transformation when the owner-funded service is activated. No other account or second upload will be required.</p>
   <div class="consent-row">
@@ -63,18 +75,6 @@
   <p class="explain" id="accountless-status" role="status" aria-live="polite">Checking availability…</p>
   <p class="explain">This button stays disabled until API credentials and a spending cap are approved by the owner. No purchase or paid request will be triggered prematurely.</p>
 </form>
-<div class="runway-handoff" aria-label="Runway automated transfer test">
-  <span class="eyebrow">WORKING NOW · FREE IMAGE TEST</span>
-  <h3>Test your photo upload — no login. <span aria-hidden="true">📸</span></h3>
-  <p class="explain">Choose your photo above and select any era. Use this free check to confirm that KIVZUNO can receive and process the same photo automatically — without Puter or another upload. This checks compatibility; <strong>it does not yet create an AI transformation or a movie</strong>.</p>
-  <div class="consent-row">
-    <input type="checkbox" id="runway-consent">
-    <label for="runway-consent">I agree to send my selected photograph (or an existing AI result) to KIVZUNO's server for this free compatibility test. It will be validated, then discarded; no Runway request will be made.</label>
-  </div>
-  <button class="primary" id="runway-check" type="button" disabled>✓ Test my photo — FREE (£0)</button>
-  <p class="explain" id="runway-status" role="status" aria-live="polite">First choose a photo, pick an era and tick the permission box. No provider account or credits needed for this test.</p>
-</div>
-
 <details class="step action-panel legacy-puter">
 <summary>Earlier Puter version — optional login and personal credits</summary>
 <div class="legacy-puter-inner">
