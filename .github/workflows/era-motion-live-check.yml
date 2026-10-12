@@ -1,0 +1,48 @@
+name: KIVZUNO Era Motion production availability
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "hub/era-motion/**"
+      - "hub/index.html"
+      - ".github/workflows/era-motion-live-check.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Confirm Era Motion was actually deployed to the live KIVZUNO site
+        run: |
+          node --input-type=module <<'JS'
+          const base="https://kivzuno-hub.netlify.app";
+          const expect=[
+            ["/era-motion/","KIVZUNO Era Motion"],
+            ["/era-motion/app.js","const ERAS = ["],
+            ["/era-motion/style.css",".studio{"],
+            ["/","/era-motion/?src="]
+          ];
+          const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+          for(let attempt=1;attempt<=12;attempt++){
+            let ok=true;
+            for(const [path,needle] of expect){
+              try{
+                const res=await fetch(base+path,{signal:AbortSignal.timeout(9000),headers:{"cache-control":"no-cache"}});
+                const body=await res.text();
+                if(!res.ok || !body.includes(needle)){
+                  ok=false;
+                  console.log("Attempt "+attempt+" FAILED "+path+" status="+res.status+" marker="+body.includes(needle));
+                }else{
+                  console.log("Attempt "+attempt+" OK "+path+" status="+res.status);
+                }
+              }catch(err){ok=false;console.log("Attempt "+attempt+" ERROR "+path+" "+String(err.message));}
+            }
+            if(ok){console.log("ERA_MOTION_PUBLIC_PRODUCTION_VERIFIED "+new Date().toISOString());process.exit(0);}
+            if(attempt<12)await wait(6000);
+          }
+          console.error("LIVE_PRODUCTION_NOT_VERIFIED: GitHub main may be merged but Netlify site may not be deployed.");
+          process.exit(1);
+          JS
