@@ -36,3 +36,14 @@ a{color:inherit}.shell{max-width:1280px;margin:0 auto;padding:20px clamp(18px,4v
 .video-results [hidden]{display:none!important}
 .video-results .outline{text-align:center;display:block}
 @media(max-width:440px){.video-purchase{padding:14px}.preview-pill{font-size:9px}}
+
+/* Automatic Runway transfer test, explicitly no payment or video yet. */
+.runway-handoff{border:1px solid #ceff7078;border-radius:18px;background:linear-gradient(135deg,#24302a,#18202c);padding:18px;margin:19px 0}
+.runway-handoff h3{font-size:22px;letter-spacing:-.035em;margin:9px 0 5px}
+.runway-handoff strong{color:#fff}
+.runway-handoff .outline{margin-top:12px}
+#runway-status{font-size:13px;line-height:1.65;color:#daead6}
+.legacy-beta{border:1px solid #ffffff2a;border-radius:15px;margin-top:15px;padding:12px}
+.legacy-beta summary{cursor:pointer;color:#d0d4dc;font-size:13px;font-weight:700;line-height:1.5}
+.legacy-beta[open] summary{margin-bottom:12px}
+.legacy-beta .video-purchase{margin:0;padding:15px}
