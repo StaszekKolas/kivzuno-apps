@@ -24,7 +24,7 @@
  function mode(enabled){
    aiEnabled=Boolean(enabled);
    if(aiEnabled){
-     banner.textContent="REAL AI PHOTO BETA · One free image attempt per visitor each day, up to three in total per day. No provider login.";
+     banner.textContent="REAL AI PHOTO BETA · Limited testing: one image attempt per network each day, up to three total. No provider login.";
      label.textContent="I agree to send my photo to KIVZUNO and its AI provider for this transformation.";
      $("action-hint").textContent="No sign-in · Limited daily free AI quota · Each new image uses an attempt";
      $("availability-detail").textContent="Real AI photo transformations are available within a small shared daily quota. Please save your finished image promptly. Paid movies and checkout are not active.";
