@@ -87,6 +87,9 @@ test("user must upload photo AND consent before enabling AI",async()=>{
   m.el("consent").listeners.change();
   assert.equal(m.el("generate-btn").disabled,true);
   await m.el("photo").listeners.change({target:{files:[{size:1200,type:"image/jpeg",name:"Polar.jpg"}]}});
+  assert.equal(m.el("consent").checked,false,"Uploading a new photo should require renewed explicit consent");
+  assert.equal(m.el("generate-btn").disabled,true);
+  m.el("consent").checked=true;m.el("consent").listeners.change();
   assert.equal(m.el("generate-btn").disabled,false);
   m.el("consent").checked=false;
   m.el("consent").listeners.change();
