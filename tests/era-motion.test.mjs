@@ -43,7 +43,7 @@ test("12 genuinely different era prompts are syntactically valid",()=>{
 
 function mockBrowser(){
   const elements=new Map();
-  let aiCalls=[],videoCalls=[],authCalls=0,allowVideo=true;
+  let aiCalls=[],videoCalls=[],authCalls=0,allowVideo=true,signedIn=false,usageCalls=0;
   class E {
     constructor(name=""){this.name=name;this.children=[];this.listeners={};this.dataset={};this.attributes={};this.style={};this.value="";this.checked=false;this.disabled=false;this.hidden=false;this.naturalWidth=1500;this.naturalHeight=1000;this.complete=true;this._src="";this.textContent="";}
     addEventListener(name,listener){this.listeners[name]=listener;}
@@ -63,7 +63,11 @@ function mockBrowser(){
   const document={getElementById:el,createElement:tag=>new E(tag),body:{append(){}}};
   const url={createObjectURL:()=>"blob:upload",revokeObjectURL(){}};
   const window={doNotTrack:"1",addEventListener(){},confirm:()=>allowVideo,puter:{
-    auth:{signIn:async()=>{authCalls++;return true;}},
+    auth:{
+      isSignedIn:()=>signedIn,
+      signIn:async()=>{authCalls++;signedIn=true;return true;},
+      getMonthlyUsage:async()=>{usageCalls++;return {allowanceInfo:{remaining:250000000,monthUsageAllowance:1000000000}};}
+    },
     ai:{txt2img:async (prompt,opts)=>{
       aiCalls.push({prompt,opts});
       return {src:"data:image/png;base64,ZmFrZQ=="};
@@ -76,7 +80,7 @@ function mockBrowser(){
     URL:url,URLSearchParams,Image:E,Blob,Math,Date,
     console,fetch:async()=>({status:204}),
     setTimeout(){},clearTimeout(){}};
-  return {el,ctxData,aiCalls,videoCalls,authCount:()=>authCalls,allowVideo:v=>{allowVideo=v;}};
+  return {el,ctxData,aiCalls,videoCalls,authCount:()=>authCalls,usageCount:()=>usageCalls,setSignedIn:v=>{signedIn=v;},allowVideo:v=>{allowVideo=v;}};
 }
 test("user must upload photo AND consent before enabling AI",async()=>{
   const m=mockBrowser();
@@ -141,6 +145,7 @@ test("real video uses generated AI image as starting frame only after separate c
   m.allowVideo(true);
   await m.el("video-btn").click();
   assert.equal(m.videoCalls.length,1);
+  assert.equal(m.authCount(),1,"Video should reuse the Puter session established by photo generation");
   assert.equal(m.videoCalls[0].opts.model,"togetherai:google/veo-3.1-lite");
   assert.equal(m.videoCalls[0].opts.seconds,6);
   assert.equal(m.videoCalls[0].opts.input_reference,"data:image/png;base64,ZmFrZQ==");
@@ -161,6 +166,31 @@ test("changing era removes video and requires renewed video consent",async()=>{
   assert.equal(m.el("video-consent").checked,false);
   assert.equal(m.el("video-btn").disabled,true);
   assert.equal(m.el("generated").hidden,true);
+});
+test("signed-in visitors can generate multiple images without repeating login",async()=>{
+  const m=mockBrowser();runInNewContext(js,m.ctxData);
+  m.setSignedIn(true);
+  await m.el("photo").listeners.change({target:{files:[{size:500,type:"image/jpeg",name:"Polar.jpg"}]}});
+  m.el("consent").checked=true;m.el("consent").listeners.change();
+  await m.el("generate-btn").click();
+  assert.equal(m.authCount(),0);
+  await m.el("generate-btn").click();
+  assert.equal(m.authCount(),0,"Already signed-in should not open login popup again");
+  assert.equal(m.aiCalls.length,2);
+});
+test("Puter monthly allowance check is read-only and never logs in or generates a video",async()=>{
+  const m=mockBrowser();runInNewContext(js,m.ctxData);
+  await m.el("balance-btn").click();
+  assert.equal(m.authCount(),0);
+  assert.equal(m.usageCount(),0);
+  assert.match(m.el("balance-status").textContent,/Log in to Puter/);
+  m.setSignedIn(true);
+  await m.el("balance-btn").click();
+  assert.equal(m.authCount(),0);
+  assert.equal(m.usageCount(),1);
+  assert.equal(m.videoCalls.length,0);
+  assert.match(m.el("balance-status").textContent,/25%/);
+  assert.match(m.el("balance-status").textContent,/does NOT guarantee enough balance/);
 });
 test("invalid inputs cannot trigger the paid provider",async()=>{
   const m=mockBrowser();runInNewContext(js,m.ctxData);
