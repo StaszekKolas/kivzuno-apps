@@ -21,7 +21,8 @@ test("real AI app is reachable and transparently distinguishes Puter video beta 
   assert.match(html,/id="video-consent"/);
   assert.match(html,/id="generated-video"/);
   assert.match(html,/id="video-download"/);
-  assert.doesNotMatch(html,/checkout is active|Try it free.*film/i);
+  assert.match(html,/No video generation, Runway purchase or checkout is active/);
+  assert.doesNotMatch(html,/>Try it free.*film/i);
   assert.match(html,/KIVZUNO never charges you/);
   assert.match(js,/puter\.ai\.txt2img\(generatePrompt\(\),/);
   assert.match(js,/puter\.ai\.txt2vid\(videoPrompt\(\),/);
