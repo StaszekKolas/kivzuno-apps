@@ -21,7 +21,7 @@
     <section class="intro">
       <p class="eyebrow">KIVZUNO / ERA MOTION</p>
       <h1>One photo.<br><em>Another era.</em></h1>
-      <p class="lead">Private owner test: create a new historical photo, then optionally animate it for five seconds.</p>
+      <p class="lead">Choose one product: a historical AI photo or a five-second AI movie. Test each independently with your prepaid credits.</p>
       <p id="mode-banner" class="mode-banner" role="status">Checking what’s available…</p>
     </section>
 
@@ -47,7 +47,18 @@
         </section>
 
         <section class="form-step">
-          <div class="step-heading"><span class="count">2</span><h2>Choose an era</h2></div>
+          <div class="step-heading"><span class="count">2</span><h2>Choose a product</h2></div>
+          <div class="product-picker" role="radiogroup" aria-label="Choose your product">
+            <label class="product-option">
+              <input type="radio" name="product" value="photo" checked>
+              <span><strong>📸 AI historical photo</strong><small>Photo transformation · 2 prepaid Runway credits per owner test · separately paid product for future customers</small></span>
+            </label>
+            <label class="product-option">
+              <input type="radio" name="product" value="video">
+              <span><strong>🎬 AI movie · 5 seconds</strong><small>Animate your uploaded photo directly · 25 prepaid Runway credits per owner test · separately paid product for future customers</small></span>
+            </label>
+          </div>
+          <div class="step-heading"><span class="count">3</span><h2>Choose an era</h2></div>
           <label class="sr-only" for="era">Historical era</label>
           <select id="era" name="era">
             <option value="medieval">🏰 Medieval kingdom</option>
@@ -67,9 +78,16 @@
         </section>
 
         <section class="form-step last-step">
-          <div class="step-heading"><span class="count">3</span><h2>Ready?</h2></div>
+          <div class="step-heading"><span class="count">4</span><h2>Ready?</h2></div>
           <label class="consent"><input type="checkbox" id="consent"><span id="consent-label">I agree to send my chosen photo to KIVZUNO for a free format check. It will be discarded immediately.</span></label>
-          <button class="primary" id="go" type="submit" disabled>Check my photo — free</button>
+          <div id="photo-submit"><button class="primary" id="go" type="submit" disabled>Create my AI photo</button></div>
+          <div id="video-submit" hidden>
+            <label class="consent" for="video-approval">
+              <input id="video-approval" type="checkbox">
+              <span>I approve ONE 5-second Runway movie test using 25 of my prepaid API credits.</span>
+            </label>
+            <button type="button" class="primary" id="generate-video" disabled>Create my 5-second movie</button>
+          </div>
           <p class="helper" id="action-hint">No login · No credits · No payment</p>
           <p class="result-message" id="message" role="status" aria-live="polite">Choose a photo to start.</p>
         </section>
@@ -93,19 +111,15 @@
           </div>
           <p class="save-help">On iPhone, tap <strong>Open full-size image</strong>, then touch and hold it to save to Photos. Image links can expire, so save it promptly.</p>
           <p class="helper">Another era always requires a new manual generation. This test does not take customer payments.</p>
-          <div class="video-test" id="video-test" hidden>
-            <p class="eyebrow">PRIVATE 5-SECOND VIDEO TEST</p>
-            <p>Animate this exact generated image — no second upload. One attempt uses 25 of your existing Runway Developer credits (approximately $0.25 at the published API rate). No new purchase or customer checkout.</p>
-            <label class="consent" for="video-approval">
-              <input id="video-approval" type="checkbox">
-              <span>I approve one 5-second Runway video test using 25 of my existing API credits.</span>
-            </label>
-            <button type="button" class="primary" id="generate-video" disabled>Animate my image · 5 seconds</button>
-            <p id="video-message" class="helper" role="status" aria-live="polite">Only one video per generated photo. No automatic retries.</p>
-            <video id="finished-video" controls playsinline preload="none" hidden></video>
-            <a id="video-open" class="save-image" href="#" target="_blank" rel="noopener noreferrer" hidden>↗ Open or save finished video</a>
-            <p class="helper">Save the video immediately; Runway delivery links expire.</p>
-          </div>
+          <p class="helper">You selected AI photo. Film generation is a separate product and does not require buying this photo.</p>
+        </div>
+        <div class="video-test" id="video-test" hidden>
+          <p class="eyebrow">YOUR 5-SECOND VIDEO RESULT</p>
+          <p>Runway animates the <strong>uploaded photo directly</strong>. You do not need to generate or pay for an AI photo first. Historical transformations in video still require real testing.</p>
+          <p id="video-message" class="result-message" role="status" aria-live="polite">Select Video and approve one movie test to begin.</p>
+          <video id="finished-video" controls playsinline preload="none" hidden></video>
+          <a id="video-open" class="save-image" href="#" target="_blank" rel="noopener noreferrer" hidden>↗ Open or save finished video</a>
+          <p class="helper">Save finished films promptly. Runway links expire. The movie is a separate paid product when customer payments are enabled later.</p>
         </div>
         <p class="privacy">Owner testing only. Only upload photos you may use. AI photos are sent to Runway for processing; generated media links expire. Save your result promptly.</p>
       </aside>
@@ -113,7 +127,7 @@
 
     <section class="simple-note" id="owner-note" hidden>
       <strong>Private owner testing</strong>
-      <p id="availability-detail">Only the owner may start generation. Photos and five-second film tests use prepaid Runway credits. No customer payments or public release.</p>
+      <p id="availability-detail">Photo and five-second video are separate future paid products, with independent purchase choices. Owner testing spends existing Runway credits but does not take customer payments. No public release.</p>
     </section>
   </main>
   <footer>© KIVZUNO · Photo studio preview · <a href="/">Home</a></footer>
