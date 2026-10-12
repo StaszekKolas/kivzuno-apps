@@ -24,13 +24,14 @@ test("a single photo studio without legacy providers, vendor login or checkout",
   assert.equal((html.match(/type="submit"/g)||[]).length,1);
   assert.equal((html.match(/type="file"/g)||[]).length,1);
 });
-test("the page tells the truth about inactive AI creation and separate upload test",()=>{
-  assert.match(html,/PHOTO STUDIO|photo studio/i);
-  assert.match(html,/It does <strong>not<\/strong> create a new AI image or a video/i);
-  assert.match(html,/No login/);
-  assert.match(html,/No credits/);
-  assert.match(html,/No payment/);
-  assert.match(html,/Photo generation, paid movies and checkout stay off until tested and approved/i);
+test("private owner UI describes test credits and blocks public sales",()=>{
+  assert.match(html,/id="owner-login"/);
+  assert.match(html,/id="owner-workspace"[^>]+hidden/);
+  assert.match(html,/PRIVATE TESTING/);
+  assert.match(html,/No new purchase or customer checkout/);
+  assert.match(html,/25 of my existing API credits/);
+  assert.match(html,/id="generate-video"/);
+  assert.match(html,/id="video-approval"/);
 });
 test("all 12 historical scenes map to the secure server era allow-list",async()=>{
   const {ERAS}=await import("../netlify/functions/runway-handoff-core.mjs");
