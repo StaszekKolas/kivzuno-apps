@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="./style.css">
 <script src="https://js.puter.com/v2/" defer></script>
 <script src="./app.js" defer></script>
+<script src="./runway-bridge.js" defer></script>
 </head>
 <body>
 <div class="shell">
@@ -54,6 +55,18 @@
 <button class="primary" id="generate-btn" disabled>✨ Generate real AI photo</button>
 <p class="explain">Puter remembers your session in this browser. You should only need to sign in again if it expires, you sign out, or you use a different/private browser session. Upload consent is separate and required for each new photo.</p>
 <button class="outline" id="download-btn" disabled>↓ Download my AI photo</button>
+<div class="runway-handoff" aria-label="Runway automated transfer test">
+  <span class="eyebrow">KIVZUNO × RUNWAY · NEXT STEP</span>
+  <h3>Make your photo move — no second upload. 🎬</h3>
+  <p class="explain">Your generated AI photo will be passed automatically to KIVZUNO and then to Runway when verified paid orders are enabled. Right now you can <strong>test this automatic photo transfer for £0</strong>. No video generation, Runway purchase or checkout is active.</p>
+  <div class="consent-row">
+    <input type="checkbox" id="runway-consent">
+    <label for="runway-consent">For this no-charge transfer test, I agree to send my newly generated AI photo to KIVZUNO's Netlify server. The image will be validated and discarded, not sent to Runway or stored.</label>
+  </div>
+  <button class="outline" id="runway-check" type="button" disabled>↗ Check automatic transfer to Runway · £0</button>
+  <p class="explain" id="runway-status" role="status" aria-live="polite">First generate an AI photo. Once ready, you can test passing it automatically — without uploading it again.</p>
+</div>
+<details class="legacy-beta"><summary>Older Puter video beta (uses your Puter credits)</summary>
 <div class="video-purchase" aria-label="AI video generation beta">
 <span class="eyebrow">OPTIONAL · REAL AI VIDEO BETA</span>
 <h3>Make the photo move. 🎬</h3>
@@ -63,11 +76,12 @@
 <button class="outline" id="balance-btn" type="button">ℹ Check my Puter allowance (read only)</button>
 <p class="explain" id="balance-status" role="status" aria-live="polite">Video requires more credits than a photo and may trigger Puter's “Low Balance” notice. Checking the allowance uses no video generation; it cannot guarantee sufficient credits.</p>
 </div>
+</details>
 <p class="status" id="status" role="status" aria-live="polite">Choose a photo and era, then generate.</p>
 </div>
 </div>
 <div class="result">
-<div class="preview-head"><div><span class="eyebrow">BEFORE → AFTER</span><h2>Watch the world change.</h2></div><span class="preview-pill">REAL AI EDIT + FILM BETA</span></div>
+<div class="preview-head"><div><span class="eyebrow">BEFORE → AFTER</span><h2>Watch the world change.</h2></div><span class="preview-pill">PHOTO AI · RUNWAY TRANSFER BETA</span></div>
 <div class="screen ai-result-screen">
 <div class="placeholder" id="output-placeholder"><span>✨</span><strong>Your new era awaits.</strong><small>Real transformed image appears here after generation.</small></div>
 <img id="generated" alt="AI-generated historical transformation based on your photographs" hidden>
@@ -82,7 +96,7 @@
 </div>
 </div>
 </section>
-<section class="about"><div><span class="eyebrow">COMMERCIAL MODEL</span><h2>Real images and films. No KIVZUNO checkout yet.</h2><p>Photo-to-photo AI editing and 6-second image-to-video are connected to Puter. Both depend on your Puter account’s allowance or credits and may incur charges there. The planned KIVZUNO business model is a free photo and a paid film, but commercial billing is not active and quality still needs real-device testing.</p></div><a class="secondary-link" href="/">More KIVZUNO ↗</a></section>
+<section class="about"><div><span class="eyebrow">COMMERCIAL MODEL</span><h2>Real AI photo today. Automated Runway transfer under test.</h2><p>AI photos work through your personal Puter allowance. The image-to-video Runway integration can receive the finished AI image automatically; its no-charge transfer test is available, but actual paid Runway processing and KIVZUNO checkout are not yet active. The older Puter video beta is optional and may use your own credits. We will only sell films after quality, privacy, pricing and payment verification are complete.</p></div><a class="secondary-link" href="/">More KIVZUNO ↗</a></section>
 </main>
 <footer>© KIVZUNO · AI images may contain errors · <a href="/">Home</a> · Image &amp; video provider: <a href="https://puter.com" rel="noopener noreferrer" target="_blank">Puter</a></footer>
 </div>
