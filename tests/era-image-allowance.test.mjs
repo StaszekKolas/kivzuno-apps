@@ -61,7 +61,7 @@ test("browser shows quota used before any expensive photo request",async()=>{
     URL:{createObjectURL:()=>"",revokeObjectURL(){}}
   });
   await new Promise(resolve=>setTimeout(resolve,20));
-  assert.deepEqual(calls,["capabilities","eligibility"]);
+  assert.deepEqual(calls,["capabilities","eligibility","capabilities"]); // image + separate read-only video readiness
   assert.equal(element("go").disabled,true);
   assert.match(element("mode-banner").textContent,/13 Oct, 01:00 UK time/);
   assert.match(element("go").textContent,/AI limit reached/);
