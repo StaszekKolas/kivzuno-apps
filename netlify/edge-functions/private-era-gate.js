@@ -52,6 +52,7 @@ export default async function privateEraGate(request,context){
  return context.next();
 }
 export const config={path:[
+  "/era-motion",
   "/era-motion/*",
   "/.netlify/functions/era-image-task",
   "/.netlify/functions/owner-video-task",
