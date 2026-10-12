@@ -44,6 +44,17 @@ jobs:
                   throw new Error("image endpoint capability schema or customer price invalid");
                 if(path==="lemon-readiness" && (data.paymentActive!==false || data.checkoutReady!==false))
                   throw new Error("unexpected live checkout");
+                if(path==="era-image-task" && data.available===true){
+                  const quotaRes=await fetch(base+"/.netlify/functions/era-image-task",{
+                    method:"POST",headers:{"origin":base,"content-type":"application/json"},
+                    body:JSON.stringify({action:"eligibility"}),
+                    signal:AbortSignal.timeout(14000)
+                  });
+                  const quota=await quotaRes.json();
+                  if(!quotaRes.ok || typeof quota.eligible!=="boolean")
+                    throw new Error("Read-only quota check failed "+quotaRes.status+" "+JSON.stringify(quota));
+                  console.log("VERIFIED_READ_ONLY_QUOTA eligibility="+String(quota.eligible)+" reset="+String(quota.resetAt||"none"));
+                }
                 console.log("VERIFIED_READINESS "+path+" image_available="+String(data.available===true)+" payment_active="+String(data.paymentActive===true)+"; no AI or payment call made");
               }
               process.exit(0);
