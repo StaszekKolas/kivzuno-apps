@@ -1,6 +1,7 @@
 import { getStore } from "@netlify/blobs";
 import { randomUUID, randomBytes, createHash, createHmac } from "node:crypto";
 import {parseImage,ERAS,reply} from "./runway-handoff-core.mjs";
+import {createImagePrompt} from "./era-photo-prompts.mjs";
 
 // READY FOR OWNER'S FUTURE RUNWAY API KEY; ZERO SPEND WHILE DISABLED.
 // Images always go through KIVZUNO, with no Puter account, only after explicit upload consent.
@@ -24,13 +25,6 @@ async function parse(req) {
   if(body.length>9_500_000)throw new Error("size");
   return JSON.parse(body);
 }
-const prompt=(e,hasSecond)=>[
-  "@main is the primary real subject. Create a completely NEW photorealistic cinematic portrait set in "+ERAS[e]+".",
-  hasSecond?"@companion is a second real subject who must appear together with @main, naturally in the same scene.":"",
-  "Replace the original landscape, location, attire and background with an era-appropriate scene; do not add borders or captions.",
-  "Preserve original person facial identity and pet markings wherever possible. No extra limbs, duplicated heads or split-screen.",
-  "Cinematic atmosphere, vertical composition, beautiful natural lighting and photorealistic details."
-].filter(Boolean).join(" ");
 async function runway(method,path,body) {
   const res=await fetch(API+path,{method,headers:authHeaders(),body:body?JSON.stringify(body):undefined,
     signal:AbortSignal.timeout(22000)});
@@ -96,7 +90,7 @@ export default async function handler(request) {
       if(companion)referenceImages.push({uri:companion.dataUri,tag:"companion"});
       const task=await runway("POST","/v1/text_to_image",{
         model:"gen4_image_turbo",ratio:"720:1280",
-        promptText:prompt(body.era,Boolean(companion)),referenceImages
+        promptText:createImagePrompt(body.era,{hasCompanion:Boolean(companion)}),referenceImages
       });
       if(!idOk(task?.id))throw new Error("provider_task_invalid");
       await jobs.setJSON("image/"+taskId,{
