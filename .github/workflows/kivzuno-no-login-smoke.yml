@@ -29,7 +29,7 @@ jobs:
             try{
               const page=await fetch(base+"/era-motion/",{signal:AbortSignal.timeout(10000)});
               const html=await page.text();
-              if(!page.ok || !html.includes("no-login-studio.js") || !html.includes("lemon-status.js"))
+              if(!page.ok || !html.includes("studio-simple.js") || html.includes("js.puter.com"))
                 throw new Error("new frontend is not yet deployed");
               for(const path of ["era-image-task","lemon-readiness"]){
                 const res=await fetch(base+"/.netlify/functions/"+path,{

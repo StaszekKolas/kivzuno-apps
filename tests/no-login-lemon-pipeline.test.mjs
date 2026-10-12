@@ -5,22 +5,20 @@ import {createHmac} from "node:crypto";
 import {validateLemonSignature,isPaidLemonOrder,checkoutPayload} from "../netlify/functions/lemon-commerce-core.mjs";
 
 const img=readFileSync("netlify/functions/era-image-task.mjs","utf8");
-const ui=readFileSync("hub/era-motion/no-login-studio.js","utf8");
+const ui=readFileSync("hub/era-motion/studio-simple.js","utf8");
 const html=readFileSync("hub/era-motion/index.html","utf8");
-const glue=readFileSync("hub/era-motion/app.js","utf8");
+const glue=readFileSync("hub/era-motion/studio-simple.js","utf8");
 const lemon=readFileSync("netlify/functions/lemon-readiness.mjs","utf8");
 
-test("no-login form is tied to existing photo and existing era without another upload",()=>{
-  assert.match(html,/id="accountless-image"/);
-  assert.match(html,/id="accountless-consent"/);
-  assert.match(html,/id="accountless-generate"/);
-  assert.match(html,/no-login-studio\.js/);
-  assert.match(glue,/snapshot:\(\)=>\(\{image:generatedSrc,era:chosen,photo:selected\.photo,companion:selected\.companion\}\)/);
-  assert.match(ui,/window\.kivzunoEraMotion\?\.snapshot/);
-  assert.match(ui,/acceptServerImage\(state\.imageUrl,currentEra\)/);
-  assert.match(ui,/action:"start",photo,companion,era,consent:true/);
-  assert.match(ui,/action:"status",jobId:data\.jobId,accessToken:data\.accessToken/);
-  assert.doesNotMatch(ui,/puter\.auth|signIn\(|RUNWAYML_API_SECRET|LEMON_SQUEEZY_API_KEY|localStorage/);
+test("one-screen flow reuses photo for compatibility check or future AI generation",()=>{
+  for(const id of ['creator','consent','go'])assert.ok(html.includes('id="'+id+'"'));
+  assert.ok(html.includes("studio-simple.js"));
+  assert.ok(glue.includes('action:"preflight",image:img,era:chosen'));
+  assert.ok(glue.includes('action:"start",photo:img,era:chosen,consent:true'));
+  assert.ok(ui.includes('action:"status",jobId:task.jobId,accessToken:task.accessToken'));
+  assert.ok(ui.includes('body.available===true'));
+  for(const banned of ['puter.auth','signIn(','RUNWAYML_API_SECRET','LEMON_SQUEEZY_API_KEY','localStorage'])
+    assert.ok(!ui.includes(banned));
 });
 test("owner-funded images remain disabled until credentials and spending ceiling approved",()=>{
   assert.match(img,/KIVZUNO_SERVER_IMAGE_ENABLED==="owner-approved"/);
