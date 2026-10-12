@@ -1,43 +1,76 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#10121b">
-<meta name="description" content="KIVZUNO Era Motion: free 12-era framed photo postcard preview. Genuine AI photo transformation and paid AI videos are in development.">
-<meta name="robots" content="index,follow">
-<meta property="og:title" content="KIVZUNO Era Motion — Travel through time">
-<meta property="og:description" content="Try 12 free era-themed photo previews. Real AI transformation and paid films are still in development.">
-<title>KIVZUNO Era Motion — Free photo · Paid AI film planned</title>
+<meta name="description" content="KIVZUNO Era Motion — truly transform your own photo using AI. Select one of 12 eras, add an optional pet, and create an image.">
+<meta property="og:title" content="KIVZUNO Era Motion — Turn your photo into another era">
+<meta property="og:description" content="Upload your photo, select an era, and generate a real AI transformation. AI processing requires a Puter account and allowance.">
+<title>KIVZUNO Era Motion — AI Photo Transformation</title>
 <link rel="stylesheet" href="./style.css">
+<script src="https://js.puter.com/v2/" defer></script>
 <script src="./app.js" defer></script>
 </head>
 <body>
 <div class="shell">
-<header class="top"><a class="brand" href="/" aria-label="KIVZUNO home">KIV<span>ZUNO</span></a><span class="top-tag">ERA MOTION <span class="dot">●</span> FREE PHOTO · PAID FILM PLANNED</span><a class="back" href="/">← All apps</a></header>
+<header class="top"><a class="brand" href="/">KIV<span>ZUNO</span></a><span class="top-tag">REAL AI PHOTO EDITOR</span><a class="back" href="/">← All apps</a></header>
 <main>
-<section class="hero"><div class="eyebrow">KIVZUNO CREATIVE STUDIO / V1</div><h1>Your photo.<br><em>Another lifetime.</em></h1><p>Choose one of 12 eras, add a photo and save a free themed image preview. When real AI film generation is available, videos will be a paid upgrade.</p><div class="honest"><b>Important:</b> Today’s free image is an era-themed frame around your original photo, <b>not an AI transformation</b>. It does not change your clothes, face, animal or background. Genuine AI-generated photos and paid films are <b>not available yet</b>. No checkout or payment is active.</div></section>
-<section class="studio" aria-label="Era Motion creator">
+<section class="hero">
+<span class="eyebrow">KIVZUNO / ERA MOTION</span>
+<h1>Your photo.<br><em>Another lifetime.</em></h1>
+<p>Upload your photo, pick a world, and let AI change your outfit, scenery and atmosphere. Your real dog can join the scene.</p>
+<div class="honest"><b>Real AI image editing is now connected via Puter.</b> Sign-in is required. Puter gives accounts a monthly free allowance, but it is limited; further generations can use your own Puter credits. KIVZUNO never charges you. Video creation is not available yet.</div>
+</section>
+<section class="studio" aria-label="AI image transformation creator">
 <div class="controls">
-<div class="step"><div class="step-title"><span class="number">01</span><h2>Make it personal</h2></div><label class="filebox" for="photo"><span class="fileicon">↥</span><span><b id="photo-label">Choose your photo</b><small>JPG, PNG, WebP or compatible iPhone photo • max 12 MB</small></span></label><input id="photo" type="file" accept="image/*" aria-describedby="privacy">
-<label class="filebox secondary" for="companion"><span class="fileicon">+</span><span><b id="companion-label">Add a companion photo (optional)</b><small>Show your dog, cat or someone special in a second frame</small></span></label><input id="companion" type="file" accept="image/*">
-<p class="privacy" id="privacy">🔒 Photos stay in this browser. This app does not upload or store them. Files are only used to draw the preview.</p>
+<div class="step">
+<div class="step-title"><span class="number">01</span><h2>Upload your photo</h2></div>
+<label class="filebox" for="photo"><span class="fileicon">↥</span><span><b id="photo-label">Select the main photo</b><small>Your face, your dog, or anything else · JPG/PNG/WebP · up to 12 MB</small></span></label>
+<input id="photo" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif">
+<div class="small-preview"><img id="before" hidden alt="Your original photo"><span id="before-placeholder">Your original image will appear here.</span></div>
+<label class="filebox secondary" for="companion"><span class="fileicon">+</span><span><b id="companion-label">Add another photo (optional)</b><small>A pet, person or another subject — AI will combine the photos into one scene</small></span></label>
+<input id="companion" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif">
+<p class="privacy">Photos stay on your device until you press Generate. When you proceed, the photos are sent to Puter's selected AI provider for transformation. KIVZUNO does not receive or store your photos. See Puter's privacy terms before continuing.</p>
 </div>
-<div class="step"><div class="step-title"><span class="number">02</span><h2>Pick your era <span class="muted">· 12 looks</span></h2></div><div class="eras" id="eras" role="group" aria-label="Choose an era"></div></div>
-<div class="step"><div class="step-title"><span class="number">03</span><h2>Choose a companion</h2></div><label for="animal" class="fieldlabel">Optional decorative animal symbol</label><select id="animal"><option value="">No animal</option><option value="🐕">Dog</option><option value="🐺">Wolf</option><option value="🐈">Cat</option><option value="🐎">Horse</option><option value="🦁">Lion</option><option value="🦅">Eagle</option><option value="🐉">Dragon (fantasy)</option></select><p class="explain">The symbol is decorative. To feature your actual pet, add its photo above.</p></div>
-<div class="step action-panel"><div class="step-title"><span class="number">04</span><h2>Free photo / paid film</h2></div><label for="title">Personalized title (optional)</label><input id="title" maxlength="45" type="text" placeholder="Our great adventure" autocomplete="off"><button id="poster-btn" class="primary" type="button" disabled>↓ Save free photo postcard (PNG) · £0</button><p class="explain">Currently: original photo with a themed frame, not AI scene transformation.</p><button id="interest-btn" class="outline" type="button">🎬 Interested in a paid AI film?</button><p class="explain">Paid films are not yet available. Tapping only records anonymous interest; no account, payment or reservation.</p><p class="status" id="status" role="status" aria-live="polite">Choose a photo to begin.</p></div>
+<div class="step">
+<div class="step-title"><span class="number">02</span><h2>Choose your era <span class="muted">· 12 worlds</span></h2></div>
+<div class="eras" id="eras" role="group" aria-label="Choose an era"></div>
 </div>
-<div class="result" aria-label="Live visual preview">
-<div class="preview-head"><div><span class="eyebrow">LIVE PREVIEW</span><h2>See yourself in another era.</h2></div><span class="preview-pill">FREE PHOTO PREVIEW</span></div>
-<div class="screen"><canvas id="scene" width="540" height="960" role="img" aria-label="Era Motion animated poster preview"></canvas><span class="preview-glass">KIVZUNO / ERA MOTION</span></div>
-
-
-<p class="preview-caption">Real browser-generated still-image preview, not an AI photo transformation. A paid AI film product will only be offered after generation, quality, privacy and payments are implemented.</p>
+<div class="step">
+<div class="step-title"><span class="number">03</span><h2>Your companion</h2></div>
+<label for="animal" class="fieldlabel">Optional animal (AI can add one)</label>
+<select id="animal">
+<option value="">No extra animal</option><option value="dog">Dog</option><option value="wolf">Wolf</option>
+<option value="cat">Cat</option><option value="horse">Horse</option><option value="lion">Lion</option>
+<option value="eagle">Eagle</option><option value="dragon">Dragon (fantasy)</option>
+</select>
+<p class="explain">If you uploaded your pet's photo, AI will try to preserve its appearance. Similarity is not guaranteed.</p>
+<label for="title" class="fieldlabel">Optional creative note</label>
+<input id="title" maxlength="45" type="text" placeholder="e.g. sunset, dramatic cinematic lighting">
+</div>
+<div class="step action-panel">
+<div class="step-title"><span class="number">04</span><h2>Transform with real AI</h2></div>
+<div class="consent-row"><input type="checkbox" id="consent"><label for="consent">I agree to send my photos to Puter's AI provider for this generation. I understand this uses my Puter account's allowance or credits; KIVZUNO does not pay for or charge for generation. I will not continue if I do not want to use credits.</label></div>
+<button class="primary" id="generate-btn" disabled>✨ Generate real AI photo</button>
+<p class="explain">A Puter sign-in window may open. Free allowance depends on your account; no unlimited free generation is promised.</p>
+<button class="outline" id="download-btn" disabled>↓ Download my AI photo</button>
+<button class="outline" id="interest-btn">🎬 I'm interested in a paid AI video</button>
+<p class="explain">Real AI video, checkout and KIVZUNO payment are not available. This button only measures anonymous interest.</p>
+<p class="status" id="status" role="status" aria-live="polite">Choose a photo and era, then generate.</p>
+</div>
+</div>
+<div class="result">
+<div class="preview-head"><div><span class="eyebrow">BEFORE → AFTER</span><h2>Watch the world change.</h2></div><span class="preview-pill">ACTUAL AI EDIT</span></div>
+<div class="screen ai-result-screen">
+<div class="placeholder" id="output-placeholder"><span>✨</span><strong>Your new era awaits.</strong><small>Real transformed image appears here after generation.</small></div>
+<img id="generated" alt="AI-generated historical transformation based on your photographs" hidden>
+<span class="preview-glass" id="output-stamp">KIVZUNO / REAL AI RESULT</span>
+</div>
+<p class="preview-caption">This is not a filter or frame. When a generation succeeds, the result comes from an actual image-to-image AI model, which may change details or likeness. Only upload photographs you are entitled to use.</p>
 </div>
 </section>
-<section class="about"><div><span class="eyebrow">REAL PRODUCT. HONEST LIMITS.</span><h2>Free photo preview. Paid film — coming later.</h2><p>Today: save a free, era-themed image using your original photo, entirely on your device. Target product: a genuinely AI-transformed photo for free and an optional paid cinematic AI film. Those AI features are not operational yet. No money is taken.</p></div><a class="secondary-link" href="/">Discover more KIVZUNO apps ↗</a></section>
+<section class="about"><div><span class="eyebrow">COMMERCIAL MODEL</span><h2>Photo experiments first. Paid films later.</h2><p>KIVZUNO does not sell images here. Free trials currently depend on Puter's limited account allowance. We won't claim the future paid video service works until we actually implement and test it.</p></div><a class="secondary-link" href="/">More KIVZUNO ↗</a></section>
 </main>
-<footer>© KIVZUNO · Creative preview, not a historical reconstruction · <a href="/">Home</a></footer>
+<footer>© KIVZUNO · AI images may contain errors · <a href="/">Home</a> · AI provider: <a href="https://puter.com" rel="noopener noreferrer" target="_blank">Puter</a></footer>
 </div>
-</body>
-</html>
+</body></html>
