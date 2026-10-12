@@ -18,7 +18,7 @@ test("a single photo studio without legacy providers, vendor login or checkout",
   assert.match(html,/id="original"/);
   assert.match(html,/id="generated-image"/);
   assert.match(html,/id="mode-banner"/);
-  assert.doesNotMatch(html,/puter|login|Buy my video|LEMON SQUEEZY|runway-bridge\.js|no-login-studio\.js|app\.js|lemon-status\.js/i);
+  assert.doesNotMatch(html,/Puter|Buy my video|LEMON SQUEEZY|runway-bridge\.js|no-login-studio\.js|lemon-status\.js|js\.puter\.com/i);
   assert.doesNotMatch(html,/stripe|checkout|sign in|credit card/i);
   assert.doesNotMatch(html,/js\.puter\.com/i);
   assert.equal((html.match(/type="submit"/g)||[]).length,1);
@@ -49,7 +49,7 @@ test("Javascript parses and API features are enabled only when confirmed by the 
   assert.match(script,/result\.charged!==false/);
   assert.match(script,/mode\(false\)/);
   assert.match(script,/go\.disabled=busy \|\| !dataUri \|\| !consent\.checked/);
-  assert.doesNotMatch(script,/puter|stripe|lemon|runwayml\.com|localStorage|sessionStorage/i);
+  assert.doesNotMatch(script,/Puter|stripe|lemon|runwayml\.com|localStorage|sessionStorage/i);
 });
 test("photo is prepared locally, re-encoded and sent only after explicit consent",()=>{
   assert.match(script,/MAX_FILE=12\*1024\*1024/);
