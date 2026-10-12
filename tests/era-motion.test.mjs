@@ -11,7 +11,8 @@ const metrics=readFileSync("netlify/functions/metrics.mjs","utf8");
 
 test("real AI app is reachable and transparently distinguishes Puter video beta from KIVZUNO checkout",()=>{
   assert.match(hub,/\/era-motion\/\?src=/);
-  assert.match(hub,/Puter sign-in and available account credits are required/);
+  assert.match(hub,/TEST YOUR OWN PHOTO TODAY/);
+  assert.match(hub,/AI scene transformation remains disabled/);
   assert.match(html,/https:\/\/js\.puter\.com\/v2\//);
   assert.match(html,/Photo upload test available now/);
   assert.match(html,/No checkout or purchases are active/);
@@ -23,9 +24,9 @@ test("real AI app is reachable and transparently distinguishes Puter video beta 
   assert.match(html,/id="video-consent"/);
   assert.match(html,/id="generated-video"/);
   assert.match(html,/id="video-download"/);
-  assert.match(html,/No video generation, Runway purchase or checkout is active/);
+  assert.match(html,/does not yet create an AI transformation or a movie/);
   assert.doesNotMatch(html,/>Try it free.*film/i);
-  assert.match(html,/KIVZUNO never charges you/);
+  assert.match(html,/No checkout or purchases are active/);
   assert.match(js,/puter\.ai\.txt2img\(generatePrompt\(\),/);
   assert.match(js,/puter\.ai\.txt2vid\(videoPrompt\(\),/);
   assert.match(js,/togetherai:google\/veo-3\.1-lite/);
