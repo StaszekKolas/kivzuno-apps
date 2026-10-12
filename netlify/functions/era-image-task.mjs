@@ -2,6 +2,7 @@ import { getStore } from "@netlify/blobs";
 import { randomUUID, randomBytes, createHash, createHmac } from "node:crypto";
 import {parseImage,ERAS,reply} from "./runway-handoff-core.mjs";
 import {createImagePrompt} from "./era-photo-prompts.mjs";
+import {ownerConfigured,ownerAuthorized,claimOwnerTestSlot,ownerPublicCapability} from "./era-owner-test-core.mjs";
 
 // READY FOR OWNER'S FUTURE RUNWAY API KEY; ZERO SPEND WHILE DISABLED.
 // Images always go through KIVZUNO, with no Puter account, only after explicit upload consent.
@@ -81,19 +82,21 @@ export default async function handler(request) {
   const action=body?.action;
   // This capability check does not open accounts, charge credits, or expose a secret.
   if(action==="capabilities")return reply({
-    available:enabled(),provider:"Runway",model:"gen4_image_turbo",
+    available:enabled() && ownerAuthorized(request),provider:"Runway",model:"gen4_image_turbo",
+    ...ownerPublicCapability(request),
     loginRequired:false,customerPrice:0,limit:MAX_DAY,
-    reason:enabled()?"ready_for_limited_beta":"owner_api_configuration_required",
+    reason:!enabled()?"owner_api_configuration_required":ownerAuthorized(request)?"owner_ready":"owner_access_required",
     billingActive:false, // image generation is funded by the owner (only after explicit owner approval)
     note:"Runway server-side API is disabled until credentials and owner-approved spend cap are configured."
   });
   if(action==="eligibility"){
-    if(!enabled())return reply({eligible:false,reason:"image_ai_not_configured"});
-    try {return reply(await allowance(request));}
-    catch{return reply({eligible:false,reason:"quota_check_unavailable"},503);}
+    if(!enabled() || !ownerConfigured())return reply({eligible:false,reason:"owner_mode_not_ready"});
+    if(!ownerAuthorized(request))return reply({eligible:false,reason:"owner_access_required"},403);
+    return reply({eligible:true,ownerTesting:true,photoCreditsPerAttempt:2,videoCreditsPerAttempt:25});
   }
   if(!["start","status"].includes(action))return reply({error:"action"},400);
-  if(!enabled())return reply({error:"image_ai_not_configured",message:"No provider API key or approved generation budget is configured."},503);
+  if(!enabled() || !ownerConfigured())return reply({error:"owner_mode_not_ready"},503);
+  if(!ownerAuthorized(request))return reply({error:"owner_access_required"},403);
   if(action==="start"){
     if(!Object.hasOwn(ERAS,body.era)||body.consent!==true)return reply({error:"era_or_consent"},400);
     let main,companion;
@@ -102,7 +105,7 @@ export default async function handler(request) {
       if(body.companion)companion=parseImage(body.companion);
       if(main.dataUri.length+(companion?.dataUri.length||0)>7_000_000)throw new Error("images_too_large");
     }catch(e){return reply({error:String(e.message).slice(0,48)},400);}
-    try {await capacity(request);}catch(e){return reply({error:String(e.message),resetAt:nextResetAt()},429);}
+    try {await claimOwnerTestSlot("image");}catch(e){return reply({error:String(e.message)},429);}
     const taskId=randomUUID(),secret=randomBytes(32).toString("hex");
     const jobs=store();
     // Keep only a hash of token, never customer photo. Source images are discarded
