@@ -25,7 +25,16 @@
       <p id="mode-banner" class="mode-banner" role="status">Checking what’s available…</p>
     </section>
 
-    <section class="workspace" aria-label="Era Motion photo studio">
+    <section class="owner-login" id="owner-login">
+  <p class="eyebrow">PRIVATE TESTING · OWNER ONLY</p>
+  <h2>Unlock your test studio</h2>
+  <p>This workspace is not ready for customers. Only the owner can generate images or videos using the project's prepaid Runway credits.</p>
+  <label for="owner-key">Private test access key</label>
+  <input id="owner-key" type="password" autocomplete="off" spellcheck="false" placeholder="Paste the private key from Netlify" />
+  <button type="button" class="primary" id="owner-unlock">Unlock studio</button>
+  <p id="owner-message" class="helper" role="status" aria-live="polite">Access is configured separately in Netlify. Never share the key.</p>
+</section>
+<section class="workspace" id="owner-workspace" aria-label="Era Motion private photo studio" hidden>
       <form class="creator" id="creator" novalidate>
         <section class="form-step">
           <div class="step-heading"><span class="count">1</span><h2>Your photo</h2></div>
@@ -83,15 +92,28 @@
             <button type="button" id="change-era" class="another-era">↻ Choose another era</button>
           </div>
           <p class="save-help">On iPhone, tap <strong>Open full-size image</strong>, then touch and hold it to save to Photos. Image links can expire, so save it promptly.</p>
-          <p class="helper">Another era means another AI generation and uses the limited daily allowance. Nothing runs automatically.</p>
+          <p class="helper">Another era always requires a new manual generation. This test does not take customer payments.</p>
+          <div class="video-test" id="video-test" hidden>
+            <p class="eyebrow">PRIVATE 5-SECOND VIDEO TEST</p>
+            <p>Animate this exact generated image — no second upload. One attempt uses 25 of your existing Runway Developer credits (approximately $0.25 at the published API rate). No new purchase or customer checkout.</p>
+            <label class="consent" for="video-approval">
+              <input id="video-approval" type="checkbox">
+              <span>I approve one 5-second Runway video test using 25 of my existing API credits.</span>
+            </label>
+            <button type="button" class="primary" id="generate-video" disabled>Animate my image · 5 seconds</button>
+            <p id="video-message" class="helper" role="status" aria-live="polite">Only one video per generated photo. No automatic retries.</p>
+            <video id="finished-video" controls playsinline preload="none" hidden></video>
+            <a id="video-open" class="save-image" href="#" target="_blank" rel="noopener noreferrer" hidden>↗ Open or save finished video</a>
+            <p class="helper">Save the video immediately; Runway delivery links expire.</p>
+          </div>
         </div>
         <p class="privacy">Only submit photos you are entitled to use. We do not save the photo during the free format test.</p>
       </aside>
     </section>
 
-    <section class="simple-note">
-      <strong>What works today?</strong>
-      <p id="availability-detail">The free photo upload and format check. It does <strong>not</strong> create a new AI image or a video. Photo generation, paid movies and checkout stay off until tested and approved.</p>
+    <section class="simple-note" id="owner-note" hidden>
+      <strong>Private owner testing</strong>
+      <p id="availability-detail">Only the owner may start generation. Photos and five-second film tests use prepaid Runway credits. No customer payments or public release.</p>
     </section>
   </main>
   <footer>© KIVZUNO · Photo studio preview · <a href="/">Home</a></footer>
