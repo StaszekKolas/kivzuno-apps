@@ -39,7 +39,7 @@
  function state(){
    $("photo-submit").hidden=productMode!=="photo";
    $("video-submit").hidden=productMode!=="video";
-   generated.hidden=productMode!=="photo" || !generatedImg.getAttribute("src");
+   generated.hidden=productMode!=="photo" || generatedImg.dataset.ready!=="1";
    $("video-test").hidden=productMode!=="video";
    go.disabled=busy || videoBusy || !ownerKey || !dataUri || !consent.checked || (aiEnabled && !quotaEligible);
    videoButton.disabled=busy || videoBusy || !ownerKey || !dataUri || !consent.checked || !videoApproval.checked || !quotaEligible;
@@ -52,6 +52,7 @@
  }
  function clearResult(){
    generated.hidden=true;generatedImg.hidden=true;generatedImg.removeAttribute("src");
+   delete generatedImg.dataset.ready;
    $("generated-download").hidden=true;
    imageJob=null;
    videoResultUrl="";
@@ -206,6 +207,7 @@
          });
          if(version!==generationVersion)throw Error("Photo changed while loading result.");
          generatedImg.src=status.imageUrl;
+         generatedImg.dataset.ready="1";
          generatedImg.alt="Your photo transformed into "+era.options[era.selectedIndex].textContent;
          generatedImg.hidden=false;
          generated.hidden=false;
