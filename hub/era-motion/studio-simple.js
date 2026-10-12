@@ -7,7 +7,7 @@
  const msg=$("message"),banner=$("mode-banner"),label=$("consent-label");
  const preview=$("original"),empty=$("empty"),generated=$("generated-section"),generatedImg=$("generated-image");
  const MAX_FILE=12*1024*1024;
- let dataUri="",busy=false,aiEnabled=false,generationVersion=0,quotaEligible=false;
+ let dataUri="",busy=false,aiEnabled=false,generationVersion=0,quotaEligible=false,quotaNotice="";
  function message(value,kind=""){msg.textContent=value;msg.dataset.kind=kind;}
  function resetLabel(resetAt){
    const when=typeof resetAt==="string"?new Date(resetAt):new Date(NaN);
@@ -27,6 +27,7 @@
  function lockQuota(reason,resetAt){
    quotaEligible=false;
    const note=quotaText(reason,resetAt);
+   quotaNotice=note;
    banner.textContent=note;
    $("action-hint").textContent="Daily AI limit reached or not verified · No credits used by this check";
    state();
@@ -47,6 +48,7 @@
  function mode(enabled){
    aiEnabled=Boolean(enabled);
    quotaEligible=false;
+   quotaNotice="";
    if(aiEnabled){
      banner.textContent="REAL AI PHOTO BETA · Limited testing: one image attempt per network each day, up to three total. No provider login.";
      label.textContent="I agree to send my photo to KIVZUNO and its AI provider for this transformation.";
@@ -85,6 +87,7 @@
        return;
      }
      quotaEligible=true;
+     quotaNotice="";
      state();
    }catch{
      lockQuota("quota_check_unavailable");
@@ -132,7 +135,7 @@
      preview.src=uri;preview.hidden=false;empty.hidden=true;
      $("upload-label").textContent=(file.name||"Your photo").slice(0,65);
      $("preview-tag").textContent="READY";
-     message(!aiEnabled || quotaEligible?"Photo ready. Choose an era, tick the box and tap the button.":"Photo ready, but today\u0027s AI limit has been reached. Your next image can be created after the daily reset.","success");
+     message(aiEnabled&&!quotaEligible?(quotaNotice||"AI allowance is unavailable right now."):"Photo ready. Choose an era, tick the box and tap the button.",aiEnabled&&!quotaEligible?"error":"success");
    }catch(err){
      if(version!==generationVersion)return;
      $("upload-label").textContent="Choose a photo";
@@ -193,7 +196,8 @@
          const link=$("generated-download");link.href=status.imageUrl;link.hidden=false;
          $("preview-tag").textContent="AI READY";
          quotaEligible=false; // Capacity gate already claimed today's attempt.
-         banner.textContent="You have used today's free AI attempt. Your next image can be generated after the daily reset (00:00 UTC).";
+         quotaNotice="Today's AI image attempt has been used. Another image is available only after the next daily reset (00:00 UTC).";
+         banner.textContent=quotaNotice;
          $("action-hint").textContent="One AI attempt per network per UTC day";
          message("✓ Your new AI image is ready! Scroll down to see it and save it to Photos.","success");
          if(typeof generated.scrollIntoView==="function")generated.scrollIntoView({behavior:"smooth",block:"start"});
@@ -212,13 +216,17 @@
  }
  photo.addEventListener("change",()=>onSelect(photo.files?.[0]));
  era.addEventListener("change",()=>{
-   message(dataUri?"New era selected. The existing result stays visible until you choose to generate again.":"Choose a photo to start.");
+   if(aiEnabled&&!quotaEligible){
+     message(quotaNotice||"Today's AI allowance is unavailable. Choosing an era does not reset the limit.","error");
+     return;
+   }
+   message(dataUri?"New era selected. Your existing result stays visible. Tap Create my AI photo to make a new image.":"Choose a photo to start.");
  });
  $("change-era").addEventListener("click",()=>{
    if(busy)return;
    era.focus();
    if(typeof era.scrollIntoView==="function")era.scrollIntoView({behavior:"smooth",block:"center"});
-   message("Choose an era above. Creating a new AI image requires a new attempt within the daily limit.");
+   message(aiEnabled&&!quotaEligible?(quotaNotice||"Daily AI allowance unavailable."):"Choose an era above. A new image requires another permitted daily attempt.",aiEnabled&&!quotaEligible?"error":"");
  });
  consent.addEventListener("change",state);
  form.addEventListener("submit",ev=>{ev.preventDefault();run();});
