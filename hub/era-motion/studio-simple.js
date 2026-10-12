@@ -7,15 +7,38 @@
  const msg=$("message"),banner=$("mode-banner"),label=$("consent-label");
  const preview=$("original"),empty=$("empty"),generated=$("generated-section"),generatedImg=$("generated-image");
  const MAX_FILE=12*1024*1024;
- let dataUri="",busy=false,aiEnabled=false,generationVersion=0;
+ let dataUri="",busy=false,aiEnabled=false,generationVersion=0,quotaEligible=false;
  function message(value,kind=""){msg.textContent=value;msg.dataset.kind=kind;}
+ function resetLabel(resetAt){
+   const when=typeof resetAt==="string"?new Date(resetAt):new Date(NaN);
+   if(!Number.isFinite(when.getTime()))return "after the next daily reset (00:00 UTC)";
+   return new Intl.DateTimeFormat("en-GB",{
+     timeZone:"Europe/London",day:"numeric",month:"short",
+     hour:"2-digit",minute:"2-digit",hour12:false
+   }).format(when)+" UK time";
+ }
+ function quotaText(reason,resetAt){
+   const next=resetLabel(resetAt);
+   if(reason==="one_image_per_day")return "You have already used today's free AI image attempt from this network. Try again from "+next+". Your photo and previous saved result are still yours.";
+   if(reason==="daily_free_image_limit")return "All three free AI image attempts have been used today. The next attempts open "+next+".";
+   if(reason==="source_ip_unknown" || reason==="quota_check_unavailable")return "We cannot check today's AI allowance right now. Please try refreshing the page later. No credits were used.";
+   return "AI image generation is temporarily unavailable. No credits were used.";
+ }
+ function lockQuota(reason,resetAt){
+   quotaEligible=false;
+   const note=quotaText(reason,resetAt);
+   banner.textContent=note;
+   $("action-hint").textContent="Daily AI limit reached or not verified · No credits used by this check";
+   state();
+   return note;
+ }
  function state(){
-   go.disabled=busy || !dataUri || !consent.checked;
+   go.disabled=busy || !dataUri || !consent.checked || (aiEnabled && !quotaEligible);
    era.disabled=busy;
    photo.disabled=busy;
    $("change-era").disabled=busy;
    go.textContent=busy ? (aiEnabled?"Creating your AI photo…":"Checking your photo…")
-     :aiEnabled?"Create my AI photo":"Check my photo — free";
+     :aiEnabled?(quotaEligible?"Create my AI photo":"AI limit reached — try later"):"Check my photo — free";
  }
  function clearResult(){
    generated.hidden=true;generatedImg.hidden=true;generatedImg.removeAttribute("src");
@@ -23,6 +46,7 @@
  }
  function mode(enabled){
    aiEnabled=Boolean(enabled);
+   quotaEligible=false;
    if(aiEnabled){
      banner.textContent="REAL AI PHOTO BETA · Limited testing: one image attempt per network each day, up to three total. No provider login.";
      label.textContent="I agree to send my photo to KIVZUNO and its AI provider for this transformation.";
@@ -44,8 +68,27 @@
        body:JSON.stringify({action:"capabilities"})
      });
      const body=await response.json();
-     mode(response.ok && body.available===true);
+     const available=response.ok && body.available===true;
+     mode(available);
+     if(available)await checkAllowance();
    }catch{mode(false);}
+ }
+ async function checkAllowance(){
+   try{
+     const response=await fetch("/.netlify/functions/era-image-task",{
+       method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",
+       body:JSON.stringify({action:"eligibility"})
+     });
+     const availability=await response.json();
+     if(!response.ok || availability.eligible!==true){
+       lockQuota(availability.reason||"quota_check_unavailable",availability.resetAt);
+       return;
+     }
+     quotaEligible=true;
+     state();
+   }catch{
+     lockQuota("quota_check_unavailable");
+   }
  }
  async function encode(file){
    if(!file || !["image/jpeg","image/png","image/webp","image/heic","image/heif"].includes(file.type) &&
@@ -89,7 +132,7 @@
      preview.src=uri;preview.hidden=false;empty.hidden=true;
      $("upload-label").textContent=(file.name||"Your photo").slice(0,65);
      $("preview-tag").textContent="READY";
-     message("Photo ready. Choose an era, tick the box and tap Create my AI photo.","success");
+     message(!aiEnabled || quotaEligible?"Photo ready. Choose an era, tick the box and tap the button.":"Photo ready, but today\u0027s AI limit has been reached. Your next image can be created after the daily reset.","success");
    }catch(err){
      if(version!==generationVersion)return;
      $("upload-label").textContent="Choose a photo";
@@ -104,11 +147,15 @@
      body:JSON.stringify(body)
    });
    const data=await response.json().catch(()=>({error:"invalid_server_response"}));
-   if(!response.ok)throw Error(String(data.error||response.status));
+   if(!response.ok){
+     const err=new Error(String(data.error||response.status));
+     err.code=data.error;err.resetAt=data.resetAt;
+     throw err;
+   }
    return data;
  }
  async function run(){
-   if(busy||!dataUri||!consent.checked)return;
+   if(busy||!dataUri||!consent.checked||(aiEnabled&&!quotaEligible))return;
    busy=true;state();clearResult();
    const img=dataUri,chosen=era.value,version=generationVersion;
    try{
@@ -145,6 +192,9 @@
          $("generated-era").textContent=era.options[era.selectedIndex].textContent;
          const link=$("generated-download");link.href=status.imageUrl;link.hidden=false;
          $("preview-tag").textContent="AI READY";
+         quotaEligible=false; // Capacity gate already claimed today's attempt.
+         banner.textContent="You have used today's free AI attempt. Your next image can be generated after the daily reset (00:00 UTC).";
+         $("action-hint").textContent="One AI attempt per network per UTC day";
          message("✓ Your new AI image is ready! Scroll down to see it and save it to Photos.","success");
          if(typeof generated.scrollIntoView==="function")generated.scrollIntoView({behavior:"smooth",block:"start"});
          return;
@@ -152,7 +202,12 @@
      }
      throw Error("Generation is taking longer than expected. Please do not retry automatically.");
    }catch(err){
-     message("Could not complete this step: "+String(err?.message||err).slice(0,130),"error");
+     if(["one_image_per_day","daily_free_image_limit","source_ip_unknown"].includes(err?.code)){
+       const note=lockQuota(err.code,err.resetAt);
+       message(note,"error");
+     }else{
+       message("Could not complete this step: "+String(err?.message||err).slice(0,130),"error");
+     }
    }finally{busy=false;state();}
  }
  photo.addEventListener("change",()=>onSelect(photo.files?.[0]));
