@@ -1,6 +1,6 @@
 # KIVZUNO Era Motion · PRIVATE OWNER TEST (not yet deployed)
 
-This work is stacked on PR #22 and NOT on the live site. No public release, no customer checkout, no promotion.
+This PR includes the fixes from PR #22 and targets main directly, but it is NOT on the live site. No public release, no customer checkout, no promotion.
 
 ## What this version actually does
 
@@ -19,7 +19,7 @@ Add exactly:
 - `KIVZUNO_OWNER_TEST_ENABLED`: `owner-approved` after checking the preview and cap.
 Ensure Netlify Functions can read the variables on preview and live; redeploy when changed.
 
-Only when BOTH keys above exist AND owner approves merging PR #22 then PR #23 can the private owner studio be used on the main domain. A preview can be tested in non-billable locked state without activating it. If preview and production share environment, the private owner key still restricts API use, but **URLs to static files are public**.
+Only when BOTH keys above exist AND owner approves merging PR #23 can the private owner studio be used on the main domain. A preview can be tested in non-billable locked state without activating it. If preview and production share environment, the private owner key still restricts API use, but **URLs to static files are public**.
 
 ## Use on iPhone
 1. Open the owner-only version (after deployment/approval), paste the secret from your password manager into the private-key field and tap Unlock. The key is held only in memory, not localStorage or a URL.
@@ -30,7 +30,7 @@ Only when BOTH keys above exist AND owner approves merging PR #22 then PR #23 ca
 ## Test and caveats
 - Automated tests/smoke checks do not call billable Runway providers.
 - Verify actual movie generation only after owner manually grants access and confirms use of prepaid credits.
-- The existing per-day public cap on current main will not be removed until owner approves a deploy. Do not bypass it by changing headers or spoofing an IP.
+- The existing per-day public cap on current main stays until owner explicitly approves a production deployment. Do not bypass it by changing headers or spoofing an IP.
 - No Lemon Squeezy store, paid video orders, customer payments, or completed checkout are enabled.
 - This mechanism is intended for owner **testing only**, not sharing with buyers. It should be replaced with verified commercial authorization and durable media delivery before monetization.
 
