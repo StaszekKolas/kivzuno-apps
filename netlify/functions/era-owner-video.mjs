@@ -39,8 +39,8 @@ export default async function handler(request){
   videoAvailable:ownerConfigured()&&ownerAuthorized(request)
  });
  if(!["start","status"].includes(action))return reply({error:"action"},400);
- if(!ownerConfigured())return reply({error:"owner_mode_not_ready"},503);
  if(!ownerAuthorized(request))return reply({error:"owner_access_required"},403);
+ if(!ownerConfigured())return reply({error:"owner_mode_not_ready"},503);
 
  if(action==="start"){
   if(!idOk(body.imageJobId)||!accessOk(body.imageAccessToken)||
