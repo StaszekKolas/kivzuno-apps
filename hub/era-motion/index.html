@@ -52,7 +52,7 @@
 <div class="step-title"><span class="number">04</span><h2>Transform with real AI</h2></div>
 <div class="consent-row"><input type="checkbox" id="consent"><label for="consent">I agree to send my photos to Puter's AI provider for this generation. I understand this uses my Puter account's allowance or credits; KIVZUNO does not pay for or charge for generation. I will not continue if I do not want to use credits.</label></div>
 <button class="primary" id="generate-btn" disabled>✨ Generate real AI photo</button>
-<p class="explain">A Puter sign-in window may open. Free allowance depends on your account; no unlimited free generation is promised.</p>
+<p class="explain">Puter remembers your session in this browser. You should only need to sign in again if it expires, you sign out, or you use a different/private browser session. Upload consent is separate and required for each new photo.</p>
 <button class="outline" id="download-btn" disabled>↓ Download my AI photo</button>
 <div class="video-purchase" aria-label="AI video generation beta">
 <span class="eyebrow">OPTIONAL · REAL AI VIDEO BETA</span>
@@ -60,6 +60,8 @@
 <p class="explain">Generate a real 6-second cinematic video from your AI photo. This uses <strong>your own Puter allowance or credits</strong>, not a KIVZUNO checkout. Puter may charge your account. KIVZUNO earns £0 from this beta; we are not selling films yet.</p>
 <div class="consent-row"><input type="checkbox" id="video-consent"><label for="video-consent">I understand that a real 6-second video may use or charge my Puter credits, and I want to request it. I will also confirm before the request is sent.</label></div>
 <button class="outline" id="video-btn" disabled>🎬 Animate this photo (6 seconds)</button>
+<button class="outline" id="balance-btn" type="button">ℹ Check my Puter allowance (read only)</button>
+<p class="explain" id="balance-status" role="status" aria-live="polite">Video requires more credits than a photo and may trigger Puter's “Low Balance” notice. Checking the allowance uses no video generation; it cannot guarantee sufficient credits.</p>
 </div>
 <p class="status" id="status" role="status" aria-live="polite">Choose a photo and era, then generate.</p>
 </div>
