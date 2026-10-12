@@ -34,6 +34,9 @@ test("browser tells users the next daily reset and does not pass through raw quo
   assert.match(browser,/Try again from/);
   assert.match(browser,/lockQuota\(err\.code,err\.resetAt\)/);
   assert.match(browser,/The Generate button is paused|AI limit reached/);
+  assert.match(browser,/quotaNotice=note/);
+  assert.match(browser,/if\(aiEnabled&&!quotaEligible\)\{/);
+  assert.match(browser,/message\(quotaNotice\|\|/);
 });
 test("browser shows quota used before any expensive photo request",async()=>{
   const elements=new Map();
