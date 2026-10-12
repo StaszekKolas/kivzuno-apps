@@ -226,6 +226,74 @@
      }
    }finally{busy=false;state();}
  }
+ async function unlockOwner(){
+   const input=$("owner-key");
+   const secret=input.value.trim();
+   if(secret.length<32){
+     $("owner-message").textContent="Paste your private access key from Netlify (at least 32 characters).";
+     return;
+   }
+   $("owner-unlock").disabled=true;
+   $("owner-message").textContent="Verifying your private owner access…";
+   ownerKey=secret;
+   input.value="";
+   try{
+     const c=await post("era-image-task",{action:"capabilities"});
+     const v=await post("era-owner-video",{action:"capabilities"});
+     if(!c.available || !c.ownerTesting || !v.videoAvailable)
+       throw Error("Owner test is not configured or the key is incorrect.");
+     $("owner-login").hidden=true;
+     $("owner-workspace").hidden=false;
+     $("owner-note").hidden=false;
+     await checkMode();
+     $("owner-message").textContent="Private access verified.";
+   }catch{
+     ownerKey="";
+     $("owner-message").textContent="Private access not verified. Check KIVZUNO_OWNER_TEST_SECRET and KIVZUNO_OWNER_TEST_ENABLED in Netlify. No credits used.";
+   }finally{$("owner-unlock").disabled=false;}
+ }
+ async function makeVideo(){
+   if(videoBusy||busy||!imageJob||!videoApproval.checked)return;
+   videoBusy=true;state();
+   $("video-message").textContent="Sending your existing AI image to Runway for one 5-second movie. Your approval uses 25 prepaid API credits…";
+   try{
+     const job=await post("era-owner-video",{
+       action:"start",imageJobId:imageJob.imageJobId,
+       imageAccessToken:imageJob.imageAccessToken,era:imageJob.era,
+       ownerApproval:true
+     });
+     if(job.status!=="SUBMITTED"||!job.videoJobId||!job.videoAccessToken)
+       throw Error("Runway has not confirmed starting your video.");
+     $("video-message").textContent="Runway is making your 5-second movie. Keep this tab open; no extra video will be started.";
+     for(let attempt=0;attempt<100;attempt++){
+       await new Promise(resolve=>setTimeout(resolve,5000));
+       const info=await post("era-owner-video",{
+         action:"status",videoJobId:job.videoJobId,
+         videoAccessToken:job.videoAccessToken
+       });
+       if(info.status==="FAILED"||info.status==="REVIEW_REQUIRED")
+         throw Error("Video was not completed. No retry has been started.");
+       if(info.status==="SUCCEEDED"){
+         if(typeof info.videoUrl!=="string"||!info.videoUrl.startsWith("https://"))
+           throw Error("The output video URL is missing.");
+         const player=$("finished-video");
+         player.src=info.videoUrl;player.hidden=false;
+         const link=$("video-open");link.href=info.videoUrl;link.hidden=false;
+         $("video-message").textContent="✓ Video ready! Play it or open it to save. Runway links expire.";
+         return;
+       }
+     }
+     throw Error("The video is taking longer than expected. Do not retry; the task may still be running.");
+   }catch(err){
+     $("video-message").textContent="Video test: "+String(err?.message||err).slice(0,150);
+   }finally{videoBusy=false;videoApproval.checked=false;state();}
+ }
+ $("owner-unlock").addEventListener("click",unlockOwner);
+ $("owner-key").addEventListener("keydown",event=>{
+   if(event.key==="Enter"){event.preventDefault();unlockOwner();}
+ });
+ videoApproval.addEventListener("change",state);
+ videoButton.addEventListener("click",makeVideo);
  photo.addEventListener("change",()=>onSelect(photo.files?.[0]));
  era.addEventListener("change",()=>{
    if(aiEnabled&&!quotaEligible){
