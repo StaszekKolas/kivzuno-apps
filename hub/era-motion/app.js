@@ -1,262 +1,197 @@
 "use strict";
-
-// KIVZUNO Era Motion v1: free local-photo postcard preview, paid AI films planned.
-// No image or image metadata leaves the browser; no claim of generative AI.
+// KIVZUNO Era Motion: genuine photo-to-photo AI via Puter.js.
+// All AI calls are user initiated after explicit disclosure/consent.
 const ERAS = [
-  {id:"egypt",name:"Ancient Egypt",date:"c. 1300 BCE",icon:"☀️",colors:["#e7a44a","#32131b"],accent:"#f7d37f",motif:"DESERT DYNASTY"},
-  {id:"rome",name:"Ancient Rome",date:"c. 100 CE",icon:"🏛️",colors:["#b46c46","#2c1d1b"],accent:"#f5c993",motif:"THE ETERNAL CITY"},
-  {id:"viking",name:"Viking Age",date:"c. 900 CE",icon:"🛡️",colors:["#517e95","#0d2837"],accent:"#c1f0f6",motif:"NORTHBOUND"},
-  {id:"medieval",name:"Medieval Kingdom",date:"c. 1200",icon:"🏰",colors:["#64486a","#1c1427"],accent:"#f4c873",motif:"A TALE OF LEGENDS"},
-  {id:"renaissance",name:"Renaissance",date:"c. 1500",icon:"🎨",colors:["#ab7659","#292127"],accent:"#efdab7",motif:"A NEW GOLDEN AGE"},
-  {id:"west",name:"Wild West",date:"c. 1880",icon:"🤠",colors:["#c07940","#43251b"],accent:"#f0c178",motif:"WANTED BY DESTINY"},
-  {id:"victorian",name:"Victorian Era",date:"c. 1890",icon:"🎩",colors:["#676c67","#191c23"],accent:"#d9d7bc",motif:"AN ELEGANT AGE"},
-  {id:"artdeco",name:"1920s Art Deco",date:"1926",icon:"✨",colors:["#99814e","#0e1c24"],accent:"#ffdb7c",motif:"THE ROARING TWENTIES"},
-  {id:"cinema",name:"1940s Cinema",date:"1944",icon:"🎞️",colors:["#96949a","#22212c"],accent:"#f2f1e8",motif:"SILVER SCREEN"},
-  {id:"retro",name:"1970s Retro",date:"1977",icon:"🪩",colors:["#d77540","#522339"],accent:"#ffe27c",motif:"GROOVY TIMES"},
-  {id:"neon",name:"1980s Neon",date:"1986",icon:"⚡",colors:["#8c409a","#15133d"],accent:"#74ebfa",motif:"ELECTRIC DREAMS"},
-  {id:"future",name:"Cyberpunk Future",date:"2088",icon:"🌆",colors:["#375fa5","#150b37"],accent:"#81ffee",motif:"BEYOND TOMORROW"}
+ {id:"egypt", name:"Ancient Egypt", icon:"☀️", scene:"ancient Egypt in the time of the pharaohs, royal linen and gold, grand temples and golden desert, historically inspired"},
+ {id:"rome", name:"Ancient Rome", icon:"🏛️", scene:"imperial Rome, authentic Roman costume, Forum Romanum, monumental columns, afternoon sun"},
+ {id:"viking", name:"Viking Age", icon:"🛡️", scene:"Viking Age Scandinavia, authentic northern garments, dramatic fjord and wooden longhouses"},
+ {id:"medieval", name:"Medieval Kingdom", icon:"🏰", scene:"a medieval European kingdom, richly detailed 13th-century clothing, stone castle and sweeping landscapes"},
+ {id:"renaissance", name:"Renaissance", icon:"🎨", scene:"Italian Renaissance, elegant 16th-century fashion, palazzo architecture, exquisite painterly cinematic lighting"},
+ {id:"west", name:"Wild West", icon:"🤠", scene:"American frontier Wild West in the late 1800s, authentic western costume, dusty frontier town and cinematic sunset"},
+ {id:"victorian", name:"Victorian Era", icon:"🎩", scene:"Victorian London in 1890, era-accurate elegant clothes, historic gas-lit cobbled streets"},
+ {id:"artdeco", name:"1920s Art Deco", icon:"✨", scene:"glamorous Roaring Twenties in 1926, Art Deco architecture, stylish period dress, grand jazz-age ambience"},
+ {id:"cinema", name:"1940s Cinema", icon:"🎞️", scene:"1940s classic black-and-white Hollywood film, authentic period costume, cinematic noir lighting"},
+ {id:"retro", name:"1970s Retro", icon:"🪩", scene:"1970s vintage street photography, authentic seventies fashion, warm analog colors and retro architecture"},
+ {id:"neon", name:"1980s Neon", icon:"⚡", scene:"1980s neon city with analog film aesthetic, authentic eighties outfit and electric atmosphere"},
+ {id:"future", name:"Cyberpunk Future", icon:"🌆", scene:"a believable futuristic cyberpunk city in 2088, imaginative future clothing, cinematic neon skyline"}
 ];
 const $ = id => document.getElementById(id);
-const canvas = $("scene");
-const ctx = canvas.getContext("2d", {alpha:false});
 const MAX_BYTES = 12 * 1024 * 1024;
-let chosen = "medieval", photo = null, companion = null, photoUrl = null, companionUrl = null;
-let hasStarted = false;
-const cleanText = value => String(value || "").replace(/[\r\n]+/g," ").trim().slice(0,45);
-const era = () => ERAS.find(e => e.id === chosen) || ERAS[0];
-const noTrack = () => navigator.doNotTrack === "1" || window.doNotTrack === "1" || navigator.globalPrivacyControl === true;
+const selected = {photo:null, companion:null};
+let chosen = "medieval", generating = false, generatedSrc = "";
 const sourceParam = new URLSearchParams(location.search).get("src");
-const sources = ["ig_reel","ig_story","ig_bio","ig_post","fb_reel","fb_post","tiktok","direct","other"];
-const source = sources.includes(sourceParam) ? sourceParam : "direct";
+const allowedSources = ["ig_reel","ig_story","ig_bio","ig_post","fb_reel","fb_post","tiktok","direct","other"];
+const source = allowedSources.includes(sourceParam) ? sourceParam : "direct";
+const noTrack = () => navigator.doNotTrack === "1" || window.doNotTrack === "1" || navigator.globalPrivacyControl === true;
 function track(event) {
   if (noTrack() || !["visit","start","complete","premium_click"].includes(event)) return;
-  fetch("/.netlify/functions/metrics",{
-    method:"POST",
-    headers:{"content-type":"application/json"},
+  fetch("/.netlify/functions/metrics", {
+    method:"POST",headers:{"content-type":"application/json"},
     body:JSON.stringify({app:"eramotion",event,source}),
-    keepalive:true,
-    credentials:"same-origin"
+    credentials:"same-origin",keepalive:true
   }).catch(()=>{});
 }
-function setStatus(message, type) {
-  $("status").textContent = message;
-  $("status").className = "status" + (type ? " " + type : "");
+function status(message,kind="") {
+  $("status").textContent=message;
+  $("status").className="status"+(kind?" "+kind:"");
+}
+function refreshButtons() {
+  $("generate-btn").disabled=generating || !selected.photo || !$("consent").checked;
+  $("download-btn").disabled=!generatedSrc || generating;
+}
+function resetResult() {
+  generatedSrc="";
+  $("generated").hidden=true;
+  $("generated").removeAttribute("src");
+  $("output-placeholder").hidden=false;
+  refreshButtons();
 }
 function makeChoices() {
-  const grid = $("eras");
-  for (const entry of ERAS) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "era";
-    btn.dataset.era = entry.id;
-    btn.setAttribute("aria-pressed", String(entry.id === chosen));
-    const sym = document.createElement("span");
-    sym.className = "sym";
-    sym.textContent = entry.icon;
-    const title = document.createElement("span");
-    title.className = "name";
-    title.textContent = entry.name;
-    btn.append(sym,title);
-    btn.addEventListener("click",() => {
-      chosen = entry.id;
-      for (const node of grid.children) node.setAttribute("aria-pressed",String(node === btn));
-      drawFrame(.35);
-      if (photo) setStatus("Selected: "+entry.name+". Download the free image; AI film is coming later.");
+  const grid=$("eras");
+  for(const entry of ERAS) {
+    const button=document.createElement("button");
+    button.type="button";button.className="era";
+    button.dataset.era=entry.id;
+    button.setAttribute("aria-pressed",String(entry.id===chosen));
+    const sym=document.createElement("span");sym.className="sym";sym.textContent=entry.icon;
+    const name=document.createElement("span");name.className="name";name.textContent=entry.name;
+    button.append(sym,name);
+    button.addEventListener("click",()=>{
+      if(generating)return;
+      chosen=entry.id;
+      for(const node of grid.children)node.setAttribute("aria-pressed",String(node===button));
+      resetResult();
+      status("Selected "+entry.name+". Ready for a real AI transformation.");
     });
-    grid.append(btn);
+    grid.append(button);
   }
 }
-async function loadPhoto(file, kind) {
-  if (!file) return;
-  if (file.size > MAX_BYTES) { setStatus("Please choose an image smaller than 12 MB.","error"); return; }
-  if (!file.type.startsWith("image/")) { setStatus("Please choose an image file.","error"); return; }
-  const url = URL.createObjectURL(file);
-  const img = new Image();
+async function encodeImage(file) {
+  if (!file || !file.type.startsWith("image/"))throw new Error("Please choose a photo.");
+  if(file.size>MAX_BYTES)throw new Error("Image too large. Choose a photo under 12 MB.");
+  const url=URL.createObjectURL(file);
+  const img=new Image();
   try {
-    await new Promise((resolve,reject) => {
-      img.onload = resolve;
-      img.onerror = () => reject(new Error("Browser cannot read this image. Try JPG, PNG or WebP."));
-      img.src = url;
+    await new Promise((resolve,reject)=>{
+      img.onload=resolve;
+      img.onerror=()=>reject(new Error("Could not open this image. Try a JPG or PNG."));
+      img.src=url;
     });
-    if (!img.naturalWidth || !img.naturalHeight) throw new Error("Image has no dimensions.");
-    // Object URLs are kept only while the image is in browser memory.
-    if (kind === "photo") {
-      if (photoUrl) URL.revokeObjectURL(photoUrl);
-      photo = img;
-      photoUrl = url;
-      $("photo-label").textContent = file.name;
-    } else {
-      if (companionUrl) URL.revokeObjectURL(companionUrl);
-      companion = img;
-      companionUrl = url;
-      $("companion-label").textContent = file.name;
+    if(!img.naturalWidth||!img.naturalHeight)throw new Error("Image has no dimensions.");
+    // Resize and re-encode locally; strips EXIF and shrinks phone uploads.
+    const scale=Math.min(1,1280/Math.max(img.naturalWidth,img.naturalHeight));
+    const w=Math.max(1,Math.round(img.naturalWidth*scale));
+    const h=Math.max(1,Math.round(img.naturalHeight*scale));
+    const canvas=document.createElement("canvas");canvas.width=w;canvas.height=h;
+    const ctx=canvas.getContext("2d");
+    if(!ctx)throw new Error("Photo processing is not supported in this browser.");
+    ctx.drawImage(img,0,0,w,h);
+    return canvas.toDataURL("image/jpeg",.87);
+  } finally {URL.revokeObjectURL(url);}
+}
+async function onPhoto(file,kind) {
+  if(!file)return;
+  if(generating)return;
+  try {
+    status("Preparing your photo on this device…");
+    const data=await encodeImage(file);
+    selected[kind]=data;
+    $(kind==="photo"?"photo-label":"companion-label").textContent=file.name.slice(0,85);
+    if(kind==="photo") {
+      $("before").src=data;$("before").hidden=false;$("before-placeholder").hidden=true;
     }
-    $("poster-btn").disabled = !photo;
-    drawFrame(.35);
-    if (kind === "photo" && !hasStarted) {hasStarted = true; track("start");}
-    setStatus("Photo ready. Save a free image preview. The AI film product is not live.","success");
-  } catch(e) {
-    URL.revokeObjectURL(url);
-    setStatus(e.message,"error");
+    resetResult();
+    status("Photo ready. Select an era and tick the consent box.","success");
+  } catch(e) {status(e.message || "Unable to open photo.","error");}
+  refreshButtons();
+}
+function generatePrompt() {
+  const entry=ERAS.find(e=>e.id===chosen);
+  const extra=$("animal").value;
+  const note=$("title").value.trim().slice(0,45);
+  return [
+    "IMAGE EDITING TASK: Use uploaded image 1 as the PRIMARY identity reference.",
+    selected.companion?"Use uploaded image 2 as SECOND subject reference. Both subjects must appear naturally in the SAME NEW SCENE, interacting realistically.":"Use the original subject as the main protagonist.",
+    "Create a newly rendered, photorealistic cinematic photograph set in "+entry.scene+".",
+    "IMPORTANT: Truly change the location, clothing/outfit, lighting and atmosphere to fit that era. DO NOT frame, caption, crop or collage the original photograph. Do not keep the original outdoor background; regenerate the ENTIRE environment.",
+    "Maintain recognizable facial features, proportions, individual animal appearance and fur coloration as much as feasible. Depict everyone respectfully.",
+    extra?"Include a realistic "+extra+" as a natural part of the historical/fantasy scene (avoid duplicating any uploaded animal).":"",
+    note?"Additional artistic direction: "+note+".":"",
+    "One cohesive original image, natural poses, professionally cinematic composition, fine photorealistic details. No captions, text, typography, watermarks, split screen, borders, frames or extra limbs."
+  ].filter(Boolean).join(" ");
+}
+function humanError(error) {
+  const code=String(error?.errorCode || error?.code || "");
+  const msg=String(error?.message || error?.msg || error || "");
+  if (/insufficient_funds|subscription_required/i.test(code+" "+msg))return "Your Puter allowance is insufficient. KIVZUNO has not taken any payment. Do not buy credits unless you decide to.";
+  if (/auth_window_closed|popup_blocked|unsupported_origin/i.test(code+" "+msg))return "Puter sign-in did not finish. Open KIVZUNO in Safari (not Facebook's built-in browser) and allow the login popup.";
+  if (/moderation_flagged|content policy|safety/i.test(code+" "+msg))return "The model refused this edit. Try a different photograph or artistic description.";
+  return "AI could not generate the image: "+msg.slice(0,160)+". No result was created.";
+}
+async function generate() {
+  if(generating || !selected.photo || !$("consent").checked)return;
+  if(!window.puter || typeof window.puter.ai?.txt2img!=="function") {
+    status("Puter AI did not load. Try Safari or refresh the page.","error");return;
   }
-}
-const W = canvas.width, H = canvas.height;
-function roundRect(x,y,w,h,r,fill,stroke) {
-  ctx.beginPath();
-  ctx.roundRect(x,y,w,h,r);
-  if (fill) {ctx.fillStyle=fill;ctx.fill();}
-  if (stroke) {ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke();}
-}
-function text(str,x,y,size,color,weight,align,font) {
-  ctx.font=(weight||"800")+" "+size+"px "+(font||"system-ui,-apple-system,sans-serif");
-  ctx.textAlign=align||"center";
-  ctx.fillStyle=color;
-  ctx.fillText(str,x,y);
-}
-function fittedText(str,x,y,maxWidth,size,color,font) {
-  let current=size;
-  do {
-    ctx.font="900 "+current+"px "+(font||"Georgia,serif");
-    if(ctx.measureText(str).width<=maxWidth) break;
-    current-=2;
-  } while(current>21);
-  text(str,x,y,current,color,"900","center",font||"Georgia,serif");
-}
-function drawImageCover(img,x,y,w,h,zoom) {
-  if (!img) return;
-  const scale=Math.max(w/img.naturalWidth,h/img.naturalHeight)*(zoom||1);
-  const ow=img.naturalWidth*scale, oh=img.naturalHeight*scale;
-  ctx.drawImage(img,x+(w-ow)/2,y+(h-oh)/2,ow,oh);
-}
-function stars(t,accent) {
-  ctx.save();
-  ctx.globalAlpha=.25;
-  for(let i=0;i<35;i++){
-    let x=(i*127.37+37)%W, y=(i*239.72+55)%H;
-    const delta=Math.sin(t*6.283+i*3)*2;
-    ctx.fillStyle=accent;ctx.fillRect(x,y+delta,i%4===0?3:1.4,i%4===0?3:1.4);
-  }
-  ctx.restore();
-}
-function motifs(entry,t) {
-  ctx.save();
-  ctx.globalAlpha=.25;
-  ctx.strokeStyle=entry.accent;
-  ctx.lineWidth=2;
-  const cy=420;
-  for (let i=0;i<4;i++){
-    const r=280+i*42+Math.sin(t*6.283+i)*9;
-    ctx.beginPath();ctx.arc(W/2,cy,r,.05*Math.PI,1.9*Math.PI);ctx.stroke();
-  }
-  if (["egypt","rome","medieval","renaissance","victorian","artdeco"].includes(entry.id)){
-    for(let side of [0,1]) {
-      const x=side?W-27:27;
-      ctx.strokeRect(x,116,1,620);
-      ctx.strokeRect(x+(side?-9:9),135,1,580);
-    }
-  }
-  if (["neon","future","retro"].includes(entry.id)){
-    for(let y=590;y<810;y+=21){
-      ctx.globalAlpha=.13+(y-590)/180*.1;
-      ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
-    }
-  }
-  ctx.restore();
-}
-function drawFrame(normalized) {
-  const p=Math.max(0,Math.min(1,Number(normalized)||0));
-  const e=era();
-  const grad=ctx.createLinearGradient(0,0,W,H);
-  grad.addColorStop(0,e.colors[0]);grad.addColorStop(.62,e.colors[1]);grad.addColorStop(1,"#06080f");
-  ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
-  stars(p,e.accent);motifs(e,p);
-  // Hero card with a real uploaded photo, gently panning inside an era frame.
-  const x=40,y=217,w=460,h=545;
-  ctx.save();
-  ctx.shadowColor="#000a";ctx.shadowBlur=30;
-  roundRect(x-8,y-8,w+16,h+16,20,"#040915");
-  ctx.restore();
-  ctx.save();
-  ctx.beginPath();ctx.roundRect(x,y,w,h,14);ctx.clip();
-  if (photo) {
-    const scale = 1.06 + p*.11;
-    const dx = Math.sin(p*Math.PI*2)*7;
-    const dy = (p-.5)*18;
-    ctx.translate(dx,dy);
-    drawImageCover(photo,x-25,y-25,w+50,h+50,scale);
-  } else {
-    const dark=ctx.createLinearGradient(x,y,x+w,y+h);dark.addColorStop(0,"#242938");dark.addColorStop(1,"#11131d");
-    ctx.fillStyle=dark;ctx.fillRect(x,y,w,h);
-    ctx.fillStyle="#ffffff22";ctx.beginPath();ctx.arc(W/2,y+170,75,0,Math.PI*2);ctx.fill();
-    roundRect(W/2-137,y+250,274,265,130,"#ffffff1a");
-    text("UPLOAD YOUR PHOTO",W/2,y+488,25,"#ffffffbd");
-  }
-  ctx.restore();
-  // Cinematic color treatment, frame and gradients; not AI scene replacement.
-  ctx.save();ctx.globalAlpha=.18;
-  roundRect(x,y,w,h,14,e.colors[0]);
-  ctx.restore();
-  const vignette=ctx.createLinearGradient(0,y,0,y+h);
-  vignette.addColorStop(0,"#02030aaa");vignette.addColorStop(.19,"#02030a00");vignette.addColorStop(.78,"#02030a10");vignette.addColorStop(1,"#02030add");
-  roundRect(x,y,w,h,14,vignette,e.accent);
-  ctx.save();ctx.globalAlpha=.85;
-  ctx.fillStyle=e.accent;ctx.fillRect(x+13,y+13,80,3);ctx.fillRect(x+13,y+13,3,53);
-  ctx.fillRect(x+w-93,y+13,80,3);ctx.fillRect(x+w-16,y+13,3,53);
-  ctx.restore();
-  // Optional second real photograph in a framed miniature.
-  if (companion) {
-    ctx.save();
-    ctx.beginPath();ctx.arc(413,625,74,0,Math.PI*2);ctx.clip();
-    drawImageCover(companion,339,551,148,148,1);
-    ctx.restore();
-    ctx.strokeStyle=e.accent;ctx.lineWidth=7;ctx.beginPath();ctx.arc(413,625,74,0,Math.PI*2);ctx.stroke();
-  }
-  text("K I V Z U N O",W/2,74,23,"#ffffff","900");
-  text("E R A   M O T I O N",W/2,109,14,e.accent,"800");
-  roundRect(128,136,284,35,17,"#0009",e.accent+"aa");
-  text(e.date+"   •   PHOTO MOTION",W/2,160,14,"#ffffff","800");
-  text(e.motif,W/2,277,15,"#fffefa","900");
-  const animal=$("animal").value;
-  if (animal) text(animal,464,295,42,"#ffffff");
-  fittedText(e.name.toUpperCase(),W/2,812,440,43,e.accent,"Georgia,serif");
-  const subtitle=cleanText($("title").value)||"YOUR STORY, REIMAGINED";
-  fittedText(subtitle,W/2,852,460,22,"#ffffff","system-ui,sans-serif");
-  text("YOUR PHOTO  ·  12 ERAS  ·  ONE STORY",W/2,906,14,"#ffffffce","800");
-  ctx.fillStyle=e.accent;ctx.fillRect(135,925,270*p,4);
-}
-function filename(extension) {
-  return "kivzuno-"+chosen+"-"+new Date().toISOString().slice(0,10)+"."+extension;
-}
-function downloadBlob(blob, name) {
-  const url=URL.createObjectURL(blob);
-  const link=document.createElement("a");
-  link.href=url;link.download=name;
-  document.body.append(link);link.click();link.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),30000);
-}
-function savePoster() {
-  if (!photo) return;
-  drawFrame(.35);
-  canvas.toBlob(blob=>{
-    if (!blob) {setStatus("Could not export the still image.","error");return;}
-    downloadBlob(blob,filename("png"));
-    setStatus("Free PNG postcard ready. AI photo transformation and paid films are not available yet.","success");
+  generating=true;resetResult();refreshButtons();
+  try {
+    // Sign-in is initiated directly by a real button click, as required for popup blockers.
+    status("Opening Puter sign-in (your personal free allowance may apply)…");
+    await window.puter.auth.signIn();
+    status("Sending consented photo(s) to Puter for AI transformation. This may take up to a minute…");
+    track("start");
+    const referenceImages=[selected.photo];
+    if(selected.companion)referenceImages.push(selected.companion);
+    const image=await window.puter.ai.txt2img(generatePrompt(),{
+      model:"gpt-image-1-mini",
+      quality:"medium",
+      ratio:{w:3,h:4},
+      input_images:referenceImages
+    });
+    if(!image || typeof image.src!=="string" || !/^(data:image\/|https:\/\/|blob:)/i.test(image.src))throw new Error("Provider returned no usable image.");
+    generatedSrc=image.src;
+    const rendered=$("generated");
+    await new Promise((resolve,reject)=>{
+      rendered.onload=resolve;
+      rendered.onerror=()=>reject(new Error("Generated image could not be displayed."));
+      rendered.src=generatedSrc;
+      if(rendered.complete && rendered.naturalWidth>0)resolve();
+    });
+    $("output-placeholder").hidden=true;
+    rendered.hidden=false;
     track("complete");
-  },"image/png");
+    status("Real AI image ready! Download it below.","success");
+  } catch(e) {resetResult();status(humanError(e),"error");}
+  finally {generating=false;refreshButtons();}
 }
-$("photo").addEventListener("change",e=>loadPhoto(e.target.files[0],"photo"));
-$("companion").addEventListener("change",e=>loadPhoto(e.target.files[0],"companion"));
-$("animal").addEventListener("change",()=>drawFrame(.35));
-$("title").addEventListener("input",()=>drawFrame(.35));
-$("poster-btn").addEventListener("click",savePoster);
+async function downloadResult() {
+  if(!generatedSrc)return;
+  const ext="png";
+  const name="kivzuno-ai-"+chosen+"-"+new Date().toISOString().slice(0,10)+"."+ext;
+  try {
+    const response=await fetch(generatedSrc,{mode:"cors"});
+    if(!response.ok)throw new Error("Image cannot be downloaded.");
+    const blob=await response.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");a.href=url;a.download=name;
+    document.body.append(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),30000);
+    status("AI image saved to your downloads.","success");
+  }catch(e){
+    // Some providers restrict cross-origin blob fetches.
+    window.open(generatedSrc,"_blank","noopener,noreferrer");
+    status("Opened the generated image in a new tab — use Save Image in your browser.","success");
+  }
+}
+$("photo").addEventListener("change",e=>onPhoto(e.target.files[0],"photo"));
+$("companion").addEventListener("change",e=>onPhoto(e.target.files[0],"companion"));
+$("animal").addEventListener("change",resetResult);
+$("title").addEventListener("input",resetResult);
+$("consent").addEventListener("change",refreshButtons);
+$("generate-btn").addEventListener("click",generate);
+$("download-btn").addEventListener("click",downloadResult);
 $("interest-btn").addEventListener("click",()=>{
   track("premium_click");
-  setStatus("Thanks! Paid AI films are planned but not available yet. No payment has been taken.","success");
+  status("Thanks! Real AI videos are not for sale yet; no money has been taken.","success");
 });
-window.addEventListener("pagehide",()=>{
-  if(photoUrl)URL.revokeObjectURL(photoUrl);
-  if(companionUrl)URL.revokeObjectURL(companionUrl);
-});
-makeChoices();
-drawFrame(0);
-track("visit");
+makeChoices();refreshButtons();track("visit");
