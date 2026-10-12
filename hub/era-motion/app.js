@@ -143,6 +143,37 @@ function humanError(error) {
   if (/moderation_flagged|content policy|safety/i.test(code+" "+msg))return "The model refused this edit. Try a different photograph or artistic description.";
   return "AI could not generate the image: "+msg.slice(0,160)+". No result was created.";
 }
+async function ensurePuterSignedIn() {
+  const auth=window.puter?.auth;
+  if (!auth || typeof auth.signIn!=="function")throw new Error("Puter authentication is unavailable.");
+  // Puter remembers an existing session; never launch sign-in unnecessarily.
+  if (typeof auth.isSignedIn==="function" && auth.isSignedIn())return;
+  await auth.signIn();
+}
+async function checkAllowance() {
+  const auth=window.puter?.auth;
+  if (!auth || typeof auth.isSignedIn!=="function" || !auth.isSignedIn()) {
+    $("balance-status").textContent="Log in to Puter through photo generation first, then check the allowance.";
+    return;
+  }
+  if(typeof auth.getMonthlyUsage!=="function"){
+    $("balance-status").textContent="Puter allowance information is unavailable in this browser.";
+    return;
+  }
+  $("balance-status").textContent="Checking your Puter monthly allowance…";
+  try {
+    const usage=await auth.getMonthlyUsage();
+    const info=usage?.allowanceInfo;
+    if (!info || typeof info.remaining!=="number" || typeof info.monthUsageAllowance!=="number" || info.monthUsageAllowance<=0){
+      $("balance-status").textContent="Puter did not provide a measurable monthly allowance. Check it in your Puter account.";
+      return;
+    }
+    const fraction=Math.max(0,Math.min(100,Math.round(100*info.remaining/info.monthUsageAllowance)));
+    $("balance-status").textContent="Puter monthly allowance remaining: approximately "+fraction+"%. This does NOT guarantee enough balance to make a video. Purchased credits, if any, are separate.";
+  }catch(e){
+    $("balance-status").textContent="Unable to check Puter allowance: "+String(e?.message||e).slice(0,100);
+  }
+}
 async function generate() {
   if(generating || !selected.photo || !$("consent").checked)return;
   if(!window.puter || typeof window.puter.ai?.txt2img!=="function") {
@@ -150,9 +181,8 @@ async function generate() {
   }
   generating=true;resetResult();refreshButtons();
   try {
-    // Sign-in is initiated directly by a real button click, as required for popup blockers.
-    status("Opening Puter sign-in (your personal free allowance may apply)…");
-    await window.puter.auth.signIn();
+    status("Checking your Puter session (sign-in only if needed)…");
+    await ensurePuterSignedIn();
     status("Sending consented photo(s) to Puter for AI transformation. This may take up to a minute…");
     track("start");
     const referenceImages=[selected.photo];
@@ -223,7 +253,7 @@ async function generateVideo() {
   refreshButtons();
   try{
     status("Puter is creating your real 6-second film. This may take several minutes; keep this page open.");
-    await window.puter.auth.signIn();
+    await ensurePuterSignedIn();
     const clip=await window.puter.ai.txt2vid(videoPrompt(),{
       model:"togetherai:google/veo-3.1-lite",
       seconds:6,
@@ -261,4 +291,5 @@ $("video-consent").addEventListener("change",refreshButtons);
 $("generate-btn").addEventListener("click",generate);
 $("download-btn").addEventListener("click",downloadResult);
 $("video-btn").addEventListener("click",generateVideo);
+$("balance-btn").addEventListener("click",checkAllowance);
 makeChoices();refreshButtons();track("visit");
