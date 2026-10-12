@@ -53,6 +53,7 @@ function resetVideo() {
 }
 function resetResult() {
   resetVideo();
+  window.dispatchEvent?.(new Event("kivzuno:result-change"));
   generatedSrc="";
   $("generated").hidden=true;
   $("generated").removeAttribute("src");
@@ -206,6 +207,7 @@ async function generate() {
     rendered.hidden=false;
     track("complete");
     status("Real AI image ready! Download it below.","success");
+    window.dispatchEvent?.(new Event("kivzuno:result-change"));
   } catch(e) {resetResult();status(humanError(e),"error");}
   finally {generating=false;refreshButtons();}
 }
@@ -292,4 +294,7 @@ $("generate-btn").addEventListener("click",generate);
 $("download-btn").addEventListener("click",downloadResult);
 $("video-btn").addEventListener("click",generateVideo);
 $("balance-btn").addEventListener("click",checkAllowance);
+window.kivzunoEraMotion = Object.freeze({
+  snapshot:()=>({image:generatedSrc,era:chosen})
+});
 makeChoices();refreshButtons();track("visit");
