@@ -8,6 +8,8 @@ on:
       - "netlify/functions/metrics.mjs"
       - "hub/stats.html"
       - "tests/era-motion.test.mjs"
+      - "tests/era-photo-prompts.test.mjs"
+      - "netlify/functions/era-photo-prompts.mjs"
       - "tests/runway-handoff.test.mjs"
       - "tests/no-login-lemon-pipeline.test.mjs"
       - "netlify/functions/era-image-task.mjs"
@@ -33,6 +35,7 @@ jobs:
           node --check netlify/functions/runway-handoff-core.mjs
           node --check hub/era-motion/no-login-studio.js
           node --check netlify/functions/era-image-task.mjs
+          node --check netlify/functions/era-photo-prompts.mjs
           node --check netlify/functions/lemon-commerce-core.mjs
           node --check netlify/functions/lemon-readiness.mjs
-          node --test tests/era-motion.test.mjs tests/runway-handoff.test.mjs tests/no-login-lemon-pipeline.test.mjs
+          node --test tests/era-motion.test.mjs tests/runway-handoff.test.mjs tests/no-login-lemon-pipeline.test.mjs tests/era-photo-prompts.test.mjs
