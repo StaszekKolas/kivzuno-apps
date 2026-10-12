@@ -31,7 +31,7 @@ export default async (request) => {
       return reply({ error: "invalid event" }, 400);
     }
     if (app === "home" && event !== "visit") return reply({ error: "invalid combination" }, 400);
-    if (event === "premium_click" && !["battery", "flag", "petreport"].includes(app)) {
+    if (event === "premium_click" && !["battery", "flag", "petreport", "eramotion"].includes(app)) {
       return reply({ error: "invalid combination" }, 400);
     }
     const key = ["v1", isoDay(new Date()), source, app, event].join("/");
