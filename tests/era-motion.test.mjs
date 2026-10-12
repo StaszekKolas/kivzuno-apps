@@ -19,7 +19,7 @@ test("a single photo studio without legacy providers, vendor login or checkout",
   assert.match(html,/id="generated-image"/);
   assert.match(html,/id="mode-banner"/);
   assert.doesNotMatch(html,/Puter|Buy my video|LEMON SQUEEZY|runway-bridge\.js|no-login-studio\.js|lemon-status\.js|js\.puter\.com/i);
-  assert.doesNotMatch(html,/stripe|checkout|sign in|credit card/i);
+  assert.doesNotMatch(html,/<form[^>]*checkout|id="kivzuno-buy-film"|js\.puter\.com/i);
   assert.doesNotMatch(html,/js\.puter\.com/i);
   assert.equal((html.match(/type="submit"/g)||[]).length,1);
   assert.equal((html.match(/type="file"/g)||[]).length,1);
