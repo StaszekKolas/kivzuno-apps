@@ -21,7 +21,7 @@
  function mode(enabled){
    aiEnabled=Boolean(enabled);
    if(aiEnabled){
-     banner.textContent="AI photo creation is available in a limited beta. No Puter login or customer payment.";
+     banner.textContent="AI photo creation is available in a limited beta. No external account or customer payment.";
      label.textContent="I agree to send my photo to KIVZUNO and its AI provider for this transformation.";
      $("action-hint").textContent="No external login · Limited free quota";
      $("availability-detail").textContent="AI photos are available during our limited test. Paid movies and checkout are not active.";
