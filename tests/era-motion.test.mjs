@@ -13,7 +13,9 @@ test("real AI app is reachable and transparently distinguishes Puter video beta 
   assert.match(hub,/\/era-motion\/\?src=/);
   assert.match(hub,/Puter sign-in and available account credits are required/);
   assert.match(html,/https:\/\/js\.puter\.com\/v2\//);
-  assert.match(html,/Puter gives accounts a monthly free allowance, but it is limited/);
+  assert.match(html,/Photo upload test available now/);
+  assert.match(html,/No checkout or purchases are active/);
+  assert.match(html,/Test my photo — FREE/);
   assert.match(html,/agree to send my photos to Puter's AI provider/);
   assert.match(html,/OPTIONAL · REAL AI VIDEO BETA/);
   assert.match(html,/Puter may charge your account/);
