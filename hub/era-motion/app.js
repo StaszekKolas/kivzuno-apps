@@ -261,8 +261,4 @@ $("video-consent").addEventListener("change",refreshButtons);
 $("generate-btn").addEventListener("click",generate);
 $("download-btn").addEventListener("click",downloadResult);
 $("video-btn").addEventListener("click",generateVideo);
-$("interest-btn").addEventListener("click",()=>{
-  track("premium_click");
-  status("Thanks! Real AI videos are not for sale yet; no money has been taken.","success");
-});
 makeChoices();refreshButtons();track("visit");
