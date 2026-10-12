@@ -54,7 +54,7 @@
             <option value="neon">⚡ 1980s neon</option>
             <option value="future">🌆 Futuristic city</option>
           </select>
-          <p class="helper">A new AI scene is available only when generation is activated.</p>
+          <p class="helper">Choose a setting for your photo. A new scene is generated only when you tap the main button.</p>
         </section>
 
         <section class="form-step last-step">
@@ -75,9 +75,15 @@
           <div class="empty" id="empty"><span aria-hidden="true">✦</span><strong>Your photo appears here</strong><small>Nothing is generated or charged just by selecting a file.</small></div>
         </div>
         <div class="generated" id="generated-section" hidden>
-          <p class="eyebrow">GENERATED AI IMAGE</p>
-          <img id="generated-image" alt="Your historical AI scene" hidden>
-          <a id="generated-download" href="#" target="_blank" rel="noopener noreferrer" hidden>Open or save your AI image ↗</a>
+          <p class="eyebrow">YOUR NEW ERA PHOTO</p>
+          <p class="generated-era" id="generated-era">Your new historical scene</p>
+          <img id="generated-image" alt="Your new AI-generated historical scene" hidden>
+          <div class="generated-actions">
+            <a id="generated-download" class="save-image" href="#" target="_blank" rel="noopener noreferrer" hidden>↗ Open full-size image</a>
+            <button type="button" id="change-era" class="another-era">↻ Choose another era</button>
+          </div>
+          <p class="save-help">On iPhone, tap <strong>Open full-size image</strong>, then touch and hold it to save to Photos. Image links can expire, so save it promptly.</p>
+          <p class="helper">Another era means another AI generation and uses the limited daily allowance. Nothing runs automatically.</p>
         </div>
         <p class="privacy">Only submit photos you are entitled to use. We do not save the photo during the free format test.</p>
       </aside>
