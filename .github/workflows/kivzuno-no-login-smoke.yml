@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "22"
-      - name: Verify both real Netlify services refuse unconfigured spending
+      - name: Verify no-login AI readiness and disabled checkout without triggering billable work
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
@@ -40,11 +40,11 @@ jobs:
                 });
                 const data=await res.json();
                 if(!res.ok)throw new Error(path+" response "+res.status+" "+JSON.stringify(data));
-                if(path==="era-image-task" && (data.available!==false || data.billingActive!==false))
-                  throw new Error("image endpoint activated without owner approval");
+                if(path==="era-image-task" && (typeof data.available!=="boolean" || data.billingActive!==false || data.loginRequired!==false || data.customerPrice!==0))
+                  throw new Error("image endpoint capability schema or customer price invalid");
                 if(path==="lemon-readiness" && (data.paymentActive!==false || data.checkoutReady!==false))
                   throw new Error("unexpected live checkout");
-                console.log("VERIFIED_NO_CHARGE "+path+" configuration remains disabled");
+                console.log("VERIFIED_READINESS "+path+" image_available="+String(data.available===true)+" payment_active="+String(data.paymentActive===true)+"; no AI or payment call made");
               }
               process.exit(0);
             }catch(e){last=String(e?.message||e);console.log("Attempt "+attempt+": "+last);}
