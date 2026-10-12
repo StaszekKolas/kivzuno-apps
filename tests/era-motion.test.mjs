@@ -29,7 +29,7 @@ test("private owner UI describes test credits and blocks public sales",()=>{
   assert.match(html,/id="owner-workspace"[^>]+hidden/);
   assert.match(html,/PRIVATE TESTING/);
   assert.match(html,/No public orders or customer checkout/);
-  assert.match(html,/25 of my existing API credits/);
+  assert.match(html,/25 of my prepaid API credits/);
   assert.match(html,/id="generate-video"/);
   assert.match(html,/id="video-approval"/);
 });
