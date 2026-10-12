@@ -11,6 +11,7 @@
 <script src="https://js.puter.com/v2/" defer></script>
 <script src="./app.js" defer></script>
 <script src="./runway-bridge.js" defer></script>
+<script src="./no-login-studio.js" defer></script>
 </head>
 <body>
 <div class="shell">
@@ -49,12 +50,18 @@
 <label for="title" class="fieldlabel">Optional creative note</label>
 <input id="title" maxlength="45" type="text" placeholder="e.g. sunset, dramatic cinematic lighting">
 </div>
-<div class="step action-panel">
-<div class="step-title"><span class="number">04</span><h2>Transform with real AI</h2></div>
-<div class="consent-row"><input type="checkbox" id="consent"><label for="consent">I agree to send my photos to Puter's AI provider for this generation. I understand this uses my Puter account's allowance or credits; KIVZUNO does not pay for or charge for generation. I will not continue if I do not want to use credits.</label></div>
-<button class="primary" id="generate-btn" disabled>✨ Generate real AI photo</button>
-<p class="explain">Puter remembers your session in this browser. You should only need to sign in again if it expires, you sign out, or you use a different/private browser session. Upload consent is separate and required for each new photo.</p>
-<button class="outline" id="download-btn" disabled>↓ Download my AI photo</button>
+<form class="step accountless-panel" id="accountless-image">
+  <div class="step-title"><span class="number">04</span><h2>KIVZUNO AI — no Puter account</h2></div>
+  <span class="eyebrow">NEW CUSTOMER EXPERIENCE · BETA</span>
+  <p>Use the photo you uploaded above. Our server will handle the AI transformation when the owner-funded service is activated. No other account or second upload will be required.</p>
+  <div class="consent-row">
+    <input type="checkbox" id="accountless-consent">
+    <label for="accountless-consent">I agree to send my chosen photograph to KIVZUNO and its AI provider for a new scene. I understand that free generation is limited.</label>
+  </div>
+  <button type="submit" class="primary" id="accountless-generate" disabled>✨ Generate AI photo — no sign-in</button>
+  <p class="explain" id="accountless-status" role="status" aria-live="polite">Checking availability…</p>
+  <p class="explain">This button stays disabled until API credentials and a spending cap are approved by the owner. No purchase or paid request will be triggered prematurely.</p>
+</form>
 <div class="runway-handoff" aria-label="Runway automated transfer test">
   <span class="eyebrow">KIVZUNO × RUNWAY · NEXT STEP</span>
   <h3>Make your photo move — no second upload. 🎬</h3>
@@ -66,6 +73,15 @@
   <button class="outline" id="runway-check" type="button" disabled>↗ Check automatic transfer to Runway · £0</button>
   <p class="explain" id="runway-status" role="status" aria-live="polite">First generate an AI photo. Once ready, you can test passing it automatically — without uploading it again.</p>
 </div>
+
+<details class="step action-panel legacy-puter">
+<summary>Earlier Puter version — optional login and personal credits</summary>
+<div class="legacy-puter-inner">
+<div class="step-title"><span class="number">04</span><h2>Transform with real AI</h2></div>
+<div class="consent-row"><input type="checkbox" id="consent"><label for="consent">I agree to send my photos to Puter's AI provider for this generation. I understand this uses my Puter account's allowance or credits; KIVZUNO does not pay for or charge for generation. I will not continue if I do not want to use credits.</label></div>
+<button class="primary" id="generate-btn" disabled>✨ Generate real AI photo</button>
+<p class="explain">Puter remembers your session in this browser. You should only need to sign in again if it expires, you sign out, or you use a different/private browser session. Upload consent is separate and required for each new photo.</p>
+<button class="outline" id="download-btn" disabled>↓ Download my AI photo</button>
 <details class="legacy-beta"><summary>Older Puter video beta (uses your Puter credits)</summary>
 <div class="video-purchase" aria-label="AI video generation beta">
 <span class="eyebrow">OPTIONAL · REAL AI VIDEO BETA</span>
@@ -79,6 +95,7 @@
 </details>
 <p class="status" id="status" role="status" aria-live="polite">Choose a photo and era, then generate.</p>
 </div>
+</details>
 </div>
 <div class="result">
 <div class="preview-head"><div><span class="eyebrow">BEFORE → AFTER</span><h2>Watch the world change.</h2></div><span class="preview-pill">PHOTO AI · RUNWAY TRANSFER BETA</span></div>
