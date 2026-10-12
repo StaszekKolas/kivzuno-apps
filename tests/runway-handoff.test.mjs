@@ -49,7 +49,7 @@ test("browser transfers actual Puter result with consent without a second upload
   assert.match(html,/id="runway-check"/);
   assert.match(html,/runway-bridge\.js/);
   assert.match(script,/kivzunoEraMotion = Object\.freeze/);
-  assert.match(script,/snapshot:\(\)=>\(\{image:generatedSrc,era:chosen\}\)/);
+  assert.match(script,/snapshot:\(\)=>\(\{image:generatedSrc,era:chosen,photo:selected\.photo,companion:selected\.companion\}\)/);
   assert.match(frontend,/window\.kivzunoEraMotion\?\.snapshot/);
   assert.match(frontend,/action:"preflight",image:payload,era/);
   assert.match(frontend,/image\.naturalWidth/);
