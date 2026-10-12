@@ -32,7 +32,7 @@ test("12 era presets are uniquely identified and JavaScript parses",()=>{
 function mockUI(){
   const elements=new Map();
   class E{
-    constructor(id){this.id=id;this.children=[];this.listeners={};this.attributes={};this.style={};this.value="";this.textContent="";this.disabled=false;this.hidden=true;}
+    constructor(id){this.id=id;this.children=[];this.listeners={};this.attributes={};this.dataset={};this.style={};this.value="";this.textContent="";this.disabled=false;this.hidden=true;}
     append(...children){this.children.push(...children);}
     addEventListener(name,fn){this.listeners[name]=fn;}
     setAttribute(k,v){this.attributes[k]=v;}
