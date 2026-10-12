@@ -12,7 +12,7 @@ const stats=readFileSync("hub/stats.html","utf8");
 
 test("separate working app is discoverable from main hub and honest about limitations",()=>{
   assert.match(hub,/\/era-motion\/\?src=/);
-  assert.match(html,/does <b>not yet use generative AI<\/b>/);
+  assert.match(html,/<b>not an AI transformation<\/b>/);
   assert.match(html,/photos stay in this browser/i);
   assert.match(html,/Save free photo postcard \(PNG\)/);
   assert.match(html,/Interested in a paid AI film/);
