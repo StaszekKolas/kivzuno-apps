@@ -1,12 +1,13 @@
-name: KIVZUNO no-account readiness smoke
+name: KIVZUNO private owner & closed checkout readiness
 
 on:
   pull_request:
     paths:
       - "netlify/functions/era-image-task.mjs"
+      - "netlify/functions/owner-*.mjs"
       - "netlify/functions/lemon-*.mjs"
+      - "netlify/edge-functions/**"
       - "hub/era-motion/**"
-      - "tests/no-login-lemon-pipeline.test.mjs"
       - ".github/workflows/kivzuno-no-login-smoke.yml"
 permissions:
   contents: read
@@ -18,49 +19,38 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "22"
-      - name: Verify no-login AI readiness and disabled checkout without triggering billable work
+      - name: Verify owner gate and no public payment
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           node --input-type=module <<'JS'
           const base="https://deploy-preview-"+process.env.PR_NUMBER+"--kivzuno-hub.netlify.app";
           let last="";
-          for(let attempt=1;attempt<=14;attempt++){
+          for(let attempt=1;attempt<=12;attempt++){
             try{
-              const page=await fetch(base+"/era-motion/",{signal:AbortSignal.timeout(10000)});
-              const html=await page.text();
-              if(!page.ok || !html.includes("studio-simple.js") || html.includes("js.puter.com"))
-                throw new Error("new frontend is not yet deployed");
-              for(const path of ["era-image-task","lemon-readiness"]){
-                const res=await fetch(base+"/.netlify/functions/"+path,{
-                  method:"POST",
-                  headers:{"origin":base,"content-type":"application/json"},
-                  body:JSON.stringify({action:"capabilities"}),
-                  signal:AbortSignal.timeout(14000)
-                });
-                const data=await res.json();
-                if(!res.ok)throw new Error(path+" response "+res.status+" "+JSON.stringify(data));
-                if(path==="era-image-task" && (typeof data.available!=="boolean" || data.billingActive!==false || data.loginRequired!==false || data.customerPrice!==0))
-                  throw new Error("image endpoint capability schema or customer price invalid");
-                if(path==="lemon-readiness" && (data.paymentActive!==false || data.checkoutReady!==false))
-                  throw new Error("unexpected live checkout");
-                if(path==="era-image-task" && data.available===true){
-                  const quotaRes=await fetch(base+"/.netlify/functions/era-image-task",{
-                    method:"POST",headers:{"origin":base,"content-type":"application/json"},
-                    body:JSON.stringify({action:"eligibility"}),
-                    signal:AbortSignal.timeout(14000)
-                  });
-                  const quota=await quotaRes.json();
-                  if(!quotaRes.ok || typeof quota.eligible!=="boolean")
-                    throw new Error("Read-only quota check failed "+quotaRes.status+" "+JSON.stringify(quota));
-                  console.log("VERIFIED_READ_ONLY_QUOTA eligibility="+String(quota.eligible)+" reset="+String(quota.resetAt||"none"));
-                }
-                console.log("VERIFIED_READINESS "+path+" image_available="+String(data.available===true)+" payment_active="+String(data.paymentActive===true)+"; no AI or payment call made");
-              }
+              const page=await fetch(base+"/era-motion/",{signal:AbortSignal.timeout(11000)});
+              if(![401,503].includes(page.status))throw Error("Owner studio is publicly accessible");
+              const image=await fetch(base+"/.netlify/functions/era-image-task",{
+                method:"POST",headers:{origin:base,"content-type":"application/json"},
+                body:JSON.stringify({action:"eligibility"}),signal:AbortSignal.timeout(11000)
+              });
+              if(![401,503].includes(image.status))throw Error("Unprotected image eligibility");
+              const video=await fetch(base+"/.netlify/functions/owner-video-task",{
+                method:"POST",headers:{origin:base,"content-type":"application/json"},
+                body:JSON.stringify({action:"capabilities"}),signal:AbortSignal.timeout(11000)
+              });
+              if(![401,503].includes(video.status))throw Error("Unprotected owner video API");
+              const payment=await fetch(base+"/.netlify/functions/lemon-readiness",{
+                method:"POST",headers:{origin:base,"content-type":"application/json"},
+                body:JSON.stringify({action:"capabilities"}),signal:AbortSignal.timeout(11000)
+              });
+              const data=await payment.json();
+              if(!payment.ok||data.paymentActive!==false||data.checkoutReady!==false)
+                throw Error("Unexpected public checkout");
+              console.log("VERIFIED: private owner gate ON and public checkout OFF; no billable requests");
               process.exit(0);
             }catch(e){last=String(e?.message||e);console.log("Attempt "+attempt+": "+last);}
-            if(attempt<14)await new Promise(resolve=>setTimeout(resolve,6000));
+            if(attempt<12)await new Promise(r=>setTimeout(r,6000));
           }
-          console.error("READINESS_UNVERIFIED: "+last);
-          process.exit(1);
+          throw Error("Private/checkout smoke unsuccessful: "+last);
           JS
