@@ -181,4 +181,4 @@ export default async function handler(request){
   }
   return reply({error:"unknown_action"},400);
 }
-export const config={rateLimit:{action:"rate_limit",aggregateBy:"ip",windowSize:60,windowLimit:8}};
+export const config={rateLimit:{action:"rate_limit",aggregateBy:"ip",windowSize:60,windowLimit:60}};
