@@ -12,3 +12,15 @@
 .owner-video .consent{margin-top:17px}
 .generated video{width:100%;max-height:500px;border-radius:12px;background:#05080d}
 @media(max-width:550px){.owner-login{flex-direction:column}.owner-login button{width:100%}.owner-access{padding:16px}}
+
+/* Photo and film are separate modes; never make the first depend on the second. */
+.product-choice{padding:20px 23px;margin:0 0 22px;border:1px solid #ffffff27;background:#141c30ee;border-radius:18px}
+.product-choice .eyebrow{margin:0 0 13px}
+.product-choice-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.product-choice-buttons button{padding:18px 16px;background:#19243a;border:1.5px solid #ffffff2e;color:#f7f9ff;border-radius:14px;cursor:pointer;text-align:left;display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-height:130px}
+.product-choice-buttons button[aria-pressed="true"]{background:#243b47;border-color:#baf0cc;box-shadow:0 0 0 1px #baf0cc33}
+.product-choice-buttons button strong{font-size:17px}
+.product-choice-buttons button small{font-size:12px;color:#c0d0e1;line-height:1.45}
+.product-choice-buttons button span{font-size:27px}
+.product-choice .helper{margin:13px 0 0}
+@media(max-width:500px){.product-choice{padding:16px}.product-choice-buttons{gap:9px}.product-choice-buttons button{padding:14px 11px;min-height:145px}}
