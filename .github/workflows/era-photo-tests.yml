@@ -1,0 +1,25 @@
+name: KIVZUNO free Era Photo preview tests
+
+on:
+  pull_request:
+    paths:
+      - "hub/era-photo/**"
+      - "hub/_redirects"
+      - "hub/index.html"
+      - "tests/era-photo.test.mjs"
+      - ".github/workflows/era-photo-tests.yml"
+permissions:
+  contents: read
+jobs:
+  free-photo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Run no-network editor and watermark tests
+        run: |
+          node --check hub/era-photo/studio.js
+          node --test tests/era-photo.test.mjs
