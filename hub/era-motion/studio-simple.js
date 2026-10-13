@@ -36,8 +36,6 @@
    diag.dataset.kind=reason?"warning":"success";
    go.textContent=busy ? (selectedProduct==="video"?"Creating your AI film…":aiEnabled?"Creating your AI photo…":"Checking your photo…")
      :!dataUri?"Choose a photo first"
-     :!consent.checked?"Tick the consent box to continue"
-     :reason?"Why is generation blocked?"
      :selectedProduct==="video"?"Create my historical film (27 credits)"
      :aiEnabled?"Create my AI photo (2 credits)":"Check my photo — free";
  }
