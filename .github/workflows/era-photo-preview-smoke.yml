@@ -1,0 +1,50 @@
+name: KIVZUNO Era Photo live preview smoke
+
+on:
+  pull_request:
+    paths:
+      - "hub/era-photo/**"
+      - "hub/index.html"
+      - "hub/_redirects"
+      - ".github/workflows/era-photo-preview-smoke.yml"
+permissions:
+  contents: read
+jobs:
+  verify-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Inspect Deploy Preview routes without generating images
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          node --input-type=module <<'JS'
+          const base="https://deploy-preview-"+process.env.PR_NUMBER+"--kivzuno-hub.netlify.app";
+          let last="";
+          for(let attempt=1;attempt<=12;attempt++){
+            try{
+              const request=path=>fetch(base+path,{signal:AbortSignal.timeout(11000),cache:"no-store"});
+              const [home,studio,js,retired]=await Promise.all([
+                request("/"),request("/era-photo/"),request("/era-photo/studio.js?v=1"),
+                fetch(base+"/era-motion/",{redirect:"manual",signal:AbortSignal.timeout(11000)})
+              ]);
+              if(!home.ok||!studio.ok||!js.ok)throw Error("preview endpoint returned a non-200 status");
+              const [h,p,s]=await Promise.all([home.text(),studio.text(),js.text()]);
+              if(!h.includes("/era-photo/")||h.includes("/era-motion/?src="))
+                throw Error("hub still links the unavailable app");
+              if(!p.includes("Era Photo")||!p.includes("studio.js?v=1"))
+                throw Error("new photo app is not served");
+              if(!s.includes("burnKivzunoWatermark(ctx,w,h)")||!s.includes('const text="KIVZUNO"'))
+                throw Error("lower-right embedded output watermark missing");
+              if(![301,302,307,308].includes(retired.status))
+                throw Error("old Era Motion route was not retired (HTTP "+retired.status+")");
+              const target=retired.headers.get("location")||"";
+              if(!target.includes("/era-photo/"))
+                throw Error("legacy redirect target invalid: "+target);
+              console.log("PASS: new photo editor, watermark, visitor hub and retired route in preview");
+              process.exit(0);
+            }catch(e){last=String(e?.message||e);console.log("Attempt "+attempt+": "+last);}
+            if(attempt<12)await new Promise(r=>setTimeout(r,5000));
+          }
+          console.error("PREVIEW_UNVERIFIED: "+last);process.exit(1);
+          JS
