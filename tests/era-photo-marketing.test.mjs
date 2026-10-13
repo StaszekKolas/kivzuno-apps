@@ -21,7 +21,7 @@ test("era photo page includes honest prelaunch hero, CTAs, watermark concept",()
   assert.match(page,/href="\.\/try\.html">Test manual photo workflow/);
   assert.match(page,/KIVZUNO ERA PHOTO · IN DEVELOPMENT/);
   assert.match(page,/website does not generate AI images yet/);
-  assert.match(page,/Our aim is to offer free-to-try images/);
+  assert.match(page,/We aim for free-to-try generation/);
   assert.match(page,/small KIVZUNO watermark/);
   assert.match(page,/class="watermark">KIVZUNO/);
   assert.match(page,/ILLUSTRATIVE CONCEPT · NOT AI OUTPUT/);
