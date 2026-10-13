@@ -442,39 +442,6 @@ export default async function handler(request){
     // a new billable video simply because a background status poll is performed.
     if(job.kind==="scene_video")return reply({status:"REVIEW_REQUIRED",stage:"LEGACY_DISABLED",
       reason:"Manual image approval is now required before animation."});
-    if(!job.ownerTask)return reply({status:"REVIEW_REQUIRED",stage:job.stage},200);
-      try{
-        const task=await runway("GET","/v1/tasks/"+encodeURIComponent(job.ownerTask));
-        if(task.status==="FAILED")return reply({status:"FAILED",stage:job.stage},200);
-        if(task.status!=="SUCCEEDED")
-          return reply({status:"PROCESSING",stage:job.stage},200);
-        if(job.stage==="MOVIE"){
-          const videoUrl=taskOutput(task);
-          if(!videoUrl)return reply({error:"video_output_missing"},502);
-          return reply({status:"SUCCEEDED",stage:"MOVIE",kind:"video",videoUrl,expires:true},200);
-        }
-        if(job.stage!=="SCENE")return reply({status:"REVIEW_REQUIRED",stage:job.stage},200);
-        const sceneUrl=taskOutput(task);
-        if(!sceneUrl)return reply({status:"REVIEW_REQUIRED",stage:"SCENE"},200);
-        // Atomic hand-off lock: only one status poll may submit the billable video.
-        // If a transition fails, do not auto retry (the provider may have spent credits).
-        const lock=await jobs().setJSON("scene-video-transition/"+body.jobId,
-          {lockedAt:new Date().toISOString()},{onlyIfNew:true});
-        if(!lock.modified)return reply({status:"PROCESSING",stage:"SCENE"},200);
-        try{
-          const video=await runway("POST","/v1/image_to_video",{
-            model:MODEL,promptImage:sceneUrl,promptText:ownerFilmPrompt(job.era,job.motion,job.look||"cinematic"),
-            ratio:job.ratio,duration:DURATION
-          });
-          if(!validId(video?.id))throw Error("invalid_video_task");
-          await jobs().setJSON("task/"+body.jobId,{...job,stage:"MOVIE",ownerTask:video.id});
-          return reply({status:"PROCESSING",stage:"MOVIE"},200);
-        }catch{
-          try{await jobs().setJSON("task/"+body.jobId,{...job,stage:"MOVIE",state:"REVIEW_REQUIRED",ownerTask:null});}catch{}
-          return reply({status:"REVIEW_REQUIRED",stage:"MOVIE"},200);
-        }
-      }catch{return reply({error:"provider_or_storage_unavailable"},503);}
-    }
     if(!job.ownerTask)return reply({status:job.state||"REVIEW_REQUIRED",kind:job.kind});
     try{
       const task=await runway("GET","/v1/tasks/"+encodeURIComponent(job.ownerTask));
