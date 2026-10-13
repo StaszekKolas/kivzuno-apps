@@ -35,13 +35,14 @@ test("no interactive upload or paid service is falsely advertised as functioning
   assert.doesNotMatch(page,/<script\b/);
   assert.match(page,/No payment, upload, registration or invitation is required/);
 });
-test("marketing deliverables have five bilingual captions, reels, stories and hooks",()=>{
+test("marketing deliverables have five English-only captions, reels, stories and hooks",()=>{
   for(let n=1;n<=5;n++){
     assert.match(marketing,new RegExp("### Post "+n+"(?: —|\\n)"));
   }
-  assert.match(marketing,/## English posts/);
-  assert.match(marketing,/## Polish posts/);
-  assert.match(marketing,/## English short captions — five alternatives/);
+  assert.match(marketing,/## English-only posts/);
+  assert.doesNotMatch(marketing,/## Polish posts|\*\*Polish:\*\*/);
+  assert.match(marketing,/## Short English captions — five alternatives/);
+  assert.match(marketing,/ENGLISH-ONLY COPY/);
   assert.match(marketing,/## Instagram Stories — four slides/);
   assert.match(marketing,/## Reels \/ TikTok — 15-second concept script/);
   assert.match(marketing,/## Three short opening hooks/);
