@@ -3,7 +3,7 @@
 ## Access and release boundary
 
 The test implementation lives on \`feature/private-owner-unlimited-tests-20261012\`.
-**Do not merge, create a Netlify deploy preview, or promote to production without fresh explicit approval.**
+**Owner approved a Netlify Deploy Preview on 2026-10-13, without merging into main or promoting production. Do not merge or release publicly without another approval.**
 The GitHub repository was already PUBLIC when this change was prepared; a GitHub branch is not a private store.
 The existing public web page may still be reachable. Never present its URL as a private login portal until access controls are verified.
 
@@ -55,7 +55,7 @@ KIVZUNO public media generation or checkout.
 (pricing verified 2026-10-12). API project credits are NOT automatically the same
 as Runway ChatGPT-connected workspace credits or Runway web-app plan credits.
 
-Runway Dev auto-billing must separately be checked and DISABLED before tests:
+Owner screenshot on 2026-10-13 shows 998 Runway Dev credits and Autobilling Disabled. Recheck immediately before billable tests:
 the beta application itself cannot switch off provider auto-recharges.
 A running job can consume credits even if a browser connection fails or the user
 closes the tab. Jobs are never retried automatically. No new credit purchases
