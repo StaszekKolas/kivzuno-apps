@@ -1,0 +1,43 @@
+name: KIVZUNO Era Photo owner preview route smoke
+
+on:
+  pull_request:
+    paths:
+      - "hub/era-photo/**"
+      - "hub/index.html"
+      - ".github/workflows/era-photo-owner-preview-smoke.yml"
+permissions:
+  contents: read
+jobs:
+  check-live-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Read-only preview endpoint verification
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          node --input-type=module <<'JS'
+          const base="https://deploy-preview-"+process.env.PR_NUMBER+"--kivzuno-hub.netlify.app";
+          let fail="";
+          for(let attempt=1;attempt<=12;attempt++){
+            try{
+              const paths=["/","/era-photo/","/era-photo/try.html","/era-photo/try.js?v=1"];
+              const pages=await Promise.all(paths.map(path=>
+                fetch(base+path,{signal:AbortSignal.timeout(10000),cache:"no-store"})));
+              if(pages.some(r=>!r.ok))throw Error("HTTP statuses: "+pages.map(r=>r.status).join(","));
+              const [hub,landing,test,script]=await Promise.all(pages.map(r=>r.text()));
+              if(!hub.includes("/era-photo/"))throw Error("new homepage card missing");
+              if(!landing.includes('href="./try.html"'))throw Error("owner test link missing");
+              if(!test.includes("MANUAL CHATGPT WORKFLOW"))throw Error("workflow page not ready");
+              if(!script.includes("embedWatermark(ctx,w,h)"))throw Error("watermark generator missing");
+              if(script.includes("fetch("))throw Error("unexpected external API request");
+              console.log("PASS: Homepage, English landing, private manual workflow, local watermark JS");
+              process.exit(0);
+            }catch(e){
+              fail=String(e.message||e);console.log("Attempt "+attempt+" failed: "+fail);
+              if(attempt<12)await new Promise(r=>setTimeout(r,5000));
+            }
+          }
+          console.error("NOT VERIFIED: "+fail);process.exit(1);
+          JS
