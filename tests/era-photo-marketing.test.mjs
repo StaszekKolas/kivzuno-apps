@@ -18,8 +18,9 @@ test("era photo page includes honest prelaunch hero, CTAs, watermark concept",()
   assert.match(page,/Another era/);
   assert.match(page,/href="https:\/\/www\.instagram\.com\/kivzuno\/"/);
   assert.match(page,/Explore the eras/);
+  assert.match(page,/href="\.\/try\.html">Test manual photo workflow/);
   assert.match(page,/KIVZUNO ERA PHOTO · IN DEVELOPMENT/);
-  assert.match(page,/AI photo generation is not available yet/);
+  assert.match(page,/website does not generate AI images yet/);
   assert.match(page,/Our aim is to offer free-to-try images/);
   assert.match(page,/small KIVZUNO watermark/);
   assert.match(page,/class="watermark">KIVZUNO/);
