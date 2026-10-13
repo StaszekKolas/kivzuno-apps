@@ -23,7 +23,9 @@ test("private owner beta gates all billable operations with server-side auth and
 test("no one-image-per-day quota in owner's path; total credit budget is atomic",()=>{
   assert.doesNotMatch(backend,/one_image_per_day|daily_free_image_limit|MAX_DAY/);
   assert.match(backend,/const IMAGE_CREDITS=2, VIDEO_CREDITS=25/);
-  assert.match(backend,/n>=25&&n<=1000/);
+  assert.match(backend,/OWNER_EXTRA_CREDITS_APPROVED=200/);
+  assert.match(backend,/base!==100\)return 0/);
+  assert.match(backend,/return base\+OWNER_EXTRA_CREDITS_APPROVED/);
   assert.match(backend,/setJSON\("credit\/"\+i/);
   assert.match(backend,/onlyIfNew:true/);
   assert.match(backend,/if\(claimed!==amount\)throw Error\("budget_exhausted"\)/);
