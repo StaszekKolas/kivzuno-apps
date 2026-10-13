@@ -7,7 +7,7 @@
  const msg=$("message"),banner=$("mode-banner"),label=$("consent-label");
  const preview=$("original"),empty=$("empty"),generated=$("generated-section"),generatedImg=$("generated-image");
  const MAX_FILE=12*1024*1024;
- let dataUri="",busy=false,aiEnabled=false,generationVersion=0;
+ let dataUri="",sourceAspect="portrait",busy=false,aiEnabled=false,generationVersion=0;
  let ownerKey="",selectedProduct="video";
  const motion=$("motion");
  function message(value,kind=""){msg.textContent=value;msg.dataset.kind=kind;}
@@ -15,7 +15,7 @@
    go.disabled=busy || !dataUri || !consent.checked ||
      (selectedProduct==="video"&&!aiEnabled);
    go.textContent=busy ? (selectedProduct==="video"?"Creating your AI film…":aiEnabled?"Creating your AI photo…":"Checking your photo…")
-     :selectedProduct==="video"?"Create my AI film (25 credits)"
+     :selectedProduct==="video"?"Create my historical film (27 credits)"
      :aiEnabled?"Create my AI photo (2 credits)":"Check my photo — free";
  }
  function clearResult(){
@@ -28,10 +28,10 @@
  function mode(enabled){
    aiEnabled=Boolean(enabled);
    if(aiEnabled){
-     banner.textContent="PRIVATE OWNER TEST — choose an AI photo OR a film directly from your original photo. No KIVZUNO checkout.";
+     banner.textContent="OWNER TEST — Film AI changes the location and era, then animates the scene. Photo AI remains separate. No customer checkout.";
      label.textContent="I agree to send my photo to KIVZUNO and its AI provider for this transformation.";
      $("action-hint").textContent="Images 2 Runway Dev credits each · No daily KIVZUNO limit";
-     $("availability-detail").textContent="Owner preview: AI photos and films are independent. Images use about 2 Runway Dev API credits, films 25. Public payment and watermarked customer previews are NOT enabled.";
+     $("availability-detail").textContent="Owner preview: Film AI uses an internal historical scene-generation step (2 credits) then animation (25 credits). Total 27 existing Runway Dev API credits. Photo AI remains separate. No public payments or watermarked customer previews.";
    } else {
      banner.textContent="PUBLIC GENERATION DISABLED — Enter your owner test code to unlock AI images and film.";
      label.textContent="I agree to send my photo to KIVZUNO for a free image-format check. It will be discarded; no AI provider is called.";
@@ -46,13 +46,13 @@
    const movie=selectedProduct==="video";
    $("photo-choice").setAttribute("aria-pressed",String(!movie));
    $("film-choice").setAttribute("aria-pressed",String(movie));
-   $("creator-purpose").textContent=movie?"FILM AI — directly from your uploaded photo":"PHOTO AI — transform your uploaded photo";
+   $("creator-purpose").textContent=movie?"FILM AI — transform the era and animate it":"PHOTO AI — transform your uploaded photo";
    $("motion-step").hidden=!movie;
-   $("active-mode").textContent=movie?"🎬 FILM AI — photo is animated directly":"📷 PHOTO AI — create a new image";
+   $("active-mode").textContent=movie?"🎬 FILM AI — new historical setting + real motion":"📷 PHOTO AI — create a new image";
    if(movie){
-     label.textContent="I agree to send my photo to Runway to create one 5-second film using 25 existing API credits.";
+     label.textContent="I agree to create a historical scene and then animate it into a 5-second film, using up to 27 existing Runway Dev API credits.";
      $("action-hint").textContent=aiEnabled
-       ?"Runs directly from your photo · 25 existing Runway Dev API credits"
+       ?"One tap · two AI stages · 27 existing Runway Dev API credits"
        :"Owner access required for films — unlock with your private code.";
    } else if(aiEnabled){
      label.textContent="I agree to send my photo to KIVZUNO and its AI provider for this transformation.";
@@ -73,7 +73,7 @@
      const body=await response.json();
      mode(response.ok && body.available===true);
      $("owner-state").textContent=aiEnabled
-       ?"✓ Owner-only AI test unlocked. No daily limit; 2 credits/image, 25 credits/film."
+       ?"✓ Owner test unlocked. No daily image limit; 2 credits/photo, 27 credits/historical film."
        :ownerKey?"Owner access is unavailable or not yet configured on the server. No credits used."
        :"Owner-only generation is locked. Nothing is shared or billed.";
    }catch{mode(false);$("owner-state").textContent="Owner generation service unreachable. No credits used.";}
@@ -101,7 +101,8 @@
      ctx.drawImage(img,0,0,canvas.width,canvas.height);
      for(const quality of [.86,.74,.6,.5]){
        const jpeg=canvas.toDataURL("image/jpeg",quality);
-       if(jpeg.startsWith("data:image/jpeg;base64,")&&jpeg.length<4_600_000)return jpeg;
+       if(jpeg.startsWith("data:image/jpeg;base64,")&&jpeg.length<4_600_000)
+         return {uri:jpeg,aspect:img.naturalWidth>=img.naturalHeight?"landscape":"portrait"};
      }
      throw Error("This photo is too large to transfer.");
    }finally{URL.revokeObjectURL(uri);}
@@ -114,8 +115,9 @@
    if(!file){message("Choose a photo to start.");return;}
    message("Opening your photo on this device…");
    try{
-     const uri=await encode(file);
+     const prepared=await encode(file);
      if(version!==generationVersion)return;
+     const uri=prepared.uri;sourceAspect=prepared.aspect;
      dataUri=uri;
      preview.src=uri;preview.hidden=false;empty.hidden=true;
      $("upload-label").textContent=(file.name||"Your photo").slice(0,65);
@@ -153,17 +155,25 @@
        return;
      }
      if(selectedProduct==="video"){
-       if(!window.confirm("Generate a REAL 5-second film directly from your uploaded photo? This uses approximately 25 existing Runway Dev API credits. No top-up or KIVZUNO payment."))
+       if(!window.confirm("Create ONE 5-second historical film? First Runway transforms the setting to your chosen era (2 credits), then animates it (25 credits). Total 27 existing Runway Dev API credits. Quality is NOT guaranteed. No purchases or auto-top-ups."))
          return;
-       message("Runway is creating a film directly from the original photo. No AI image generation required.");
-       const task=await post("era-owner-test",{action:"direct_video_start",photo:img,era:chosen,motion:motion.value,consent:true});
+       message("Stage 1 of 2: Rebuilding your photo into the selected historical era…");
+       const task=await post("era-owner-test",{action:"scene_video_start",photo:img,era:chosen,
+         aspect:sourceAspect,motion:motion.value,consent:true});
        if(task.status!=="SUBMITTED"||!task.jobId||!task.accessToken)throw Error("Film generation did not start.");
-       for(let attempt=0;attempt<90;attempt++){
+       let priorStage="";
+       for(let attempt=0;attempt<120;attempt++){
          await new Promise(resolve=>setTimeout(resolve,5000));
          if(version!==generationVersion||selectedProduct!=="video")throw Error("Photo or generator changed during film creation.");
          const progress=await post("era-owner-test",{
            action:"status",jobId:task.jobId,accessToken:task.accessToken
          });
+         if(progress.status==="PROCESSING" && progress.stage!==priorStage){
+           priorStage=progress.stage;
+           message(priorStage==="MOVIE"
+             ?"Stage 2 of 2: The historical setting is ready. Animating people, animals and camera…"
+             :"Stage 1 of 2: Rebuilding the entire scene in the chosen era…");
+         }
          if(progress.status==="FAILED"||progress.status==="REVIEW_REQUIRED")
            throw Error("Film could not complete. No automatic retry.");
          if(progress.status==="SUCCEEDED"){
@@ -172,11 +182,11 @@
            const player=$("generated-video");player.src=progress.videoUrl;player.load();
            $("video-section").hidden=false;
            const link=$("video-download");link.href=progress.videoUrl;link.hidden=false;
-           message("A Runway video file was generated. Check that subjects REALLY MOVE and that playback lasts five seconds. This result has not passed motion-quality inspection.","success");
+           message("Your historical film has been generated. Confirm that the era really changed, faces and animals look natural, and the video has genuine motion. This result has NOT been quality-certified.","success");
            return;
          }
        }
-       throw Error("Film is still processing. No automatic retry was made.");
+       throw Error("Historical film is still processing. No automatic retry was made; avoid a second submission.");
      }
      message("Sending your photo for one AI transformation. This may take a minute…");
      const task=await post("era-owner-test",{action:"image_start",photo:img,era:chosen,consent:true});
