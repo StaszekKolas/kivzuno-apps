@@ -34,7 +34,8 @@ test("the page tells the truth about inactive AI creation and separate upload te
 });
 test("all 12 historical scenes map to the secure server era allow-list",async()=>{
   const {ERAS}=await import("../netlify/functions/runway-handoff-core.mjs");
-  const selected=[...html.matchAll(/<option value="([^"]+)"/g)].map(x=>x[1]);
+  const eraSelect=html.match(/<select id="era"[\s\S]*?<\/select>/)?.[0]||"";
+  const selected=[...eraSelect.matchAll(/<option value="([^"]+)"/g)].map(x=>x[1]);
   assert.equal(selected.length,12);
   assert.deepEqual(new Set(selected),new Set(Object.keys(ERAS)));
 });
