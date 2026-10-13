@@ -7,6 +7,7 @@ on:
       - "hub/index.html"
       - "content/marketing/kivzuno-era-photo-prelaunch-20261013.md"
       - "tests/era-photo-marketing.test.mjs"
+      - "tests/era-photo-workflow.test.mjs"
       - ".github/workflows/era-photo-marketing-tests.yml"
 permissions:
   contents: read
@@ -20,4 +21,6 @@ jobs:
         with:
           node-version: "22"
       - name: Check launch wording without using AI credits or posting
-        run: node --test tests/era-photo-marketing.test.mjs
+        run: |
+          node --check hub/era-photo/try.js
+          node --test tests/era-photo-marketing.test.mjs tests/era-photo-workflow.test.mjs
