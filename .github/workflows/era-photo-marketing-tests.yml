@@ -1,0 +1,23 @@
+name: KIVZUNO Era Photo prelaunch kit checks
+
+on:
+  pull_request:
+    paths:
+      - "hub/era-photo/**"
+      - "hub/index.html"
+      - "content/marketing/kivzuno-era-photo-prelaunch-20261013.md"
+      - "tests/era-photo-marketing.test.mjs"
+      - ".github/workflows/era-photo-marketing-tests.yml"
+permissions:
+  contents: read
+jobs:
+  validate-drafts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Check launch wording without using AI credits or posting
+        run: node --test tests/era-photo-marketing.test.mjs
