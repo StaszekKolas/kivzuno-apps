@@ -51,7 +51,7 @@ test("single-screen browser validates selected photo without billable provider c
   assert.ok(frontend.includes('action:"preflight",image:img,era:chosen'));
   assert.ok(frontend.includes('dataUri=""'));
   assert.ok(frontend.includes('result.charged!==false'));
-  assert.ok(frontend.includes('!dataUri||!consent.checked'));
+  assert.ok(frontend.includes('if(!consent.checked)return "Tick the consent checkbox above."'));
   assert.ok(frontend.includes('canvas.toDataURL("image/jpeg",quality)'));
   assert.ok(!frontend.includes("RUNWAYML_API_SECRET"));
   assert.ok(!frontend.includes("localStorage"));
