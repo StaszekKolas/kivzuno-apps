@@ -8,7 +8,7 @@
  const preview=$("original"),empty=$("empty"),generated=$("generated-section"),generatedImg=$("generated-image");
  const MAX_FILE=12*1024*1024;
  let dataUri="",busy=false,videoBusy=false,aiEnabled=false,generationVersion=0;
- let ownerKey="",imageJob=null;
+ let ownerKey="",imageJob=null,selectedProduct="photo";
  const videoButton=$("video-go"),videoConsent=$("video-consent"),videoMsg=$("video-message");
  function videoMessage(value,kind=""){videoMsg.textContent=value;videoMsg.dataset.kind=kind;}
  function videoState(){
@@ -17,10 +17,12 @@
  }
  function message(value,kind=""){msg.textContent=value;msg.dataset.kind=kind;}
  function state(){
-   go.disabled=busy || videoBusy || !dataUri || !consent.checked;
+   go.disabled=busy || videoBusy || !dataUri || !consent.checked ||
+     (selectedProduct==="video"&&!aiEnabled);
    videoState();
-   go.textContent=busy ? (aiEnabled?"Creating your AI photo…":"Checking your photo…")
-     :aiEnabled?"Create my AI photo":"Check my photo — free";
+   go.textContent=busy ? (selectedProduct==="video"?"Creating your AI film…":aiEnabled?"Creating your AI photo…":"Checking your photo…")
+     :selectedProduct==="video"?"Create my AI film (25 credits)"
+     :aiEnabled?"Create my AI photo (2 credits)":"Check my photo — free";
  }
  function clearResult(){
    imageJob=null;
@@ -35,10 +37,10 @@
  function mode(enabled){
    aiEnabled=Boolean(enabled);
    if(aiEnabled){
-     banner.textContent="PRIVATE OWNER TEST — Runway image and video creation unlocked. No public access or KIVZUNO checkout.";
+     banner.textContent="PRIVATE OWNER TEST — choose an AI photo OR a film directly from your original photo. No KIVZUNO checkout.";
      label.textContent="I agree to send my photo to KIVZUNO and its AI provider for this transformation.";
      $("action-hint").textContent="Images 2 Runway Dev credits each · No daily KIVZUNO limit";
-     $("availability-detail").textContent="Only the authorised owner can create images or 5-second films. A film uses 25 Runway Dev API credits. KIVZUNO checkout and public generation stay off.";
+     $("availability-detail").textContent="Owner preview: AI photos and films are independent. Images use about 2 Runway Dev API credits, films 25. Public payment and watermarked customer previews are NOT enabled.";
    } else {
      banner.textContent="PUBLIC GENERATION DISABLED — Enter your owner test code to unlock AI images and film.";
      label.textContent="I agree to send my photo to KIVZUNO for a free image-format check. It will be discarded; no AI provider is called.";
@@ -46,8 +48,27 @@
      $("availability-detail").textContent="Without a private owner code, only the free photo format check works. Images and video are locked for everyone else.";
    }
    consent.checked=false;
-   $("owner-video").hidden=!aiEnabled;
    clearResult();
+   updateChoice();
+ }
+ function updateChoice(){
+   const movie=selectedProduct==="video";
+   $("photo-choice").setAttribute("aria-pressed",String(!movie));
+   $("film-choice").setAttribute("aria-pressed",String(movie));
+   $("owner-video").hidden=!aiEnabled||movie;
+   $("creator-purpose").textContent=movie?"Film AI — directly from your uploaded photo":"Photo AI — transform your uploaded photo";
+   if(movie){
+     label.textContent="I agree to send my photo to Runway to create one 5-second film using 25 existing API credits.";
+     $("action-hint").textContent=aiEnabled
+       ?"Runs directly from your photo · 25 existing Runway Dev API credits"
+       :"Owner access required for films — unlock with your private code.";
+   } else if(aiEnabled){
+     label.textContent="I agree to send my photo to KIVZUNO and its AI provider for this transformation.";
+     $("action-hint").textContent="Image generation uses 2 existing Runway Dev API credits";
+   }else{
+     label.textContent="I agree to send my photo to KIVZUNO for a free image-format check. It will be discarded; no AI provider is called.";
+     $("action-hint").textContent="No login · No credits · No payment";
+   }
    state();
  }
  async function checkMode(){
@@ -139,6 +160,32 @@
        message("✓ Your photo passed! KIVZUNO received and validated it. No AI image was generated, no credits used and no payment made.","success");
        return;
      }
+     if(selectedProduct==="video"){
+       if(!window.confirm("Generate a REAL 5-second film directly from your uploaded photo? This uses approximately 25 existing Runway Dev API credits. No top-up or KIVZUNO payment."))
+         return;
+       message("Runway is creating a film directly from the original photo. No AI image generation required.");
+       const task=await post("era-owner-test",{action:"direct_video_start",photo:img,era:chosen,consent:true});
+       if(task.status!=="SUBMITTED"||!task.jobId||!task.accessToken)throw Error("Film generation did not start.");
+       for(let attempt=0;attempt<90;attempt++){
+         await new Promise(resolve=>setTimeout(resolve,5000));
+         if(version!==generationVersion||selectedProduct!=="video")throw Error("Photo or generator changed during film creation.");
+         const progress=await post("era-owner-test",{
+           action:"status",jobId:task.jobId,accessToken:task.accessToken
+         });
+         if(progress.status==="FAILED"||progress.status==="REVIEW_REQUIRED")
+           throw Error("Film could not complete. No automatic retry.");
+         if(progress.status==="SUCCEEDED"){
+           if(typeof progress.videoUrl!=="string"||!/^https:\/\//.test(progress.videoUrl))
+             throw Error("Provider did not return a video.");
+           const player=$("generated-video");player.src=progress.videoUrl;player.load();
+           $("video-section").hidden=false;
+           const link=$("video-download");link.href=progress.videoUrl;link.hidden=false;
+           message("✓ Your independent 5-second AI film is ready. Save it before the temporary provider link expires.","success");
+           return;
+         }
+       }
+       throw Error("Film is still processing. No automatic retry was made.");
+     }
      message("Sending your photo for one AI transformation. This may take a minute…");
      const task=await post("era-owner-test",{action:"image_start",photo:img,era:chosen,consent:true});
      if(task.status!=="SUBMITTED"||!task.jobId||!task.accessToken)throw Error("Generation did not start.");
@@ -208,6 +255,18 @@
  });
  videoButton.addEventListener("click",makeVideo);
  videoConsent.addEventListener("change",videoState);
+ function chooseProduct(next){
+   if(busy||videoBusy||!["photo","video"].includes(next)||selectedProduct===next)return;
+   selectedProduct=next;
+   clearResult();
+   consent.checked=false;
+   message(dataUri?next==="video"
+     ?"Film mode: use your current photo directly — unlock owner access if needed."
+     :"Photo mode: transform your current photo.":"Choose a photo to start.");
+   updateChoice();
+ }
+ $("photo-choice").addEventListener("click",()=>chooseProduct("photo"));
+ $("film-choice").addEventListener("click",()=>chooseProduct("video"));
  photo.addEventListener("change",()=>onSelect(photo.files?.[0]));
  era.addEventListener("change",()=>{clearResult();message(dataUri?"Era selected. Ready when you are.":"Choose a photo to start.");});
  consent.addEventListener("change",state);
