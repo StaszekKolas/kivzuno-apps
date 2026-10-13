@@ -32,12 +32,16 @@ test("no one-image-per-day quota in owner's path; total credit budget is atomic"
 });
 test("image and video are distinct explicit owner-only actions, not checkout",()=>{
   assert.match(backend,/body\?\.action==="image_start"/);
-  assert.match(backend,/body\?\.action==="scene_video_start"/);
+  assert.match(backend,/body\?\.action==="scene_prepare"/);
+  assert.match(backend,/body\?\.action==="scene_approve"/);
+  assert.match(backend,/body\?\.action==="film_start"/);
   assert.match(backend,/body\.consent!==true/);
-  assert.match(backend,/model:MODEL,promptImage:sceneUrl,promptText:ownerFilmPrompt/);
+  assert.match(backend,/model:MODEL,promptImage:approved\.imageUrl/);
   assert.match(backend,/\/v1\/image_to_video/);
-  assert.match(frontend,/action:"image_start"/);
-  assert.match(frontend,/action:"scene_video_start"/);
+  assert.match(frontend,/"image_start"/);
+  assert.match(frontend,/action:"scene_prepare"/);
+  assert.match(frontend,/action:"scene_approve"/);
+  assert.match(frontend,/action:"film_start"/);
   assert.match(frontend,/window\.confirm/);
   assert.match(page,/id="owner-key"/);
   assert.match(page,/id="film-choice"/);
