@@ -29,6 +29,10 @@
    return "";
  }
  function state(){
+   // An in-flight operation cannot be silently switched to a different era,
+   // source photo or style during generation.
+   photo.disabled=busy;era.disabled=busy;look.disabled=busy;motion.disabled=busy;
+   $("photo-choice").disabled=busy;$("film-choice").disabled=busy;
    // Do not make a locked budget look like a broken button: clicking shows the
    // blocking reason but never calls the paid provider if a prerequisite fails.
    go.disabled=busy||!dataUri||(selectedProduct==="video"&&!!currentScene&&!currentScene.approved);
@@ -220,8 +224,16 @@
    }catch{ownerBudgetRemaining=null;}
    state();
  }
+ const approvalChecks=["check-subjects","check-history","check-action"];
+ function updateApproval(){
+   $("approve-scene").disabled=busy||!sceneImageValid||!currentScene||
+     currentScene.approved||!currentScene.accessToken||
+     !approvalChecks.every(id=>$(id).checked);
+ }
+ approvalChecks.forEach(id=>$(id).addEventListener("change",updateApproval));
  function showScene(scene){
    currentScene=scene;sceneImageValid=false;sceneLookupReady=true;
+   approvalChecks.forEach(id=>{$(id).checked=false;$(id).disabled=!!scene.approved;});
    generated.hidden=false;generatedImg.hidden=false;
    $("scene-review").hidden=false;
    $("approve-scene").disabled=true;
@@ -235,7 +247,7 @@
      $("image-quality").textContent=good
        ?"Format check passed. VISUALLY inspect identity, count, era accuracy, no modern objects and action. Automatic visual checks are not available."
        :"WRONG IMAGE ORIENTATION — do not approve this scene. Needs Review.";
-     $("approve-scene").disabled=!good||scene.approved||!scene.accessToken;
+     updateApproval();
      state();
    };
    generatedImg.onerror=()=>{
@@ -351,11 +363,11 @@
    }catch(e){
      const reason=String(e?.message||e);
      message("Could not complete this step: "+reason.slice(0,180)+". No automatic retry.","error");
-   }finally{busy=false;state();}
+   }finally{busy=false;state();updateApproval();}
  }
  $("approve-scene").addEventListener("click",async()=>{
    if(!aiEnabled||!currentScene||currentScene.approved||!sceneImageValid||
-      !currentScene.accessToken||busy)return;
+      !currentScene.accessToken||busy||!approvalChecks.every(id=>$(id).checked))return;
    if(!window.confirm("Approve this historical picture for your Film AI? Approval costs ZERO credits. Film generation will still need a separate 25-credit confirmation."))return;
    busy=true;state();
    try{
@@ -367,7 +379,7 @@
      $("approval-state").textContent="Approved. You may now generate the film using 25 credits, or return later and reuse this scene.";
      message("Scene approved for film. NO video credits were spent by this approval.","success");
    }catch(e){message("Could not approve the scene: "+String(e.message),"error");}
-   finally{busy=false;state();}
+   finally{busy=false;state();updateApproval();}
  });
  $("audit-button").addEventListener("click",async()=>{
    const button=$("audit-button"),display=$("audit-report");
