@@ -157,6 +157,37 @@ test("a film cannot be started before an owner-approved historical scene",async(
   assert.ok(final.body.videoUrl.endsWith("clip.mp4"));
   assert.equal(app.slots.size,27);
 });
+test("unapproved image can be recovered and approved after Safari reload without repeating provider charges",async()=>{
+  const app=server();
+  const detail={photo:"mock-photo",era:"viking",aspect:"landscape",
+    look:"cinematic",motion:"animals",consent:true};
+  const start=await app.handler(app.request({action:"scene_prepare",...detail}));
+  assert.equal(start.status,202);
+  assert.equal(app.slots.size,2);
+  const recover=await app.handler(app.request({action:"scene_lookup",...detail}));
+  assert.equal(recover.status,200);
+  assert.equal(recover.body.status,"PREPARED_NEEDS_REVIEW");
+  assert.equal(recover.body.jobId,start.body.jobId);
+  assert.equal(recover.body.imageUrl,sceneUrl);
+  assert.equal(app.calls.filter(x=>x.method==="POST").length,1);
+  const secondPrepare=await app.handler(app.request({action:"scene_prepare",...detail}));
+  assert.equal(secondPrepare.status,200);
+  assert.equal(secondPrepare.body.status,"PREPARED_NEEDS_REVIEW");
+  assert.equal(app.slots.size,2,"reload must not consume another 2 credits");
+  const failWrongJob=await app.handler(app.request({
+    action:"scene_approve",jobId:"eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",...detail
+  }));
+  assert.equal(failWrongJob.status,403);
+  const recovered=await app.handler(app.request({
+    action:"scene_approve",jobId:start.body.jobId,...detail
+  }));
+  assert.equal(recovered.status,200);
+  assert.equal(recovered.body.status,"ALREADY_APPROVED");
+  assert.equal(app.calls.filter(x=>x.method==="POST").length,1);
+  assert.equal(app.slots.size,2,"restored approval must be free");
+  const approved=await app.handler(app.request({action:"scene_lookup",...detail}));
+  assert.equal(approved.body.status,"ALREADY_APPROVED");
+});
 test("invalid styling and missing owner code never call paid provider",async()=>{
   const app=server();
   const invalid=await app.handler(app.request({
