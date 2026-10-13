@@ -1,0 +1,5 @@
+# PRIVATE PREVIEW ONLY: retire the unavailable Era Motion visitor entry point.
+# A forced redirect stops the existing static /era-motion/index.html from loading.
+/era-motion /era-photo/ 302!
+/era-motion/ /era-photo/ 302!
+/era-motion/index.html /era-photo/ 302!
