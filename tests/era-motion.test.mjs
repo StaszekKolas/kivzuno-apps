@@ -65,5 +65,5 @@ test("responsive mobile UI and safe disabled purchase-free experience",()=>{
   assert.match(css,/\.workspace\{grid-template-columns/);
   assert.match(css,/\.primary:disabled/);
   assert.match(html,/type="submit" disabled/);
-  assert.match(hub,/\/era-motion\/\?src=/);
+  assert.match(hub,/\/era-photo\/\?src=/);
 });
