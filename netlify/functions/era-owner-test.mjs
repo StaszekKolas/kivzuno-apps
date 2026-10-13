@@ -7,6 +7,20 @@ import {ERAS, parseImage, reply, promptForEra, MODEL, RATIO, DURATION} from "./r
 // Activation needs three separate, server-only Netlify environment variables.
 const API="https://api.dev.runwayml.com";
 const IMAGE_CREDITS=2, VIDEO_CREDITS=25;
+
+const FILM_MOTIONS=Object.freeze({
+  walk:"The main subject walks several clearly visible steps across the scene. Legs and body change position relative to the background. The camera tracks alongside in one continuous live-action shot.",
+  animals:"Every visible animal takes distinct steps forward, legs and paws moving in a natural gait. Ears and coats move with the action; people turn their heads while the camera tracks alongside. One continuous live-action shot.",
+  gesture:"The main subject turns toward the camera, raises a hand, gives a clear wave and lowers the arm. Head, shoulders and hands visibly change position. One continuous live-action shot.",
+  ride:"The cart, vehicle or mount moves forward several meters through the setting. Wheels or hooves visibly turn, dust rises and nearby subjects move in response. The camera follows in one continuous live-action shot.",
+  camera:"The camera makes a pronounced sideways tracking move past the subjects, revealing additional surroundings while the subjects turn and react. One continuous cinematic live-action shot."
+});
+function ownerFilmPrompt(era,motion){
+  if(!Object.hasOwn(ERAS,era)||!Object.hasOwn(FILM_MOTIONS,motion))throw Error("invalid_motion");
+  return FILM_MOTIONS[motion]+" The scene uses "+ERAS[era]+
+    ". Retain recognizable people and animals in the same continuous action.";
+}
+
 const jobs=()=>getStore({name:"kivzuno-owner-beta-jobs-v1",region:"eu-central-1",consistency:"strong"});
 const budgetStore=()=>getStore({name:"kivzuno-owner-beta-credit-reservations-v1",region:"eu-central-1",consistency:"strong"});
 const hash=s=>createHash("sha256").update(s).digest();
@@ -146,18 +160,18 @@ export default async function handler(request){
   // Video is a separate product: start directly from the owner's chosen photo.
   // No earlier AI image task, paid order or checkout is required.
   if(body?.action==="direct_video_start"){
-    if(!Object.hasOwn(ERAS,body.era)||body.consent!==true)
+    if(!Object.hasOwn(ERAS,body.era)||!Object.hasOwn(FILM_MOTIONS,body.motion)||body.consent!==true)
       return reply({error:"era_or_video_consent"},400);
     let source;
     try{source=parseImage(body.photo);}
     catch(e){return reply({error:String(e.message).slice(0,48)},400);}
     return createJob("video",body.era,VIDEO_CREDITS,()=>runway("POST","/v1/image_to_video",{
-      model:MODEL,promptImage:source.dataUri,promptText:promptForEra(body.era),
+      model:MODEL,promptImage:source.dataUri,promptText:ownerFilmPrompt(body.era,body.motion),
       ratio:RATIO,duration:DURATION
     }));
   }
   if(body?.action==="video_start"){
-    if(body.consent!==true)return reply({error:"video_consent_required"},400);
+    if(body.consent!==true||!Object.hasOwn(FILM_MOTIONS,body.motion))return reply({error:"video_consent_required"},400);
     let imageJob;
     try{imageJob=await readAuthorizedJob(body.imageJobId,body.imageAccessToken);}
     catch{return reply({error:"job_store_unavailable"},503);}
@@ -171,7 +185,7 @@ export default async function handler(request){
       if(!imageUrl)return reply({error:"image_output_missing"},502);
     }catch{return reply({error:"image_provider_unavailable"},503);}
     return createJob("video",imageJob.era,VIDEO_CREDITS,()=>runway("POST","/v1/image_to_video",{
-      model:MODEL,promptImage:imageUrl,promptText:promptForEra(imageJob.era),
+      model:MODEL,promptImage:imageUrl,promptText:ownerFilmPrompt(imageJob.era,body.motion),
       ratio:RATIO,duration:DURATION
     }));
   }
