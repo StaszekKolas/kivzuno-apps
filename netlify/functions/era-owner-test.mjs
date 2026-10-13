@@ -62,11 +62,11 @@ function validCreative(era,motion,look,aspect){
 function scenePrompt(era,motion,look){
   return [
     "Edit @main into a photorealistic "+ERAS[era]+" film still.",
-    "Preserve original crop, camera angle, subject positions, size, left-right order, exact human and pet count, recognizable faces and coat markings.",
-    "Replace setting, clothes and modern vehicle with era equivalents. Keep vehicle location, direction and relationship to people and pets.",
+    "Preserve original crop, camera angle, exact left-right order, positions, human/pet count, faces and coat markings.",
+    "Replace ALL modern van, asphalt, houses, fences and clothes with era equivalents. Period transport must occupy the SAME spot and direction as the original vehicle.",
     LOOKS[look],ACTIONS[motion].still,
     "Atmosphere: "+ERA_ATMOSPHERE[era]+".",
-    "Capture a vivid mid-action story moment, not a posed lineup. Real anatomy, paws, hands; no caricatures, duplicate/missing subjects or text."
+    "Dynamic action, not posed lineup. Real paws and hands; NO added people, missing animals, caricatures or text."
   ].join(" ");
 }
 function ownerFilmPrompt(era,motion,look){
