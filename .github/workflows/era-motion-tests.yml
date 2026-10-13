@@ -16,6 +16,7 @@ on:
       - "tests/film-first.test.mjs"
       - "tests/credit-budget.test.mjs"
       - "tests/reservation-audit.test.mjs"
+      - "tests/era-action-modes.test.mjs"
       - "netlify/functions/lemon-*.mjs"
       - "netlify/functions/runway-handoff*.mjs"
       - ".github/workflows/era-motion-tests.yml"
@@ -41,4 +42,4 @@ jobs:
           node --check netlify/functions/era-owner-test.mjs
           node --check netlify/functions/lemon-commerce-core.mjs
           node --check netlify/functions/lemon-readiness.mjs
-          node --test tests/era-motion.test.mjs tests/runway-handoff.test.mjs tests/no-login-lemon-pipeline.test.mjs tests/owner-beta.test.mjs tests/film-first.test.mjs tests/credit-budget.test.mjs tests/reservation-audit.test.mjs
+          node --test tests/era-motion.test.mjs tests/runway-handoff.test.mjs tests/no-login-lemon-pipeline.test.mjs tests/owner-beta.test.mjs tests/film-first.test.mjs tests/credit-budget.test.mjs tests/reservation-audit.test.mjs tests/era-action-modes.test.mjs
