@@ -61,13 +61,12 @@ function validCreative(era,motion,look,aspect){
 }
 function scenePrompt(era,motion,look){
   return [
-    "Transform the exact @main reference photo into a photorealistic movie frame from "+ERAS[era]+".",
-    "This is a faithful transformation of THIS photo, NOT a newly invented group portrait.",
-    "Keep the same camera angle, wide or tall crop, left-to-right subject order, scale, foreground positions, and exact count of people and animals. Recognizable faces, coats and markings.",
-    "Replace modern buildings, street, vehicles and clothing with plausible equivalents from the chosen era. Keep the original vehicle's size, location and travel direction; convert its form to period transport.",
+    "Edit THIS @main photo into "+ERAS[era]+". Photorealistic cinema still.",
+    "KEEP the original camera framing, angle, subject positions, scale, left-to-right order and EXACT count of people and animals. Match real faces and animal markings.",
+    "Change modern background, clothes and transport into historical equivalents. Keep the vehicle in the same place and direction, replacing its form with period transport.",
     LOOKS[look],ACTIONS[motion].still,
-    "Environment: "+ERA_ATMOSPHERE[era]+".",
-    "Make it an exciting candid story moment, not a lineup or static pose. Natural anatomy, paws and hands; no cartoon, caricature, duplicate or missing subject, no text."
+    "Atmosphere: "+ERA_ATMOSPHERE[era]+".",
+    "Capture a vivid mid-action moment, never a posed portrait. Believable hands and paws. No caricatures, duplicated or missing subjects, or text."
   ].join(" ");
 }
 function ownerFilmPrompt(era,motion,look){
@@ -140,8 +139,10 @@ async function runway(method,path,payload){
   return response.json();
 }
 function imagePrompt(era,motion,look,companion){
-  return scenePrompt(era,motion,look)+
-    (companion?" Include the @companion reference as an additional recognizable subject with consistent anatomy.":"");
+  const text=scenePrompt(era,motion,look)+
+    (companion?" Include the @companion as the same recognizable extra subject.":"");
+  if(text.length>1000)throw Error("image_prompt_too_long");
+  return text;
 }
 // Each 1-credit slot is an atomic onlyIfNew claim. Two concurrent requests cannot
 // spend the same part of the pre-approved total cap. Partial claims are deliberately
@@ -323,12 +324,16 @@ export default async function handler(request){
       if(body.companion)companion=parseImage(body.companion);
       if(main.dataUri.length+(companion?.dataUri.length||0)>7_000_000)throw Error("images_too_large");
     }catch(e){return reply({error:String(e.message).slice(0,48)},400);}
+    // Verify prompt before reserving prepaid credits; no provider request on error.
+    let prompt;
+    try{prompt=imagePrompt(body.era,motion,look,Boolean(companion));}
+    catch{return reply({error:"image_prompt_too_long"},400);}
     return createJob("image",body.era,IMAGE_CREDITS,()=>{
       const referenceImages=[{uri:main.dataUri,tag:"main"}];
       if(companion)referenceImages.push({uri:companion.dataUri,tag:"companion"});
       return runway("POST","/v1/text_to_image",{
         model:"gen4_image_turbo",ratio:aspect==="landscape"?"1280:720":"720:1280",
-        promptText:imagePrompt(body.era,motion,look,Boolean(companion)),referenceImages
+        promptText:prompt,referenceImages
       });
     });
   }
@@ -343,10 +348,12 @@ export default async function handler(request){
     try{source=parseImage(body.photo);}
     catch(e){return reply({error:String(e.message).slice(0,48)},400);}
     const ratio=body.aspect==="landscape"?"1280:720":"720:1280";
+    const sceneText=scenePrompt(body.era,body.motion,look);
+    if(sceneText.length>1000)return reply({error:"image_prompt_too_long"},400);
     return createJob("scene_video",body.era,SCENE_FILM_CREDITS,
       ()=>runway("POST","/v1/text_to_image",{
         model:"gen4_image_turbo",ratio,
-        promptText:scenePrompt(body.era,body.motion,look),
+        promptText:sceneText,
         referenceImages:[{uri:source.dataUri,tag:"main"}]
       }),{stage:"SCENE",motion:body.motion,look,ratio});
   }
