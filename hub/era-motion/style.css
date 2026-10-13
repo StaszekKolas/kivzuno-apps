@@ -28,3 +28,8 @@
 /* Clearly show current independent product next to the only generation action. */
 .active-mode{margin:0 0 16px;padding:11px 13px;border-radius:10px;border:1px solid #b8f2c271;background:#294337;color:#e0ffe8;font-size:13px;font-weight:800;letter-spacing:.02em}
 #motion-step[hidden]{display:none!important}
+
+/* Generation is never silently inert: show an accessible blocker beside the action. */
+.generation-diagnostic{border-radius:10px;border:1px solid #ffffff29;padding:12px 14px;line-height:1.5;font-size:14px;background:#182037;color:#dfe8f8;margin:12px 0 4px}
+.generation-diagnostic[data-kind="warning"]{border-color:#f5c28a82;background:#392c29;color:#ffe4c4}
+.generation-diagnostic[data-kind="success"]{border-color:#a4e5c080;color:#d4f7df}
