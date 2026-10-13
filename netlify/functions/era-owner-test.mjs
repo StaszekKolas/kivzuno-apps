@@ -15,9 +15,9 @@ const SCENE_FILM_CREDITS=IMAGE_CREDITS+VIDEO_CREDITS;
 // photo and two tasks per film, with the same approved 2/27-credit reservations.
 // Reference prompting improves fidelity but does not guarantee pixel-perfect editing.
 const LOOKS=Object.freeze({
-  faithful:"Faithful: maintain the input camera viewpoint, crop, subject scale, all poses and object positions. A small believable action may be visible, but do not rearrange the scene.",
-  cinematic:"Cinematic: maintain the input framing and recognizable subjects while capturing a decisive moment of action, strong depth, vivid natural lighting and atmospheric energy.",
-  epic:"Epic: keep the original subjects and their positions identifiable, but heighten environmental effects, storytelling tension, scale and dramatic light. Photorealistic, never fantasy caricature."
+  faithful:"Faithful: preserve positions and framing strictly; include only subtle realistic action.",
+  cinematic:"Cinematic: preserve identity and original geometry, but capture vibrant action, rich natural light and dramatic depth.",
+  epic:"Epic: preserve identity and original geometry; add powerful weather, atmosphere and cinematic tension, never caricature."
 });
 const ACTIONS=Object.freeze({
   walk:{
@@ -61,12 +61,12 @@ function validCreative(era,motion,look,aspect){
 }
 function scenePrompt(era,motion,look){
   return [
-    "Edit THIS @main photo into "+ERAS[era]+". Photorealistic cinema still.",
-    "KEEP the original camera framing, angle, subject positions, scale, left-to-right order and EXACT count of people and animals. Match real faces and animal markings.",
-    "Change modern background, clothes and transport into historical equivalents. Keep the vehicle in the same place and direction, replacing its form with period transport.",
+    "Edit @main into a photorealistic "+ERAS[era]+" film still.",
+    "Preserve original crop, camera angle, subject positions, size, left-right order, exact human and pet count, recognizable faces and coat markings.",
+    "Replace setting, clothes and modern vehicle with era equivalents. Keep vehicle location, direction and relationship to people and pets.",
     LOOKS[look],ACTIONS[motion].still,
     "Atmosphere: "+ERA_ATMOSPHERE[era]+".",
-    "Capture a vivid mid-action moment, never a posed portrait. Believable hands and paws. No caricatures, duplicated or missing subjects, or text."
+    "Capture a vivid mid-action story moment, not a posed lineup. Real anatomy, paws, hands; no caricatures, duplicate/missing subjects or text."
   ].join(" ");
 }
 function ownerFilmPrompt(era,motion,look){
