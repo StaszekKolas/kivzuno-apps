@@ -9,6 +9,7 @@
  const MAX_FILE=12*1024*1024;
  let dataUri="",busy=false,videoBusy=false,aiEnabled=false,generationVersion=0;
  let ownerKey="",imageJob=null,selectedProduct="photo";
+ const motion=$("motion");
  const videoButton=$("video-go"),videoConsent=$("video-consent"),videoMsg=$("video-message");
  function videoMessage(value,kind=""){videoMsg.textContent=value;videoMsg.dataset.kind=kind;}
  function videoState(){
@@ -164,7 +165,7 @@
        if(!window.confirm("Generate a REAL 5-second film directly from your uploaded photo? This uses approximately 25 existing Runway Dev API credits. No top-up or KIVZUNO payment."))
          return;
        message("Runway is creating a film directly from the original photo. No AI image generation required.");
-       const task=await post("era-owner-test",{action:"direct_video_start",photo:img,era:chosen,consent:true});
+       const task=await post("era-owner-test",{action:"direct_video_start",photo:img,era:chosen,motion:motion.value,consent:true});
        if(task.status!=="SUBMITTED"||!task.jobId||!task.accessToken)throw Error("Film generation did not start.");
        for(let attempt=0;attempt<90;attempt++){
          await new Promise(resolve=>setTimeout(resolve,5000));
@@ -180,7 +181,7 @@
            const player=$("generated-video");player.src=progress.videoUrl;player.load();
            $("video-section").hidden=false;
            const link=$("video-download");link.href=progress.videoUrl;link.hidden=false;
-           message("✓ Your independent 5-second AI film is ready. Save it before the temporary provider link expires.","success");
+           message("A Runway video file was generated. Check that subjects REALLY MOVE and that playback lasts five seconds. This result has not passed motion-quality inspection.","success");
            return;
          }
        }
@@ -221,7 +222,7 @@
    $("video-section").hidden=true;videoMessage("Creating your film from the generated AI photo. This uses Runway Dev API credits.");
    try{
      const task=await post("era-owner-test",{
-       action:"video_start",imageJobId:parent.jobId,imageAccessToken:parent.accessToken,consent:true
+       action:"video_start",imageJobId:parent.jobId,imageAccessToken:parent.accessToken,motion:motion.value,consent:true
      });
      if(task.status!=="SUBMITTED"||!task.jobId||!task.accessToken)throw Error("Video did not start.");
      for(let attempt=0;attempt<90;attempt++){
@@ -237,7 +238,7 @@
          $("video-section").hidden=false;
          const link=$("video-download");link.href=progress.videoUrl;link.hidden=false;
          videoConsent.checked=false;
-         videoMessage("✓ Your 5-second Runway film is ready. Save it before its temporary link expires.","success");
+         videoMessage("A Runway video file was generated. Check motion and duration before deciding whether it is good enough to sell.","success");
          return;
        }
      }
