@@ -8,7 +8,7 @@
  const preview=$("original"),empty=$("empty"),generated=$("generated-section"),generatedImg=$("generated-image");
  const MAX_FILE=12*1024*1024;
  let dataUri="",busy=false,videoBusy=false,aiEnabled=false,generationVersion=0;
- let ownerKey="",imageJob=null,selectedProduct="photo";
+ let ownerKey="",imageJob=null,selectedProduct="video";
  const motion=$("motion");
  const videoButton=$("video-go"),videoConsent=$("video-consent"),videoMsg=$("video-message");
  function videoMessage(value,kind=""){videoMsg.textContent=value;videoMsg.dataset.kind=kind;}
