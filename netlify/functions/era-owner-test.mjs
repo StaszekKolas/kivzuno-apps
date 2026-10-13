@@ -369,8 +369,9 @@ export default async function handler(request){
     let source;
     try{source=parseImage(body.photo);}
     catch(e){return reply({error:String(e.message).slice(0,48)},400);}
-    const existing=await approvedSceneFor(source,body.era,body.motion,look,body.aspect)
-      .catch(()=>null);
+    let existing;
+    try{existing=await approvedSceneFor(source,body.era,body.motion,look,body.aspect);}
+    catch{return reply({error:"scene_lookup_unavailable"},503);}
     if(existing)return reply({status:"ALREADY_APPROVED",kind:"scene_prepare",...existing,estimatedCredits:0},200);
     const text=scenePrompt(body.era,body.motion,look);
     if(text.length>1000)return reply({error:"image_prompt_too_long"},400);
