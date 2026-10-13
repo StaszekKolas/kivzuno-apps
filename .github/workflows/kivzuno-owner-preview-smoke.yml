@@ -36,12 +36,12 @@ jobs:
             try{
               const page=await fetch(base+"/era-motion/",{signal:AbortSignal.timeout(10000)});
               const html=await page.text();
-              if(!page.ok||!html.includes('id="owner-key"')||!html.includes('id="video-go"'))
+              if(!page.ok||!html.includes('id="owner-key"')||!html.includes('id="film-choice"'))
                 throw Error("private owner studio not deployed yet");
               const capabilities=await post("era-owner-test",{action:"capabilities"});
               if(capabilities.status!==200||capabilities.body.available!==false)
                 throw Error("anonymous capabilities must be unavailable");
-              for(const action of ["image_start","video_start"]){
+              for(const action of ["image_start","scene_video_start"]){
                 const result=await post("era-owner-test",{action,consent:true,era:"west",photo:"dummy"});
                 if(![403,503].includes(result.status) ||
                    !["owner_authorization_required","owner_beta_not_configured"].includes(result.body?.error))
