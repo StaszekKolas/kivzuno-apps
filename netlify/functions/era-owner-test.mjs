@@ -282,6 +282,28 @@ function taskOutput(task){
     ? task.output.find(url=>typeof url==="string"&&/^https:\/\//.test(url)) : null;
 }
 
+
+function creativeIdentity(photoHash,era,motion,look,aspect){
+  return createHash("sha256").update([photoHash,era,motion,look,aspect].join("|")).digest("hex");
+}
+function approvedIndexKey(identity){return "approved-scene/"+identity;}
+async function approvedSceneFor(input,era,motion,look,aspect){
+  const identity=creativeIdentity(input.sha256,era,motion,look,aspect);
+  const index=await jobs().get(approvedIndexKey(identity),{type:"json",consistency:"strong"});
+  if(!index||!validId(index.jobId)||!Number.isSafeInteger(index.approvedAt))
+    return null;
+  const source=await jobs().get("task/"+index.jobId,{type:"json",consistency:"strong"});
+  if(!source||!["image","scene_prepare"].includes(source.kind)||!validId(source.ownerTask)||
+    source.approvedAt!==index.approvedAt||source.photoHash!==input.sha256||
+    creativeIdentity(source.photoHash,source.era,source.motion,source.look,source.aspect)!==identity)
+    return null;
+  const task=await runway("GET","/v1/tasks/"+encodeURIComponent(source.ownerTask));
+  if(task.status!=="SUCCEEDED")return null;
+  const sceneUrl=taskOutput(task);
+  if(!sceneUrl)return null;
+  return {jobId:index.jobId,imageUrl:sceneUrl,identity};
+}
+
 export default async function handler(request){
   if(request.method!=="POST")return reply({error:"method"},405);
   if(!originOk(request))return reply({error:"origin"},403);
@@ -335,36 +357,92 @@ export default async function handler(request){
         model:"gen4_image_turbo",ratio:aspect==="landscape"?"1280:720":"720:1280",
         promptText:prompt,referenceImages
       });
-    });
+    },{photoHash:main.sha256,look,motion,aspect,hasCompanion:Boolean(companion)});
   }
-  // Independent user-facing Film AI. Stage 1 builds the chosen era as a still;
-  // stage 2 runs image-to-video from that transformed still.
-  // No user-visible Photo AI step and no direct raw-photo video fallback.
-  if(body?.action==="scene_video_start"){
+  // Film AI stays independent in the UI. It prepares only the two-credit still,
+  // NEVER automatically starts the 25-credit animation. The owner reviews and
+  // explicitly approves the still before a separate paid film confirmation.
+  if(body?.action==="scene_prepare"){
     const look=body.look||"cinematic";
     if(!validCreative(body.era,body.motion,look,body.aspect)||body.consent!==true)
-      return reply({error:"era_motion_aspect_or_consent"},400);
+      return reply({error:"era_motion_look_aspect_or_consent"},400);
     let source;
     try{source=parseImage(body.photo);}
     catch(e){return reply({error:String(e.message).slice(0,48)},400);}
-    const ratio=body.aspect==="landscape"?"1280:720":"720:1280";
-    const sceneText=scenePrompt(body.era,body.motion,look);
-    if(sceneText.length>1000)return reply({error:"image_prompt_too_long"},400);
-    return createJob("scene_video",body.era,SCENE_FILM_CREDITS,
+    const existing=await approvedSceneFor(source,body.era,body.motion,look,body.aspect)
+      .catch(()=>null);
+    if(existing)return reply({status:"ALREADY_APPROVED",kind:"scene_prepare",...existing,estimatedCredits:0},200);
+    const text=scenePrompt(body.era,body.motion,look);
+    if(text.length>1000)return reply({error:"image_prompt_too_long"},400);
+    return createJob("scene_prepare",body.era,IMAGE_CREDITS,
       ()=>runway("POST","/v1/text_to_image",{
-        model:"gen4_image_turbo",ratio,
-        promptText:sceneText,
-        referenceImages:[{uri:source.dataUri,tag:"main"}]
-      }),{stage:"SCENE",motion:body.motion,look,ratio});
+        model:"gen4_image_turbo",
+        ratio:body.aspect==="landscape"?"1280:720":"720:1280",
+        promptText:text,referenceImages:[{uri:source.dataUri,tag:"main"}]
+      }),{photoHash:source.sha256,look,motion:body.motion,aspect:body.aspect});
+  }
+  if(body?.action==="scene_lookup"){
+    const look=body.look||"cinematic";
+    if(!validCreative(body.era,body.motion,look,body.aspect))
+      return reply({error:"invalid_creative_options"},400);
+    let source;
+    try{source=parseImage(body.photo);}
+    catch{return reply({error:"image_invalid"},400);}
+    try{
+      const approved=await approvedSceneFor(source,body.era,body.motion,look,body.aspect);
+      return reply(approved?{status:"ALREADY_APPROVED",...approved}:{status:"NONE"});
+    }catch{return reply({error:"scene_lookup_unavailable"},503);}
+  }
+  if(body?.action==="scene_approve"){
+    const source=await readAuthorizedJob(body.jobId,body.accessToken).catch(()=>null);
+    if(!source||!["image","scene_prepare"].includes(source.kind)||source.hasCompanion||
+      !validId(source.ownerTask)||!source.photoHash||!source.look||!source.motion||!source.aspect)
+      return reply({error:"approval_source_invalid"},403);
+    let output;
+    try{
+      const task=await runway("GET","/v1/tasks/"+encodeURIComponent(source.ownerTask));
+      if(task.status!=="SUCCEEDED")return reply({error:"scene_not_finished"},409);
+      output=taskOutput(task);
+    }catch{return reply({error:"scene_verification_unavailable"},503);}
+    if(!output)return reply({error:"scene_output_missing"},409);
+    const approvedAt=Date.now();
+    const identity=creativeIdentity(source.photoHash,source.era,source.motion,source.look,source.aspect);
+    try{
+      await jobs().setJSON("task/"+body.jobId,{...source,approvedAt});
+      await jobs().setJSON(approvedIndexKey(identity),{jobId:body.jobId,approvedAt});
+    }catch{return reply({error:"scene_approval_storage_failed"},503);}
+    return reply({status:"ALREADY_APPROVED",kind:"scene_prepare",jobId:body.jobId,
+      imageUrl:output,estimatedCredits:0});
+  }
+  if(body?.action==="film_start"){
+    const look=body.look||"cinematic";
+    if(!validCreative(body.era,body.motion,look,body.aspect)||body.consent!==true)
+      return reply({error:"invalid_creative_options_or_consent"},400);
+    let source;
+    try{source=parseImage(body.photo);}
+    catch{return reply({error:"image_invalid"},400);}
+    let approved;
+    try{approved=await approvedSceneFor(source,body.era,body.motion,look,body.aspect);}
+    catch{return reply({error:"approved_scene_unavailable"},503);}
+    if(!approved)return reply({error:"scene_not_approved"},409);
+    // Only animation is charged here; the reviewed scene is reused at no image cost.
+    return createJob("video",body.era,VIDEO_CREDITS,
+      ()=>runway("POST","/v1/image_to_video",{
+        model:MODEL,promptImage:approved.imageUrl,
+        promptText:ownerFilmPrompt(body.era,body.motion,look),
+        ratio:body.aspect==="landscape"?"1280:720":"720:1280",duration:DURATION
+      }),{sourceSceneId:approved.jobId,look,motion:body.motion,aspect:body.aspect});
   }
   if(body?.action==="status"){
     let job;
     try{job=await readAuthorizedJob(body.jobId,body.accessToken);}
     catch{return reply({error:"job_store_unavailable"},503);}
     if(!job)return reply({error:"not_found"},404);
-    if(job.kind==="scene_video"){
-      if(job.state==="REVIEW_REQUIRED")return reply({status:"REVIEW_REQUIRED",stage:job.stage},200);
-      if(!job.ownerTask)return reply({status:"REVIEW_REQUIRED",stage:job.stage},200);
+    // Legacy auto-animation jobs are deliberately quarantined: do not trigger
+    // a new billable video simply because a background status poll is performed.
+    if(job.kind==="scene_video")return reply({status:"REVIEW_REQUIRED",stage:"LEGACY_DISABLED",
+      reason:"Manual image approval is now required before animation."});
+    if(!job.ownerTask)return reply({status:"REVIEW_REQUIRED",stage:job.stage},200);
       try{
         const task=await runway("GET","/v1/tasks/"+encodeURIComponent(job.ownerTask));
         if(task.status==="FAILED")return reply({status:"FAILED",stage:job.stage},200);
@@ -403,8 +481,12 @@ export default async function handler(request){
       if(task.status==="SUCCEEDED"){
         const url=taskOutput(task);
         if(!url)return reply({error:"provider_output_missing"},502);
-        return reply({status:"SUCCEEDED",kind:job.kind,
-          ...(job.kind==="image"?{imageUrl:url}:{videoUrl:url}),expires:true});
+        // Success at the provider is only a finished file, not passed visual QA.
+        // Always mark film Needs Review until the owner inspects genuine motion.
+        return reply({status:job.kind==="video"?"REVIEW_REQUIRED":"SUCCEEDED",
+          kind:job.kind,
+          ...(["image","scene_prepare"].includes(job.kind)?{imageUrl:url}:{videoUrl:url}),
+          qualityReviewed:false,expires:true});
       }
       return reply({status:task.status==="FAILED"?"FAILED":"PROCESSING",kind:job.kind});
     }catch{return reply({error:"provider_unavailable"},503);}
