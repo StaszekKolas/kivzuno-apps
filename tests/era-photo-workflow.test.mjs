@@ -13,7 +13,7 @@ test("owner landing links a separate, honest manual ChatGPT workflow",()=>{
  assert.match(page,/not an automatic KIVZUNO AI generator/);
  assert.match(page,/Your uploads remain in this browser/);
  assert.match(page,/https:\/\/chatgpt\.com\//);
- assert.match(page,/not send or generate anything/i);
+ assert.match(page,/KIVZUNO does not receive these files/);
  assert.match(page,/name="viewport"/);
  assert.match(page,/noindex,nofollow/);
  assert.match(page,/src="\.\/try\.js\?v=1"/);
@@ -24,7 +24,7 @@ test("photo and result never leave client before manual action in ChatGPT",()=>{
                       "OPENAI_API_KEY","localStorage","sessionStorage"])assert.ok(!js.includes(banned),banned);
  assert.match(js,/URL\.createObjectURL\(file\)/);
  assert.match(js,/navigator\.clipboard\.writeText\(val\)/);
- assert.match(js,/accept="image\/jpeg,image\/png,image\/webp,image\/heic,image\/heif"/);
+ assert.match(page,/accept="image\/jpeg,image\/png,image\/webp,image\/heic,image\/heif"/);
  assert.match(js,/MAX=12\*1024\*1024/);
 });
 test("prompt matches chosen era and preserves humans, animals, and framing",()=>{
