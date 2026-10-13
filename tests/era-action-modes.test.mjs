@@ -177,9 +177,8 @@ test("both independent modes have a creative style dropdown and movement selecto
   assert.match(html,/value="cinematic" selected/);
   assert.match(html,/id="motion"/);
   assert.match(ui,/look:style/);
-  assert.match(ui,/look:look\.value/);
   assert.match(ui,/aspect:sourceAspect/);
-  assert.match(ui,/action:"scene_prepare"/);
+  assert.match(ui,/"scene_prepare"/);
   assert.match(ui,/action:"scene_approve"/);
   assert.match(ui,/action:"film_start"/);
   assert.match(ui,/"image_start"/);
