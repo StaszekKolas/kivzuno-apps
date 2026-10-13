@@ -8,8 +8,8 @@
 <meta property="og:title" content="KIVZUNO Era Motion — One photo. Another era.">
 <meta property="og:description" content="A simple photo studio. No accounts, confusing credits or hidden purchases.">
 <title>Era Motion — KIVZUNO Photo Studio</title>
-<link rel="stylesheet" href="./style.css?v=8">
-<script src="./studio-simple.js?v=8" defer></script>
+<link rel="stylesheet" href="./style.css?v=9">
+<script src="./studio-simple.js?v=9" defer></script>
 </head>
 <body>
 <div class="shell">
@@ -46,7 +46,7 @@
         <button type="button" id="film-choice" aria-pressed="true"><span aria-hidden="true">🎬</span><strong>AI Film</strong><small>Main feature — step into a historical scene that comes alive</small></button>
         <button type="button" id="photo-choice" aria-pressed="false"><span aria-hidden="true">📷</span><strong>AI Photo</strong><small>Explore a new look and preview the style</small></button>
       </div>
-      <p class="helper">Choose one: Film AI automatically rebuilds the setting into another era, then animates it. Photo AI captures a dramatic moment from your original photo. Film creation is still one tap, with two internal stages.</p>
+      <p class="helper">Choose one: Choose Photo AI or Film AI independently. Film AI first prepares a historical picture, then WAITS for your approval before any video credits are spent.</p>
     </section>
 
     <section class="workspace" aria-label="Era Motion photo studio">
@@ -108,7 +108,7 @@
 
         <section class="form-step last-step">
           <div class="step-heading"><span class="count">3</span><h2>Ready?</h2></div>
-          <p class="active-mode" id="active-mode">🎬 FILM AI — new historical setting + real motion</p>
+          <p class="active-mode" id="active-mode">🎬 FILM AI — review scene before spending video credits</p>
           <label class="consent"><input type="checkbox" id="consent"><span id="consent-label">I agree to send my chosen photo to KIVZUNO for a free format check. It will be discarded immediately.</span></label>
           <button class="primary" id="go" type="submit" disabled>Choose a photo to begin</button>
           <p class="helper" id="action-hint">No login · No credits · No payment</p>
@@ -126,13 +126,21 @@
           <div class="empty" id="empty"><span aria-hidden="true">✦</span><strong>Your photo appears here</strong><small>Nothing is generated or charged just by selecting a file.</small></div>
         </div>
         <div class="generated" id="generated-section" hidden>
-          <p class="eyebrow">GENERATED AI IMAGE</p>
-          <img id="generated-image" alt="Your historical AI scene" hidden>
+          <p class="eyebrow">HISTORICAL SCENE — NEEDS YOUR REVIEW</p>
+          <img id="generated-image" alt="Historical scene needing owner approval" hidden>
+          <p id="image-quality" class="helper" aria-live="polite">Check the people, animals, historical objects and composition before approving.</p>
           <a id="generated-download" href="#" target="_blank" rel="noopener noreferrer" hidden>Open or save your AI image ↗</a>
+          <section id="scene-review" class="scene-review" hidden>
+            <h3>Approve this picture before making a film</h3>
+            <p>Does it keep the original people and pets, look historical and show the action you wanted? Approval costs zero credits and does not start a video.</p>
+            <button id="approve-scene" type="button" disabled>Approve for Film — free</button>
+            <p id="approval-state" role="status">Needs your review. No video will start automatically.</p>
+          </section>
         </div>
         <div class="generated" id="video-section" hidden>
           <p class="eyebrow">YOUR 5-SECOND AI FILM</p>
           <video id="generated-video" controls playsinline preload="none" aria-label="Your generated Runway film"></video>
+          <p id="video-quality" class="helper" role="status">Video file needs a manual review of motion, appearance and era accuracy.</p>
           <a id="video-download" href="#" target="_blank" rel="noopener noreferrer" hidden>Open or save your film ↗</a>
         </div>
         <p class="privacy">Only submit photos you are entitled to use. The free format test discards the upload. Generated image and video links expire; save your results to your device.</p>
