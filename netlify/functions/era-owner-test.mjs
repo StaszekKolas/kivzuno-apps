@@ -110,6 +110,75 @@ async function reservationState(){
     return {max,taken,reserved:taken.size,remaining:max-taken.size,ledger};
   }catch{throw Error("budget_store_unavailable");}
 }
+// READ-ONLY OWNER AUDIT: inspect every claimed slot and its saved job record.
+// This function never mutates blobs and never calls Runway. The provider's actual
+// credits charged cannot be inferred from a reservation or SUBMITTED status.
+async function auditReservations(){
+  const state=await reservationState();
+  const slots=[...state.taken].sort((a,b)=>a-b);
+  const counts=new Map();
+  let missingSlotEntries=0,invalidReservationRecords=0;
+  // Bounded concurrency avoids overloading Netlify Blobs on a free preview.
+  for(let i=0;i<slots.length;i+=10){
+    const batch=slots.slice(i,i+10);
+    const values=await Promise.all(batch.map(async slot=>({
+      slot,value:await state.ledger.get("credit/"+slot,{type:"json",consistency:"strong"})
+    })));
+    for(const {value} of values){
+      if(value===null||value===undefined){missingSlotEntries++;continue;}
+      const id=value.taskId;
+      if(!validId(id)){invalidReservationRecords++;continue;}
+      counts.set(id,(counts.get(id)||0)+1);
+    }
+  }
+  const group={
+    image:{jobs:0,credits:0},
+    video:{jobs:0,credits:0},
+    scene_video:{jobs:0,credits:0},
+    unknown:{jobs:0,credits:0}
+  };
+  const statuses={RESERVED:{jobs:0,credits:0},SUBMITTED:{jobs:0,credits:0},
+    REVIEW_REQUIRED:{jobs:0,credits:0},missing_job:{jobs:0,credits:0},
+    unexpected_state:{jobs:0,credits:0}};
+  let providerIdRecordedCredits=0,missingProviderIdCredits=0;
+  let partialReservationJobs=0,partialReservationCredits=0;
+  const jobStore=jobs();
+  const ids=[...counts.keys()];
+  for(let i=0;i<ids.length;i+=10){
+    const batch=ids.slice(i,i+10);
+    const records=await Promise.all(batch.map(async id=>({
+      id,job:await jobStore.get("task/"+id,{type:"json",consistency:"strong"})
+    })));
+    for(const {id,job} of records){
+      const amount=counts.get(id);
+      const kind=job?.kind;
+      const groupKey=Object.hasOwn(group,kind)?kind:"unknown";
+      group[groupKey].jobs++;
+      group[groupKey].credits+=amount;
+      const stateKey=!job?"missing_job":Object.hasOwn(statuses,job.state)?job.state:"unexpected_state";
+      statuses[stateKey].jobs++;
+      statuses[stateKey].credits+=amount;
+      if(validId(job?.ownerTask))providerIdRecordedCredits+=amount;
+      else missingProviderIdCredits+=amount;
+      const expected=kind==="scene_video"?SCENE_FILM_CREDITS:
+        kind==="image"?IMAGE_CREDITS:kind==="video"?VIDEO_CREDITS:null;
+      if(expected!==null&&amount!==expected){
+        partialReservationJobs++;
+        partialReservationCredits+=amount;
+      }
+    }
+  }
+  return {
+    readOnly:true,actualProviderCreditsCharged:null,
+    cap:state.max,reservedCredits:state.reserved,remainingCredits:state.remaining,
+    jobCount:ids.length,byKind:group,bySavedState:statuses,
+    withSavedProviderTaskCredits:providerIdRecordedCredits,
+    withoutSavedProviderTaskCredits:missingProviderIdCredits,
+    partialReservationJobs,partialReservationCredits,
+    missingSlotEntries,invalidReservationRecords,
+    reconciliationNote:"Saved status and reservations are not proof of Runway charges. Provider task IDs may be missing even when a request was accepted. Do NOT refund, reset or increase limits based on this audit."
+  };
+}
 async function reserveCredits(amount,taskId){
   // Check available capacity BEFORE claiming any slots: a denied 27-credit film
   // must not burn the 1-26 reservations remaining after earlier tests.
@@ -183,6 +252,10 @@ export default async function handler(request){
         imageRequired:IMAGE_CREDITS,
         note:"Reservations shared across previews, NOT actual provider spending. No change to approved cap."});
     }catch{return reply({error:"budget_store_unavailable"},503);}
+  }
+  if(body?.action==="audit_reservations"){
+    try{return reply(await auditReservations());}
+    catch{return reply({error:"audit_storage_unavailable"},503);}
   }
   if(body?.action==="image_start"){
     if(!Object.hasOwn(ERAS,body.era)||body.consent!==true)return reply({error:"era_or_consent"},400);
