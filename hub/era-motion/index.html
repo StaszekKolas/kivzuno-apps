@@ -8,8 +8,8 @@
 <meta property="og:title" content="KIVZUNO Era Motion — One photo. Another era.">
 <meta property="og:description" content="A simple photo studio. No accounts, confusing credits or hidden purchases.">
 <title>Era Motion — KIVZUNO Photo Studio</title>
-<link rel="stylesheet" href="./style.css?v=5">
-<script src="./studio-simple.js?v=5" defer></script>
+<link rel="stylesheet" href="./style.css?v=6">
+<script src="./studio-simple.js?v=6" defer></script>
 </head>
 <body>
 <div class="shell">
@@ -33,6 +33,11 @@
         <button id="owner-unlock" type="button">Unlock test</button>
       </div>
       <p id="owner-state" role="status">Owner-only generation is locked. No generation or payment is happening.</p>
+      <div id="credit-audit" class="credit-audit" hidden>
+        <button type="button" id="audit-button" class="audit-button">Audit reserved test credits (read only)</button>
+        <pre id="audit-report" class="audit-report" aria-live="polite">No audit requested yet.</pre>
+        <p class="helper">This checks KIVZUNO's reservation records only. No API generations, refunds, resets or purchases.</p>
+      </div>
     </section>
 
     <section class="product-choice" aria-label="Choose AI photo or independent AI film">
