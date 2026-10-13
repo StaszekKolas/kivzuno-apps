@@ -11,12 +11,33 @@
  let ownerKey="",selectedProduct="video",ownerBudgetRemaining=null;
  const motion=$("motion");
  function message(value,kind=""){msg.textContent=value;msg.dataset.kind=kind;}
- function state(){
+ function blockReason(){
+   if(!dataUri)return "Select a photo to begin.";
+   if(!consent.checked)return "Tick the consent checkbox above.";
+   if(selectedProduct==="video"&&!aiEnabled)
+     return "Film AI needs owner access. Unlock the test at the top of this page.";
+   if(aiEnabled&&!Number.isInteger(ownerBudgetRemaining))
+     return "Owner access is open but the remaining test budget could not be checked. No credits will be spent. Ask for a budget diagnostic.";
    const required=selectedProduct==="video"?27:2;
-   go.disabled=busy || !dataUri || !consent.checked ||
-     (selectedProduct==="video"&&!aiEnabled) ||
-     (aiEnabled && (!Number.isInteger(ownerBudgetRemaining)||ownerBudgetRemaining<required));
+   if(aiEnabled&&ownerBudgetRemaining<required)
+     return "KIVZUNO's approved test budget has only "+ownerBudgetRemaining+
+       " reservation credits left; this "+(selectedProduct==="video"?"film needs 27":"photo needs 2")+
+       ". The Runway Dev balance is separate. No generation was submitted.";
+   return "";
+ }
+ function state(){
+   // Do not make a locked budget look like a broken button: clicking shows the
+   // blocking reason but never calls the paid provider if a prerequisite fails.
+   go.disabled=busy||!dataUri;
+   const reason=blockReason();
+   const diag=$("generation-diagnostic");
+   diag.textContent=busy?"Generation in progress…":
+     reason||"Ready: your selected AI generator can start after you confirm.";
+   diag.dataset.kind=reason?"warning":"success";
    go.textContent=busy ? (selectedProduct==="video"?"Creating your AI film…":aiEnabled?"Creating your AI photo…":"Checking your photo…")
+     :!dataUri?"Choose a photo first"
+     :!consent.checked?"Tick the consent box to continue"
+     :reason?"Why is generation blocked?"
      :selectedProduct==="video"?"Create my historical film (27 credits)"
      :aiEnabled?"Create my AI photo (2 credits)":"Check my photo — free";
  }
@@ -79,18 +100,22 @@
        // Read the site-wide reservation ledger. Never guess remaining provider credits.
        try{
          const budget=await post("era-owner-test",{action:"budget_status"});
+         if(!Number.isSafeInteger(budget.remaining)||!Number.isSafeInteger(budget.cap)||
+            !Number.isSafeInteger(budget.reserved)||budget.remaining<0||
+            budget.remaining>budget.cap)throw Error("invalid_budget");
          ownerBudgetRemaining=budget.remaining;
          $("owner-state").textContent="Owner unlocked · Approved test budget: "+
            budget.cap+" · Reserved: "+budget.reserved+" · Available for NEW reservations: "+
            budget.remaining+". This is NOT your Runway credit balance.";
          if(budget.remaining<27){
-           message("Safety limit: only "+budget.remaining+
-             " of 27 approved test credits remain. Film generation is blocked. "+
-             "No Runway call will start. Check Runway Dev Billing and earlier task history before approving more.","error");
+           message("Remaining KIVZUNO test reservation budget: "+budget.remaining+
+             ". A film needs 27, a photo needs 2. If you cannot generate, the limit is stopping a Runway call—not the button. "+
+             "Compare Runway Dev billing and past tasks before authorizing any more credits.","error");
          }
        }catch{
          ownerBudgetRemaining=null;
-         $("owner-state").textContent="Owner unlocked, but credit reservations cannot be verified. Generation locked for safety.";
+         $("owner-state").textContent="Owner unlocked, but the test budget lookup failed. This is a diagnostic problem; generation stays safely locked.";
+         message("Cannot read KIVZUNO budget status. Please send this message for diagnosis. No credits were spent.","error");
        }
        state();
      }else{
@@ -164,7 +189,13 @@
    return data;
  }
  async function run(){
-   if(busy||!dataUri||!consent.checked)return;
+   if(busy||!dataUri)return;
+   const reason=blockReason();
+   if(reason){
+     message(reason,"error");
+     state();
+     return;
+   }
    busy=true;state();clearResult();
    const img=dataUri,chosen=era.value,version=generationVersion;
    try{
@@ -255,8 +286,8 @@
    clearResult();
    consent.checked=false;
    message(dataUri?next==="video"
-     ?"Film mode: use your current photo directly — unlock owner access if needed."
-     :"Photo mode: transform your current photo.":"Choose a photo to start.");
+     ?"Film mode: one tap will create a historical scene and animate it, if the test budget allows."
+     :"Photo mode: transform your current photo, if the test budget allows.":"Choose a photo to start.");
    updateChoice();
  }
  $("photo-choice").addEventListener("click",()=>chooseProduct("photo"));
