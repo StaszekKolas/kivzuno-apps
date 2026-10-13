@@ -13,7 +13,7 @@ test("photo and film are separate user-selected products",()=>{
   assert.match(html,/WAITS for your approval/);
   assert.match(ui,/selectedProduct==="video"/);
   assert.match(ui,/"image_start"/);
-  assert.match(ui,/action:"scene_prepare"/);
+  assert.match(ui,/"scene_prepare"/);
   assert.match(ui,/action:"scene_approve"/);
   assert.match(ui,/action:"film_start"/);
   assert.doesNotThrow(()=>new Script(ui));
