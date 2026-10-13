@@ -41,7 +41,7 @@
         <button type="button" id="film-choice" aria-pressed="true"><span aria-hidden="true">🎬</span><strong>AI Film</strong><small>Main feature — animate your photo directly</small></button>
         <button type="button" id="photo-choice" aria-pressed="false"><span aria-hidden="true">📷</span><strong>AI Photo</strong><small>Explore a new look and preview the style</small></button>
       </div>
-      <p class="helper">Photo and film are separate choices. You do not need to generate a photo before making a film.</p>
+      <p class="helper">Choose one: Film AI uses the uploaded photo directly. Photo AI creates a new still picture. No extra intermediate generation.</p>
     </section>
 
     <section class="workspace" aria-label="Era Motion photo studio">
@@ -77,7 +77,7 @@
           <p class="helper">The selected era guides the AI photo or film.</p>
         </section>
 
-        <section class="form-step">
+        <section class="form-step" id="motion-step">
           <div class="step-heading"><span class="count">✦</span><h2>How should the film move?</h2></div>
           <label class="sr-only" for="motion">Film motion</label>
           <select id="motion" name="motion">
@@ -87,22 +87,16 @@
             <option value="ride">🐎 Ride or drive — wheels, hooves, movement</option>
             <option value="camera">🎥 Moving camera — tracking shot</option>
           </select>
-          <p class="helper">Applies only to Film AI. The result must show actual movement, not a still image playing as a video.</p>
+          <p class="helper">This is a film motion instruction, not a guarantee. Check the resulting clip actually moves before considering it acceptable.</p>
         </section>
 
         <section class="form-step last-step">
           <div class="step-heading"><span class="count">3</span><h2>Ready?</h2></div>
+          <p class="active-mode" id="active-mode">🎬 FILM AI — photo is animated directly</p>
           <label class="consent"><input type="checkbox" id="consent"><span id="consent-label">I agree to send my chosen photo to KIVZUNO for a free format check. It will be discarded immediately.</span></label>
           <button class="primary" id="go" type="submit" disabled>Check my photo — free</button>
           <p class="helper" id="action-hint">No login · No credits · No payment</p>
           <p class="result-message" id="message" role="status" aria-live="polite">Choose a photo to start.</p>
-        </section>
-        <section class="owner-video" id="owner-video" hidden>
-          <h2>Optional: animate the AI photo you just made</h2>
-          <p class="helper">Choose a movement above. Five seconds of Runway Gen-4 Turbo video costs about 25 Runway Dev API credits. No charge from KIVZUNO, and no automatic top-ups.</p>
-          <label class="consent"><input type="checkbox" id="video-consent"><span>I agree to spend approximately 25 existing Runway Dev API credits on this single film.</span></label>
-          <button class="primary" type="button" id="video-go" disabled>Create my 5-second film (25 credits)</button>
-          <p class="result-message" id="video-message" role="status" aria-live="polite">Generate an AI image first, then choose to animate it.</p>
         </section>
       </form>
 
