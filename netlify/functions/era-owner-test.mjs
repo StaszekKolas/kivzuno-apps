@@ -63,7 +63,7 @@ function scenePrompt(era,motion,look){
   return [
     "Edit @main into a photorealistic "+ERAS[era]+" film still.",
     "Preserve original crop, camera angle, exact left-right order, positions, human/pet count, faces and coat markings.",
-    "Replace ALL modern van, asphalt, houses, fences and clothes with era equivalents. Period transport must occupy the SAME spot and direction as the original vehicle.",
+    "Replace modern vehicles, asphalt, buildings, fences and clothes IF PRESENT with era equivalents. Keep existing transport at the SAME spot and direction. Never invent new vehicles.",
     LOOKS[look],ACTIONS[motion].still,
     "Atmosphere: "+ERA_ATMOSPHERE[era]+".",
     "Dynamic action, not posed lineup. Real paws and hands; NO added people, missing animals, caricatures or text."
