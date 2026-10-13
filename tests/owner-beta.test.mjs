@@ -35,10 +35,10 @@ test("image and video are distinct explicit owner-only actions, not checkout",()
   assert.match(backend,/model:MODEL,promptImage:imageUrl,promptText:ownerFilmPrompt/);
   assert.match(backend,/\/v1\/image_to_video/);
   assert.match(frontend,/action:"image_start"/);
-  assert.match(frontend,/action:"video_start"/);
+  assert.match(frontend,/action:"direct_video_start"/);
   assert.match(frontend,/window\.confirm/);
   assert.match(page,/id="owner-key"/);
-  assert.match(page,/id="video-consent"/);
+  assert.match(page,/id="film-choice"/);
   assert.match(page,/id="generated-video"/);
   assert.doesNotMatch(backend,/signPaidOrder|checkoutPayload|LEMON_SQUEEZY/i);
 });
