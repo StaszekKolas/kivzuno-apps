@@ -40,3 +40,13 @@
 .audit-button{font:inherit;background:#e3f6ed;color:#162c27;border:1px solid #a9dac9;border-radius:11px;padding:12px 14px;font-weight:700;min-height:46px;width:100%;cursor:pointer}
 .audit-button:disabled{opacity:.65;cursor:wait}
 .audit-report{padding:12px 6px;margin:12px 0;white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;font:12px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;color:#d7e2f7;max-height:420px;overflow:auto}
+
+/* Mobile owner-only film scene review: inspect before consuming video credits. */
+.scene-review{margin-top:16px;padding:16px;border:1px solid #a4e5c080;background:#182d2a;border-radius:15px}
+.scene-review[hidden]{display:none!important}
+.scene-review h3{font-size:17px;line-height:1.35;margin:0 0 10px;color:#e2ffec}
+.scene-review p{font-size:14px;line-height:1.55;color:#c7d9d2}
+.review-check{display:flex;gap:12px;align-items:flex-start;padding:10px 0;line-height:1.45;font-size:14px;cursor:pointer}
+.review-check input{flex-shrink:0;width:22px;height:22px;accent-color:#c9f7d4}
+#approve-scene{width:100%;padding:14px;font:inherit;font-weight:800;background:#c4f2d3;border:0;border-radius:12px;color:#142c22}
+#approve-scene:disabled{opacity:.4;cursor:not-allowed}
