@@ -8,12 +8,14 @@
  const preview=$("original"),empty=$("empty"),generated=$("generated-section"),generatedImg=$("generated-image");
  const MAX_FILE=12*1024*1024;
  let dataUri="",sourceAspect="portrait",busy=false,aiEnabled=false,generationVersion=0;
- let ownerKey="",selectedProduct="video";
+ let ownerKey="",selectedProduct="video",ownerBudgetRemaining=null;
  const motion=$("motion");
  function message(value,kind=""){msg.textContent=value;msg.dataset.kind=kind;}
  function state(){
+   const required=selectedProduct==="video"?27:2;
    go.disabled=busy || !dataUri || !consent.checked ||
-     (selectedProduct==="video"&&!aiEnabled);
+     (selectedProduct==="video"&&!aiEnabled) ||
+     (aiEnabled && (!Number.isInteger(ownerBudgetRemaining)||ownerBudgetRemaining<required));
    go.textContent=busy ? (selectedProduct==="video"?"Creating your AI film…":aiEnabled?"Creating your AI photo…":"Checking your photo…")
      :selectedProduct==="video"?"Create my historical film (27 credits)"
      :aiEnabled?"Create my AI photo (2 credits)":"Check my photo — free";
@@ -27,6 +29,7 @@
  }
  function mode(enabled){
    aiEnabled=Boolean(enabled);
+   ownerBudgetRemaining=null;
    if(aiEnabled){
      banner.textContent="OWNER TEST — Film AI changes the location and era, then animates the scene. Photo AI remains separate. No customer checkout.";
      label.textContent="I agree to send my photo to KIVZUNO and its AI provider for this transformation.";
@@ -72,10 +75,29 @@
      });
      const body=await response.json();
      mode(response.ok && body.available===true);
-     $("owner-state").textContent=aiEnabled
-       ?"✓ Owner test unlocked. No daily image limit; 2 credits/photo, 27 credits/historical film."
-       :ownerKey?"Owner access is unavailable or not yet configured on the server. No credits used."
-       :"Owner-only generation is locked. Nothing is shared or billed.";
+     if(aiEnabled){
+       // Read the site-wide reservation ledger. Never guess remaining provider credits.
+       try{
+         const budget=await post("era-owner-test",{action:"budget_status"});
+         ownerBudgetRemaining=budget.remaining;
+         $("owner-state").textContent="Owner unlocked · Approved test budget: "+
+           budget.cap+" · Reserved: "+budget.reserved+" · Available for NEW reservations: "+
+           budget.remaining+". This is NOT your Runway credit balance.";
+         if(budget.remaining<27){
+           message("Safety limit: only "+budget.remaining+
+             " of 27 approved test credits remain. Film generation is blocked. "+
+             "No Runway call will start. Check Runway Dev Billing and earlier task history before approving more.","error");
+         }
+       }catch{
+         ownerBudgetRemaining=null;
+         $("owner-state").textContent="Owner unlocked, but credit reservations cannot be verified. Generation locked for safety.";
+       }
+       state();
+     }else{
+       $("owner-state").textContent=ownerKey
+         ?"Owner access is unavailable or not configured. No credits used."
+         :"Owner-only generation is locked. Nothing is shared or billed.";
+     }
    }catch{mode(false);$("owner-state").textContent="Owner generation service unreachable. No credits used.";}
  }
  async function encode(file){
@@ -208,7 +230,15 @@
      }
      throw Error("Generation is taking longer than expected. Please do not retry automatically.");
    }catch(err){
-     message("Could not complete this step: "+String(err?.message||err).slice(0,130),"error");
+     const reason=String(err?.message||err);
+     if(reason==="owner_credit_budget_exhausted"){
+       ownerBudgetRemaining=0;
+       message("KIVZUNO safety limit reached: this test has insufficient reserved credits for another request. "+
+         "This does NOT mean your Runway balance is empty. No new Runway job was submitted. "+
+         "Check Runway Dev Billing and stop retrying until the limit is reviewed.","error");
+     }else{
+       message("Could not complete this step: "+reason.slice(0,130),"error");
+     }
    }finally{busy=false;state();}
  }
  $("owner-unlock").addEventListener("click",async()=>{
