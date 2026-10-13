@@ -54,28 +54,30 @@ function setup({reserved=0,cap=100}={}){
   return {handler,request,read:()=>({reserved:reservations.size,writes,providerCalls})};
 }
 
-test("safety cap is site-wide and reports reserved credits separately from provider spending",async()=>{
-  const ctx=setup({reserved:79});
+test("owner-approved 200 EXTRA credits raise preview reservation cap from 100 to 300, without discarding historic reservations",async()=>{
+  const ctx=setup({reserved:100});
   const status=await ctx.handler(ctx.request("budget_status"));
   assert.equal(status.status,200);
-  assert.equal(status.body.cap,100);
-  assert.equal(status.body.reserved,79);
-  assert.equal(status.body.remaining,21);
+  assert.equal(status.body.cap,300);
+  assert.equal(status.body.originalBudget,100);
+  assert.equal(status.body.additionalApproved,200);
+  assert.equal(status.body.reserved,100);
+  assert.equal(status.body.remaining,200);
   assert.match(status.body.note,/NOT actual provider spending/);
-  assert.deepEqual(ctx.read(),{reserved:79,writes:0,providerCalls:0});
+  assert.deepEqual(ctx.read(),{reserved:100,writes:0,providerCalls:0});
 });
 
 test("not enough credits for 27-credit film causes zero new reservations and zero provider calls",async()=>{
-  const ctx=setup({reserved:81});
+  const ctx=setup({reserved:281});
   const result=await ctx.handler(ctx.request("scene_video_start"));
   assert.equal(result.status,429);
   assert.equal(result.body.error,"owner_credit_budget_exhausted");
-  assert.deepEqual(ctx.read(),{reserved:81,writes:1,providerCalls:0});
+  assert.deepEqual(ctx.read(),{reserved:281,writes:1,providerCalls:0});
   // One bookkeeping job may be recorded but not sent to Runway.
 });
 
 test("the owner ledger is never disclosed without valid authorization",async()=>{
-  const ctx=setup({reserved:95});
+  const ctx=setup({reserved:295});
   const result=await ctx.handler(ctx.request("budget_status",false));
   assert.equal(result.status,403);
   assert.equal(result.body.error,"owner_authorization_required");
@@ -88,4 +90,14 @@ test("the iPhone UI disables generation when the reserved budget cannot cover it
   assert.match(frontend,/ownerBudgetRemaining<required/);
   assert.match(frontend,/This is NOT your Runway credit balance/);
   assert.match(frontend,/No new Runway job was submitted/);
+});
+
+test("unexpected settings do not authorize hidden extensions or new provider calls",async()=>{
+  const ctx=setup({reserved:100,cap:300});
+  const status=await ctx.handler(ctx.request("budget_status"));
+  // Both the initial and the supplemental authorization are strictly tied
+  // to the verified original Netlify test value of 100.
+  assert.equal(status.status,503);
+  assert.equal(status.body.error,"owner_beta_not_configured");
+  assert.deepEqual(ctx.read(),{reserved:100,writes:0,providerCalls:0});
 });
