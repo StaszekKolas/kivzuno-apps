@@ -33,3 +33,10 @@
 .generation-diagnostic{border-radius:10px;border:1px solid #ffffff29;padding:12px 14px;line-height:1.5;font-size:14px;background:#182037;color:#dfe8f8;margin:12px 0 4px}
 .generation-diagnostic[data-kind="warning"]{border-color:#f5c28a82;background:#392c29;color:#ffe4c4}
 .generation-diagnostic[data-kind="success"]{border-color:#a4e5c080;color:#d4f7df}
+
+/* Owner-only credit audit: values are a read-only diagnostic, never checkout UI. */
+.credit-audit{margin-top:16px;padding:15px;border:1px solid #ffffff2b;border-radius:14px;background:#131c30}
+.credit-audit[hidden]{display:none!important}
+.audit-button{font:inherit;background:#e3f6ed;color:#162c27;border:1px solid #a9dac9;border-radius:11px;padding:12px 14px;font-weight:700;min-height:46px;width:100%;cursor:pointer}
+.audit-button:disabled{opacity:.65;cursor:wait}
+.audit-report{padding:12px 6px;margin:12px 0;white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;font:12px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;color:#d7e2f7;max-height:420px;overflow:auto}
