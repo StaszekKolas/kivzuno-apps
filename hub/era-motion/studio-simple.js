@@ -7,33 +7,23 @@
  const msg=$("message"),banner=$("mode-banner"),label=$("consent-label");
  const preview=$("original"),empty=$("empty"),generated=$("generated-section"),generatedImg=$("generated-image");
  const MAX_FILE=12*1024*1024;
- let dataUri="",busy=false,videoBusy=false,aiEnabled=false,generationVersion=0;
- let ownerKey="",imageJob=null,selectedProduct="video";
+ let dataUri="",busy=false,aiEnabled=false,generationVersion=0;
+ let ownerKey="",selectedProduct="video";
  const motion=$("motion");
- const videoButton=$("video-go"),videoConsent=$("video-consent"),videoMsg=$("video-message");
- function videoMessage(value,kind=""){videoMsg.textContent=value;videoMsg.dataset.kind=kind;}
- function videoState(){
-   videoButton.disabled=busy||videoBusy||!aiEnabled||!imageJob||!videoConsent.checked;
-   videoButton.textContent=videoBusy?"Creating your 5-second film…":"Create my 5-second film (25 credits)";
- }
  function message(value,kind=""){msg.textContent=value;msg.dataset.kind=kind;}
  function state(){
-   go.disabled=busy || videoBusy || !dataUri || !consent.checked ||
+   go.disabled=busy || !dataUri || !consent.checked ||
      (selectedProduct==="video"&&!aiEnabled);
-   videoState();
    go.textContent=busy ? (selectedProduct==="video"?"Creating your AI film…":aiEnabled?"Creating your AI photo…":"Checking your photo…")
      :selectedProduct==="video"?"Create my AI film (25 credits)"
      :aiEnabled?"Create my AI photo (2 credits)":"Check my photo — free";
  }
  function clearResult(){
-   imageJob=null;
    generated.hidden=true;generatedImg.hidden=true;generatedImg.removeAttribute("src");
    $("generated-download").hidden=true;
    $("video-section").hidden=true;
    $("generated-video").pause();$("generated-video").removeAttribute("src");$("generated-video").load();
-   $("video-download").hidden=true;videoConsent.checked=false;
-   videoMessage("Generate an AI image first, then choose to animate it.");
-   videoState();
+   $("video-download").hidden=true;
  }
  function mode(enabled){
    aiEnabled=Boolean(enabled);
@@ -56,8 +46,9 @@
    const movie=selectedProduct==="video";
    $("photo-choice").setAttribute("aria-pressed",String(!movie));
    $("film-choice").setAttribute("aria-pressed",String(movie));
-   $("owner-video").hidden=!aiEnabled||movie;
-   $("creator-purpose").textContent=movie?"Film AI — directly from your uploaded photo":"Photo AI — transform your uploaded photo";
+   $("creator-purpose").textContent=movie?"FILM AI — directly from your uploaded photo":"PHOTO AI — transform your uploaded photo";
+   $("motion-step").hidden=!movie;
+   $("active-mode").textContent=movie?"🎬 FILM AI — photo is animated directly":"📷 PHOTO AI — create a new image";
    if(movie){
      label.textContent="I agree to send my photo to Runway to create one 5-second film using 25 existing API credits.";
      $("action-hint").textContent=aiEnabled
@@ -201,9 +192,6 @@
          generatedImg.hidden=false;
          generated.hidden=false;
          const link=$("generated-download");link.href=status.imageUrl;link.hidden=false;
-         imageJob={jobId:task.jobId,accessToken:task.accessToken};
-         videoMessage("Your AI image is ready. Confirm below to spend 25 Runway Dev credits on a 5-second film.");
-         videoState();
          message("✓ Your new AI image is ready. Open or save it below.","success");
          return;
        }
@@ -213,39 +201,6 @@
      message("Could not complete this step: "+String(err?.message||err).slice(0,130),"error");
    }finally{busy=false;state();}
  }
- async function makeVideo(){
-   if(videoBusy||busy||!aiEnabled||!imageJob||!videoConsent.checked)return;
-   if(!window.confirm("Generate a real 5-second Runway film? This spends approximately 25 of your existing Runway Dev API credits. No KIVZUNO payment or automatic top-up."))
-     return;
-   videoBusy=true;state();
-   const parent={...imageJob},version=generationVersion;
-   $("video-section").hidden=true;videoMessage("Creating your film from the generated AI photo. This uses Runway Dev API credits.");
-   try{
-     const task=await post("era-owner-test",{
-       action:"video_start",imageJobId:parent.jobId,imageAccessToken:parent.accessToken,motion:motion.value,consent:true
-     });
-     if(task.status!=="SUBMITTED"||!task.jobId||!task.accessToken)throw Error("Video did not start.");
-     for(let attempt=0;attempt<90;attempt++){
-       await new Promise(resolve=>setTimeout(resolve,5000));
-       if(version!==generationVersion || imageJob?.jobId!==parent.jobId)throw Error("Image changed during film creation.");
-       const progress=await post("era-owner-test",{
-         action:"status",jobId:task.jobId,accessToken:task.accessToken
-       });
-       if(progress.status==="FAILED"||progress.status==="REVIEW_REQUIRED")throw Error("Video was not completed. No automatic retry.");
-       if(progress.status==="SUCCEEDED"){
-         if(typeof progress.videoUrl!=="string"||!/^https:\/\//.test(progress.videoUrl))throw Error("Missing video.");
-         const player=$("generated-video");player.src=progress.videoUrl;player.load();
-         $("video-section").hidden=false;
-         const link=$("video-download");link.href=progress.videoUrl;link.hidden=false;
-         videoConsent.checked=false;
-         videoMessage("A Runway video file was generated. Check motion and duration before deciding whether it is good enough to sell.","success");
-         return;
-       }
-     }
-     throw Error("Film is still processing. No new generation was started.");
-   }catch(e){videoMessage("Video could not complete: "+String(e.message||e).slice(0,150),"error");}
-   finally{videoBusy=false;state();}
- }
  $("owner-unlock").addEventListener("click",async()=>{
    const input=$("owner-key");
    ownerKey=input.value.trim();
@@ -254,10 +209,8 @@
    await checkMode();
    if(!aiEnabled)ownerKey="";
  });
- videoButton.addEventListener("click",makeVideo);
- videoConsent.addEventListener("change",videoState);
  function chooseProduct(next){
-   if(busy||videoBusy||!["photo","video"].includes(next)||selectedProduct===next)return;
+   if(busy||!["photo","video"].includes(next)||selectedProduct===next)return;
    selectedProduct=next;
    clearResult();
    consent.checked=false;
