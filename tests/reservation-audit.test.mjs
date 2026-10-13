@@ -57,9 +57,9 @@ test("owner audit is read-only, summarizes reservations, without claiming provid
   const d=result.body;
   assert.equal(d.readOnly,true);
   assert.equal(d.actualProviderCreditsCharged,null);
-  assert.equal(d.cap,100);
+  assert.equal(d.cap,300);
   assert.equal(d.reservedCredits,6);
-  assert.equal(d.remainingCredits,94);
+  assert.equal(d.remainingCredits,294);
   assert.equal(d.jobCount,3);
   assert.deepEqual(d.byKind.image,{jobs:1,credits:2});
   assert.deepEqual(d.byKind.video,{jobs:1,credits:3});
