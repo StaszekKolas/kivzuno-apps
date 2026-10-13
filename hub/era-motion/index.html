@@ -8,8 +8,8 @@
 <meta property="og:title" content="KIVZUNO Era Motion — One photo. Another era.">
 <meta property="og:description" content="A simple photo studio. No accounts, confusing credits or hidden purchases.">
 <title>Era Motion — KIVZUNO Photo Studio</title>
-<link rel="stylesheet" href="./style.css?v=3">
-<script src="./studio-simple.js?v=3" defer></script>
+<link rel="stylesheet" href="./style.css?v=4">
+<script src="./studio-simple.js?v=4" defer></script>
 </head>
 <body>
 <div class="shell">
@@ -38,15 +38,15 @@
     <section class="product-choice" aria-label="Choose AI photo or independent AI film">
       <p class="eyebrow">CHOOSE WHAT YOU WANT TO CREATE</p>
       <div class="product-choice-buttons">
-        <button type="button" id="film-choice" aria-pressed="true"><span aria-hidden="true">🎬</span><strong>AI Film</strong><small>Main feature — animate your photo directly</small></button>
+        <button type="button" id="film-choice" aria-pressed="true"><span aria-hidden="true">🎬</span><strong>AI Film</strong><small>Main feature — step into a historical scene that comes alive</small></button>
         <button type="button" id="photo-choice" aria-pressed="false"><span aria-hidden="true">📷</span><strong>AI Photo</strong><small>Explore a new look and preview the style</small></button>
       </div>
-      <p class="helper">Choose one: Film AI uses the uploaded photo directly. Photo AI creates a new still picture. No extra intermediate generation.</p>
+      <p class="helper">Choose one: Film AI automatically rebuilds the setting into another era, then animates it. Photo AI creates a still picture. Film creation is still just one tap.</p>
     </section>
 
     <section class="workspace" aria-label="Era Motion photo studio">
       <form class="creator" id="creator" novalidate>
-        <p class="eyebrow" id="creator-purpose">Film AI — directly from your uploaded photo</p>
+        <p class="eyebrow" id="creator-purpose">Film AI — historical scene plus real movement</p>
         <section class="form-step">
           <div class="step-heading"><span class="count">1</span><h2>Your photo</h2></div>
           <label class="upload" for="photo">
@@ -74,7 +74,7 @@
             <option value="neon">⚡ 1980s neon</option>
             <option value="future">🌆 Futuristic city</option>
           </select>
-          <p class="helper">The selected era guides the AI photo or film.</p>
+          <p class="helper">Film AI must change the environment, clothing and era before animation.</p>
         </section>
 
         <section class="form-step" id="motion-step">
@@ -92,9 +92,9 @@
 
         <section class="form-step last-step">
           <div class="step-heading"><span class="count">3</span><h2>Ready?</h2></div>
-          <p class="active-mode" id="active-mode">🎬 FILM AI — photo is animated directly</p>
+          <p class="active-mode" id="active-mode">🎬 FILM AI — new historical setting + real motion</p>
           <label class="consent"><input type="checkbox" id="consent"><span id="consent-label">I agree to send my chosen photo to KIVZUNO for a free format check. It will be discarded immediately.</span></label>
-          <button class="primary" id="go" type="submit" disabled>Check my photo — free</button>
+          <button class="primary" id="go" type="submit" disabled>Choose a photo to begin</button>
           <p class="helper" id="action-hint">No login · No credits · No payment</p>
           <p class="result-message" id="message" role="status" aria-live="polite">Choose a photo to start.</p>
         </section>
