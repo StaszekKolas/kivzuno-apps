@@ -24,3 +24,7 @@
 .product-choice-buttons button span{font-size:27px}
 .product-choice .helper{margin:13px 0 0}
 @media(max-width:500px){.product-choice{padding:16px}.product-choice-buttons{gap:9px}.product-choice-buttons button{padding:14px 11px;min-height:145px}}
+
+/* Clearly show current independent product next to the only generation action. */
+.active-mode{margin:0 0 16px;padding:11px 13px;border-radius:10px;border:1px solid #b8f2c271;background:#294337;color:#e0ffe8;font-size:13px;font-weight:800;letter-spacing:.02em}
+#motion-step[hidden]{display:none!important}
