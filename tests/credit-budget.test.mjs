@@ -88,7 +88,7 @@ test("the iPhone UI disables generation when the reserved budget cannot cover it
   assert.doesNotThrow(()=>new Script(frontend));
   assert.match(frontend,/action:"budget_status"/);
   assert.match(frontend,/ownerBudgetRemaining<required/);
-  assert.match(frontend,/This is NOT your Runway credit balance/);
+  assert.match(frontend,/This is NOT your Runway Dev balance/);
   assert.match(frontend,/No new Runway job was submitted/);
 });
 
