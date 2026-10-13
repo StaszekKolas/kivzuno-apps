@@ -143,6 +143,19 @@ export default async function handler(request){
       });
     });
   }
+  // Video is a separate product: start directly from the owner's chosen photo.
+  // No earlier AI image task, paid order or checkout is required.
+  if(body?.action==="direct_video_start"){
+    if(!Object.hasOwn(ERAS,body.era)||body.consent!==true)
+      return reply({error:"era_or_video_consent"},400);
+    let source;
+    try{source=parseImage(body.photo);}
+    catch(e){return reply({error:String(e.message).slice(0,48)},400);}
+    return createJob("video",body.era,VIDEO_CREDITS,()=>runway("POST","/v1/image_to_video",{
+      model:MODEL,promptImage:source.dataUri,promptText:promptForEra(body.era),
+      ratio:RATIO,duration:DURATION
+    }));
+  }
   if(body?.action==="video_start"){
     if(body.consent!==true)return reply({error:"video_consent_required"},400);
     let imageJob;
