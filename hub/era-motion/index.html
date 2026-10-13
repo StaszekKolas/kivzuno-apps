@@ -8,8 +8,8 @@
 <meta property="og:title" content="KIVZUNO Era Motion — One photo. Another era.">
 <meta property="og:description" content="A simple photo studio. No accounts, confusing credits or hidden purchases.">
 <title>Era Motion — KIVZUNO Photo Studio</title>
-<link rel="stylesheet" href="./style.css?v=9">
-<script src="./studio-simple.js?v=9" defer></script>
+<link rel="stylesheet" href="./style.css?v=10">
+<script src="./studio-simple.js?v=10" defer></script>
 </head>
 <body>
 <div class="shell">
@@ -132,7 +132,10 @@
           <a id="generated-download" href="#" target="_blank" rel="noopener noreferrer" hidden>Open or save your AI image ↗</a>
           <section id="scene-review" class="scene-review" hidden>
             <h3>Approve this picture before making a film</h3>
-            <p>Does it keep the original people and pets, look historical and show the action you wanted? Approval costs zero credits and does not start a video.</p>
+            <p>Approval costs zero credits and never starts a video. Check the image and confirm all three conditions before approval.</p>
+            <label class="review-check"><input type="checkbox" id="check-subjects"> Same people and animals, correct count and believable anatomy</label>
+            <label class="review-check"><input type="checkbox" id="check-history"> No modern vehicle, asphalt or other era-breaking objects</label>
+            <label class="review-check"><input type="checkbox" id="check-action"> Original composition remains and the scene tells an interesting story</label>
             <button id="approve-scene" type="button" disabled>Approve for Film — free</button>
             <p id="approval-state" role="status">Needs your review. No video will start automatically.</p>
           </section>
