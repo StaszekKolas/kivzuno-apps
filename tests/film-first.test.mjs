@@ -10,26 +10,28 @@ const html=readFileSync("hub/era-motion/index.html","utf8");
 test("photo and film are separate user-selected products",()=>{
   assert.match(html,/id="photo-choice"/);
   assert.match(html,/id="film-choice"/);
-  assert.match(html,/Film AI automatically rebuilds the setting into another era/);
+  assert.match(html,/WAITS for your approval/);
   assert.match(ui,/selectedProduct==="video"/);
-  assert.match(ui,/action:"image_start",photo:img,era:chosen,consent:true/);
-  assert.match(ui,/action:"scene_video_start",photo:img,era:chosen,/);
+  assert.match(ui,/"image_start"/);
+  assert.match(ui,/action:"scene_prepare"/);
+  assert.match(ui,/action:"scene_approve"/);
+  assert.match(ui,/action:"film_start"/);
   assert.doesNotThrow(()=>new Script(ui));
 });
-test("independent film internally creates a historical still before animation",()=>{
+test("film requires separately preparing, approving, and animating the scene",()=>{
   const gate=api.indexOf('if(!owner(request))return reply({error:"owner_authorization_required"},403)');
-  const start=api.indexOf('if(body?.action==="scene_video_start")');
+  const start=api.indexOf('if(body?.action==="scene_prepare")');
   const stat=api.indexOf('if(body?.action==="status")');
   assert.ok(gate>0 && gate<start && start<stat);
   const flow=api.slice(start,stat);
   assert.match(flow,/parseImage\(body\.photo\)/);
-  assert.match(flow,/createJob\("scene_video",body\.era,SCENE_FILM_CREDITS/);
+  assert.match(flow,/createJob\("scene_prepare",body\.era,IMAGE_CREDITS/);
   assert.match(flow,/\/v1\/text_to_image/);
   assert.match(flow,/scenePrompt\(body\.era,body\.motion,look\)/);
   assert.match(api,/const SCENE_FILM_CREDITS=IMAGE_CREDITS\+VIDEO_CREDITS/);
-  assert.match(api,/scene-video-transition\/"/);
+  assert.doesNotMatch(api,/scene-video-transition\/"/);
   assert.match(api,/onlyIfNew:true/);
-  assert.match(api,/model:MODEL,promptImage:sceneUrl/);
+  assert.match(api,/model:MODEL,promptImage:approved\.imageUrl/);
   assert.doesNotMatch(api,/body\?\.action==="direct_video_start"/);
 });
 test("film prompts ask for real action, never just subtle still-frame movement",()=>{
@@ -40,8 +42,8 @@ test("film prompts ask for real action, never just subtle still-frame movement",
   assert.match(api,/paw and leg motion/);
   assert.match(api,/wheels visibly rotate or hooves take steps/i);
   assert.match(api,/validCreative\(body\.era,body\.motion,look,body\.aspect\)/);
-  assert.match(ui,/genuine motion/);
-  assert.match(ui,/has NOT been quality-certified/);
+  assert.match(ui,/genuine motion|real subject movement/);
+  assert.match(ui,/NEEDS REVIEW/);
   assert.doesNotMatch(api,/very subtle subject movement/i);
 });
 test("independent film cannot pay, auto-top up, or leak provider secrets in UI",()=>{
