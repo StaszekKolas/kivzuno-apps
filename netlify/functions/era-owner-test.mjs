@@ -11,29 +11,76 @@ const SCENE_FILM_CREDITS=IMAGE_CREDITS+VIDEO_CREDITS;
 // Film-first is a one-click user experience, but a TWO-STAGE AI pipeline.
 // One budget reservation covers both stages; no automatic retries or fallback to raw-photo animation.
 
-const FILM_MOTIONS=Object.freeze({
-  walk:"The main subject walks several clearly visible steps across the scene. Legs and body change position relative to the background. The camera tracks alongside in one continuous live-action shot.",
-  animals:"Every visible animal takes distinct steps forward, legs and paws moving in a natural gait. Ears and coats move with the action; people turn their heads while the camera tracks alongside. One continuous live-action shot.",
-  gesture:"The main subject turns toward the camera, raises a hand, gives a clear wave and lowers the arm. Head, shoulders and hands visibly change position. One continuous live-action shot.",
-  ride:"The cart, vehicle or mount moves forward several meters through the setting. Wheels or hooves visibly turn, dust rises and nearby subjects move in response. The camera follows in one continuous live-action shot.",
-  camera:"The camera makes a pronounced sideways tracking move past the subjects, revealing additional surroundings while the subjects turn and react. One continuous cinematic live-action shot."
+// Whitelisted owner-only creative controls. This is still one image task per
+// photo and two tasks per film, with the same approved 2/27-credit reservations.
+// Reference prompting improves fidelity but does not guarantee pixel-perfect editing.
+const LOOKS=Object.freeze({
+  faithful:"Faithful: maintain the input camera viewpoint, crop, subject scale, all poses and object positions. A small believable action may be visible, but do not rearrange the scene.",
+  cinematic:"Cinematic: maintain the input framing and recognizable subjects while capturing a decisive moment of action, strong depth, vivid natural lighting and atmospheric energy.",
+  epic:"Epic: keep the original subjects and their positions identifiable, but heighten environmental effects, storytelling tension, scale and dramatic light. Photorealistic, never fantasy caricature."
 });
-function ownerFilmPrompt(era,motion){
-  if(!Object.hasOwn(ERAS,era)||!Object.hasOwn(FILM_MOTIONS,motion))throw Error("invalid_motion");
-  return FILM_MOTIONS[motion]+" The scene uses "+ERAS[era]+
-    ". Retain recognizable people and animals in the same continuous action.";
+const ACTIONS=Object.freeze({
+  walk:{
+    still:"A lively instant of purposeful forward motion: walking subjects mid-stride, natural body weight shift, fabric and hair moving in the breeze.",
+    movie:"Subjects capable of walking take several clear steps, with visible leg movement and natural body weight changes; others react appropriately without leaving their established positions."
+  },
+  animals:{
+    still:"Capture any animals in the original photo actively striding or pulling, paws raised mid-step, coats moving, tack or leads under tension, dust kicked up by their feet.",
+    movie:"Every visible animal actively walks or pulls with repeated visible paw and leg motion, coats and ears responding, leads moving under tension; people or handlers react naturally."
+  },
+  gesture:{
+    still:"Capture the main human mid-gesture, turning or reaching naturally, with clothing reacting and an unmistakable moment of interaction.",
+    movie:"The main human turns and makes a visible intentional gesture, with head, arms and clothing changing position naturally; other subjects respond subtly."
+  },
+  ride:{
+    still:"Capture the era-appropriate conveyance in motion: spinning wheels or advancing hooves, dust or spray behind it, subjects interacting naturally.",
+    movie:"The era-appropriate vehicle or mount travels forward, wheels visibly rotate or hooves take steps; riders and nearby subjects react naturally."
+  },
+  camera:{
+    still:"Make a strong cinematic action frame with foreground depth, wind, particles and clearly active background atmosphere, not a posed portrait.",
+    movie:"The camera tracks laterally by a visible distance with parallax, while original subjects shift naturally and atmospheric dust, smoke or wind moves."
+  }
+});
+const ERA_ATMOSPHERE=Object.freeze({
+  west:"frontier street with passing dust, active wagon tracks, wind in period fabrics",
+  viking:"working Norse shoreline with moving sea mist, windblown sails and longhouse smoke",
+  medieval:"busy muddy castle approach with fluttering pennants, cart tracks and chimney smoke",
+  egypt:"sunlit Nile settlement with blowing sand, river sails and an active riverside setting",
+  rome:"bustling Roman stone thoroughfare with fluttering banners and market activity",
+  renaissance:"lively Italian piazza with flowing fabrics and vivid sunlight between buildings",
+  victorian:"wet cobblestones, moving steam and a lively gaslit London street",
+  artdeco:"energetic 1920s boulevard with passing classic traffic and theatrical city lights",
+  cinema:"1940s dramatic street light, swirling smoke and rich film-noir contrast",
+  retro:"busy 1970s street with breeze in clothing and warm late-afternoon light",
+  neon:"1980s nightlife street with rain reflections, neon glow and moving mist",
+  future:"dynamic futuristic street with rain reflections, dramatic light and moving vapour"
+});
+function validCreative(era,motion,look,aspect){
+  return Object.hasOwn(ERAS,era)&&Object.hasOwn(ACTIONS,motion)&&
+    Object.hasOwn(LOOKS,look)&&["landscape","portrait"].includes(aspect);
 }
-
-function sceneImagePrompt(era){
-  // Source image serves as identity and group-composition reference, not a background
-  // to be animated untouched. The separate video model subsequently animates this still.
+function scenePrompt(era,motion,look){
   return [
-    "Photorealistic cinematic historical scene. The @main image is a reference for ALL subjects and their identities, NOT the location to keep.",
-    "Recreate the scene fully in "+ERAS[era]+". Completely replace all present-day buildings, road, vehicles, objects, clothing and signage with era-appropriate equivalents.",
-    "Preserve the EXACT NUMBER of visible people and animals, each person's recognizable face, each animal's markings, and their relative placement.",
-    "Do not turn anyone into a caricature. No cartoon styling, plastic skin, exaggerated faces, duplicated or missing subjects.",
-    "Adapt modern vehicles into credible period transport while keeping the driver's position and all the animals in the scene.",
-    "Wide authentic live-action movie still with believable hands, paws, anatomy, natural shadows and a rich clearly historical landscape. No captions or logos."
+    "Transform the exact @main reference photo into a photorealistic movie frame from "+ERAS[era]+".",
+    "This is a faithful transformation of THIS photo, NOT a newly invented group portrait.",
+    "Keep the same camera angle, wide or tall crop, left-to-right subject order, scale, foreground positions, and exact count of people and animals. Recognizable faces, coats and markings.",
+    "Replace modern buildings, street, vehicles and clothing with plausible equivalents from the chosen era. Keep the original vehicle's size, location and travel direction; convert its form to period transport.",
+    LOOKS[look],ACTIONS[motion].still,
+    "Environment: "+ERA_ATMOSPHERE[era]+".",
+    "Make it an exciting candid story moment, not a lineup or static pose. Natural anatomy, paws and hands; no cartoon, caricature, duplicate or missing subject, no text."
+  ].join(" ");
+}
+function ownerFilmPrompt(era,motion,look){
+  if(!Object.hasOwn(ERAS,era)||!Object.hasOwn(ACTIONS,motion)||!Object.hasOwn(LOOKS,look))
+    throw Error("invalid_motion_or_look");
+  return [
+    "Animate this already transformed historical scene as one continuous 5-second live-action shot.",
+    ACTIONS[motion].movie,
+    "Strongly visible natural movement rather than a still-image slideshow.",
+    "Keep the original number and identity of people and animals, recognizable faces and coats, period costumes and historical setting. Do not add, remove, swap or morph subjects.",
+    look==="faithful"?"Camera mostly stable with authentic subject motion.":
+      look==="epic"?"Energetic but coherent tracking camera, lively wind and atmospheric particles.":
+        "Natural cinematic camera tracking, wind and environmental motion."
   ].join(" ");
 }
 const jobs=()=>getStore({name:"kivzuno-owner-beta-jobs-v1",region:"eu-central-1",consistency:"strong"});
@@ -92,15 +139,9 @@ async function runway(method,path,payload){
   if(!response.ok)throw Error("runway_"+response.status);
   return response.json();
 }
-function imagePrompt(era,companion){
-  return [
-    "Create a completely NEW photorealistic cinematic portrait set in "+ERAS[era]+".",
-    "The @main reference is the primary real subject.",
-    companion?"Include the @companion reference as a second real subject in the same scene.":"",
-    "Replace location, original background, period attire and lighting; no collage, frame, borders or captions.",
-    "Preserve the person's facial identity and pet coat markings. Avoid duplicated subjects, extra limbs and text.",
-    "Vertical cinematic composition, realistic atmosphere and natural lighting."
-  ].filter(Boolean).join(" ");
+function imagePrompt(era,motion,look,companion){
+  return scenePrompt(era,motion,look)+
+    (companion?" Include the @companion reference as an additional recognizable subject with consistent anatomy.":"");
 }
 // Each 1-credit slot is an atomic onlyIfNew claim. Two concurrent requests cannot
 // spend the same part of the pre-approved total cap. Partial claims are deliberately
@@ -272,7 +313,10 @@ export default async function handler(request){
     catch{return reply({error:"audit_storage_unavailable"},503);}
   }
   if(body?.action==="image_start"){
-    if(!Object.hasOwn(ERAS,body.era)||body.consent!==true)return reply({error:"era_or_consent"},400);
+    const look=body.look||"cinematic",motion=body.motion||"walk",
+      aspect=body.aspect||"portrait";
+    if(!validCreative(body.era,motion,look,aspect)||body.consent!==true)
+      return reply({error:"era_motion_look_aspect_or_consent"},400);
     let main,companion;
     try{
       main=parseImage(body.photo);
@@ -283,8 +327,8 @@ export default async function handler(request){
       const referenceImages=[{uri:main.dataUri,tag:"main"}];
       if(companion)referenceImages.push({uri:companion.dataUri,tag:"companion"});
       return runway("POST","/v1/text_to_image",{
-        model:"gen4_image_turbo",ratio:"720:1280",
-        promptText:imagePrompt(body.era,Boolean(companion)),referenceImages
+        model:"gen4_image_turbo",ratio:aspect==="landscape"?"1280:720":"720:1280",
+        promptText:imagePrompt(body.era,motion,look,Boolean(companion)),referenceImages
       });
     });
   }
@@ -292,8 +336,8 @@ export default async function handler(request){
   // stage 2 runs image-to-video from that transformed still.
   // No user-visible Photo AI step and no direct raw-photo video fallback.
   if(body?.action==="scene_video_start"){
-    if(!Object.hasOwn(ERAS,body.era)||!Object.hasOwn(FILM_MOTIONS,body.motion)||
-      body.consent!==true||!["landscape","portrait"].includes(body.aspect))
+    const look=body.look||"cinematic";
+    if(!validCreative(body.era,body.motion,look,body.aspect)||body.consent!==true)
       return reply({error:"era_motion_aspect_or_consent"},400);
     let source;
     try{source=parseImage(body.photo);}
@@ -302,9 +346,9 @@ export default async function handler(request){
     return createJob("scene_video",body.era,SCENE_FILM_CREDITS,
       ()=>runway("POST","/v1/text_to_image",{
         model:"gen4_image_turbo",ratio,
-        promptText:sceneImagePrompt(body.era),
+        promptText:scenePrompt(body.era,body.motion,look),
         referenceImages:[{uri:source.dataUri,tag:"main"}]
-      }),{stage:"SCENE",motion:body.motion,ratio});
+      }),{stage:"SCENE",motion:body.motion,look,ratio});
   }
   if(body?.action==="status"){
     let job;
@@ -334,7 +378,7 @@ export default async function handler(request){
         if(!lock.modified)return reply({status:"PROCESSING",stage:"SCENE"},200);
         try{
           const video=await runway("POST","/v1/image_to_video",{
-            model:MODEL,promptImage:sceneUrl,promptText:ownerFilmPrompt(job.era,job.motion),
+            model:MODEL,promptImage:sceneUrl,promptText:ownerFilmPrompt(job.era,job.motion,job.look||"cinematic"),
             ratio:job.ratio,duration:DURATION
           });
           if(!validId(video?.id))throw Error("invalid_video_task");
