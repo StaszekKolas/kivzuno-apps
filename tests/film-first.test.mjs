@@ -10,7 +10,7 @@ const html=readFileSync("hub/era-motion/index.html","utf8");
 test("photo and film are separate user-selected products",()=>{
   assert.match(html,/id="photo-choice"/);
   assert.match(html,/id="film-choice"/);
-  assert.match(html,/You do not need to generate a photo before making a film/);
+  assert.match(html,/Film AI uses the uploaded photo directly/);
   assert.match(ui,/selectedProduct==="video"/);
   assert.match(ui,/action:"image_start",photo:img,era:chosen,consent:true/);
   assert.match(ui,/action:"direct_video_start",photo:img,era:chosen,motion:motion.value,consent:true/);
