@@ -74,7 +74,7 @@ test("every historical era, action and visual style stays within Runway prompt l
         assert.ok(movie.length<=1000,era+"/"+style+"/"+action+" movie: "+movie.length);
         assert.match(still,/@main/);
         assert.match(still,/original crop|original geometry/);
-        assert.match(still,/exact human and pet count/);
+        assert.match(still,/human\/pet count/);
         assert.doesNotMatch(still,/completely NEW.*portrait/i);
         assert.match(movie,/movement|steps|motion/i);
         assert.equal(promptFunctions.validCreative(era,action,style,"landscape"),true);
@@ -94,7 +94,7 @@ test("photo preserves source landscape orientation and uses chosen vivid action 
   assert.equal(requests[0].body.ratio,"1280:720");
   assert.equal(requests[0].body.referenceImages[0].uri,"mock-photo");
   assert.match(requests[0].body.promptText,/paw|paws/);
-  assert.match(requests[0].body.promptText,/vehicle location/);
+  assert.match(requests[0].body.promptText,/SAME spot and direction/);
   assert.match(requests[0].body.promptText,/Cinematic/);
 });
 test("a film cannot be started before an owner-approved historical scene",async()=>{
