@@ -96,17 +96,37 @@ function imagePrompt(era,companion){
 // Each 1-credit slot is an atomic onlyIfNew claim. Two concurrent requests cannot
 // spend the same part of the pre-approved total cap. Partial claims are deliberately
 // never refunded: fail CLOSED rather than possibly billing more than the limit.
+// The site-scoped ledger is shared by all Netlify Deploy Previews. A reservation
+// is NOT evidence that Runway charged the project. Read-only checks do not reset it.
+async function reservationState(){
+  const max=cap(), ledger=budgetStore();
+  try{
+    const {blobs}=await ledger.list({prefix:"credit/"});
+    const taken=new Set(
+      blobs.map(entry=>entry.key).filter(key=>/^credit\/(0|[1-9][0-9]*)$/.test(key))
+        .map(key=>Number(key.slice("credit/".length)))
+        .filter(slot=>Number.isSafeInteger(slot)&&slot>=0&&slot<max)
+    );
+    return {max,taken,reserved:taken.size,remaining:max-taken.size,ledger};
+  }catch{throw Error("budget_store_unavailable");}
+}
 async function reserveCredits(amount,taskId){
-  const max=cap(),ledger=budgetStore();
+  // Check available capacity BEFORE claiming any slots: a denied 27-credit film
+  // must not burn the 1-26 reservations remaining after earlier tests.
+  const state=await reservationState();
+  if(state.remaining<amount)throw Error("budget_exhausted");
   let claimed=0;
   try{
-    for(let i=0;i<max && claimed<amount;i++){
-      const result=await ledger.setJSON("credit/"+i,{
+    for(let i=0;i<state.max && claimed<amount;i++){
+      if(state.taken.has(i))continue;
+      const result=await state.ledger.setJSON("credit/"+i,{
         taskId,reservedAt:new Date().toISOString()
       },{onlyIfNew:true});
       if(result.modified)claimed++;
     }
   }catch{throw Error("budget_store_unavailable");}
+  // A concurrent owner request or a failed provider response may still reserve
+  // some credits. Intentionally never auto-refund/overwrite historical claims.
   if(claimed!==amount)throw Error("budget_exhausted");
 }
 async function createJob(kind,era,amount,makeProviderTask,metadata={}){
@@ -155,6 +175,15 @@ export default async function handler(request){
   }
   if(!enabled())return reply({error:"owner_beta_not_configured"},503);
   if(!owner(request))return reply({error:"owner_authorization_required"},403);
+  if(body?.action==="budget_status"){
+    try{
+      const state=await reservationState();
+      return reply({cap:state.max,reserved:state.reserved,
+        remaining:state.remaining,filmRequired:SCENE_FILM_CREDITS,
+        imageRequired:IMAGE_CREDITS,
+        note:"Reservations shared across previews, NOT actual provider spending. No change to approved cap."});
+    }catch{return reply({error:"budget_store_unavailable"},503);}
+  }
   if(body?.action==="image_start"){
     if(!Object.hasOwn(ERAS,body.era)||body.consent!==true)return reply({error:"era_or_consent"},400);
     let main,companion;
