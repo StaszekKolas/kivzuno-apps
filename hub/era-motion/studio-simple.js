@@ -106,9 +106,11 @@
             !Number.isSafeInteger(budget.reserved)||budget.remaining<0||
             budget.remaining>budget.cap)throw Error("invalid_budget");
          ownerBudgetRemaining=budget.remaining;
-         $("owner-state").textContent="Owner unlocked · Approved test budget: "+
-           budget.cap+" · Reserved: "+budget.reserved+" · Available for NEW reservations: "+
-           budget.remaining+". This is NOT your Runway credit balance.";
+         $("owner-state").textContent="Owner unlocked · Private test cap: "+
+           budget.cap+" ("+budget.originalBudget+" original + "+
+           budget.additionalApproved+" additionally approved) · Reserved: "+
+           budget.reserved+" · Available for NEW reservations: "+
+           budget.remaining+". This is NOT your Runway Dev balance.";
          if(budget.remaining<27){
            message("Remaining KIVZUNO test reservation budget: "+budget.remaining+
              ". A film needs 27, a photo needs 2. If you cannot generate, the limit is stopping a Runway call—not the button. "+
