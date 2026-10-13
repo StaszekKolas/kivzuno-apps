@@ -32,7 +32,7 @@ test("image and video are distinct explicit owner-only actions, not checkout",()
   assert.match(backend,/body\?\.action==="image_start"/);
   assert.match(backend,/body\?\.action==="video_start"/);
   assert.match(backend,/body\.consent!==true/);
-  assert.match(backend,/model:MODEL,promptImage:imageUrl,promptText:promptForEra/);
+  assert.match(backend,/model:MODEL,promptImage:imageUrl,promptText:ownerFilmPrompt/);
   assert.match(backend,/\/v1\/image_to_video/);
   assert.match(frontend,/action:"image_start"/);
   assert.match(frontend,/action:"video_start"/);
