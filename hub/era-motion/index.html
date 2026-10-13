@@ -8,8 +8,8 @@
 <meta property="og:title" content="KIVZUNO Era Motion — One photo. Another era.">
 <meta property="og:description" content="A simple photo studio. No accounts, confusing credits or hidden purchases.">
 <title>Era Motion — KIVZUNO Photo Studio</title>
-<link rel="stylesheet" href="./style.css?v=6">
-<script src="./studio-simple.js?v=7" defer></script>
+<link rel="stylesheet" href="./style.css?v=8">
+<script src="./studio-simple.js?v=8" defer></script>
 </head>
 <body>
 <div class="shell">
@@ -46,7 +46,7 @@
         <button type="button" id="film-choice" aria-pressed="true"><span aria-hidden="true">🎬</span><strong>AI Film</strong><small>Main feature — step into a historical scene that comes alive</small></button>
         <button type="button" id="photo-choice" aria-pressed="false"><span aria-hidden="true">📷</span><strong>AI Photo</strong><small>Explore a new look and preview the style</small></button>
       </div>
-      <p class="helper">Choose one: Film AI automatically rebuilds the setting into another era, then animates it. Photo AI creates a still picture. Film creation is still just one tap.</p>
+      <p class="helper">Choose one: Film AI automatically rebuilds the setting into another era, then animates it. Photo AI captures a dramatic moment from your original photo. Film creation is still one tap, with two internal stages.</p>
     </section>
 
     <section class="workspace" aria-label="Era Motion photo studio">
@@ -79,11 +79,22 @@
             <option value="neon">⚡ 1980s neon</option>
             <option value="future">🌆 Futuristic city</option>
           </select>
-          <p class="helper">Film AI must change the environment, clothing and era before animation.</p>
+          <p class="helper">Keep the original people, pets, framing and vehicle position while changing the time period.</p>
+        </section>
+
+        <section class="form-step" id="look-step">
+          <div class="step-heading"><span class="count">✦</span><h2>How dramatic should it look?</h2></div>
+          <label class="sr-only" for="look">Visual transformation style</label>
+          <select id="look" name="look">
+            <option value="faithful">Faithful — keep the original framing and details</option>
+            <option value="cinematic" selected>Cinematic — original photo with vivid action</option>
+            <option value="epic">Epic — heightened drama, recognizable subjects</option>
+          </select>
+          <p class="helper">All three aim to keep the original people, animals and their positions. Cinematic is recommended. AI resemblance cannot be guaranteed.</p>
         </section>
 
         <section class="form-step" id="motion-step">
-          <div class="step-heading"><span class="count">✦</span><h2>How should the film move?</h2></div>
+          <div class="step-heading"><span class="count">✦</span><h2 id="motion-title">How should the scene move?</h2></div>
           <label class="sr-only" for="motion">Film motion</label>
           <select id="motion" name="motion">
             <option value="walk" selected>🚶 Walking — visible subject movement</option>
@@ -92,7 +103,7 @@
             <option value="ride">🐎 Ride or drive — wheels, hooves, movement</option>
             <option value="camera">🎥 Moving camera — tracking shot</option>
           </select>
-          <p class="helper">This is a film motion instruction, not a guarantee. Check the resulting clip actually moves before considering it acceptable.</p>
+          <p id="motion-help" class="helper">Make subjects perform visible actions. A still photo should capture the action mid-moment.</p>
         </section>
 
         <section class="form-step last-step">
