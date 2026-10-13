@@ -9,7 +9,7 @@
  const MAX_FILE=12*1024*1024;
  let dataUri="",sourceAspect="portrait",busy=false,aiEnabled=false,generationVersion=0;
  let ownerKey="",selectedProduct="video",ownerBudgetRemaining=null;
- const motion=$("motion");
+ const motion=$("motion"),look=$("look");
  function message(value,kind=""){msg.textContent=value;msg.dataset.kind=kind;}
  function blockReason(){
    if(!dataUri)return "Select a photo to begin.";
@@ -73,8 +73,14 @@
    $("photo-choice").setAttribute("aria-pressed",String(!movie));
    $("film-choice").setAttribute("aria-pressed",String(movie));
    $("creator-purpose").textContent=movie?"FILM AI — transform the era and animate it":"PHOTO AI — transform your uploaded photo";
-   $("motion-step").hidden=!movie;
-   $("active-mode").textContent=movie?"🎬 FILM AI — new historical setting + real motion":"📷 PHOTO AI — create a new image";
+   // Both photos and videos need action; a still captures a mid-action moment.
+   $("motion-step").hidden=false;
+   $("motion-title").textContent=movie?"How should the scene move?":"What should happen in your picture?";
+   $("motion-help").textContent=movie
+     ?"Make subjects perform real actions instead of moving a frozen photo."
+     :"Capture an exciting split-second of action without losing the original people, pets or camera angle.";
+   $("active-mode").textContent=movie?"🎬 FILM AI — preserve subjects, change era, add action"
+     :"📷 PHOTO AI — your original scene becomes an action shot";
    if(movie){
      label.textContent="I agree to create a historical scene and then animate it into a 5-second film, using up to 27 existing Runway Dev API credits.";
      $("action-hint").textContent=aiEnabled
@@ -212,11 +218,11 @@
        return;
      }
      if(selectedProduct==="video"){
-       if(!window.confirm("Create ONE 5-second historical film? First Runway transforms the setting to your chosen era (2 credits), then animates it (25 credits). Total 27 existing Runway Dev API credits. Quality is NOT guaranteed. No purchases or auto-top-ups."))
+       if(!window.confirm("Create ONE 5-second historical film in "+look.options[look.selectedIndex].text+" style? The historical action scene is generated first (2 credits), then animated (25 credits). Total 27 existing Runway Dev API credits. Identity and motion quality are not guaranteed. No top-ups."))
          return;
        message("Stage 1 of 2: Rebuilding your photo into the selected historical era…");
        const task=await post("era-owner-test",{action:"scene_video_start",photo:img,era:chosen,
-         aspect:sourceAspect,motion:motion.value,consent:true});
+         aspect:sourceAspect,motion:motion.value,look:look.value,consent:true});
        if(task.status!=="SUBMITTED"||!task.jobId||!task.accessToken)throw Error("Film generation did not start.");
        let priorStage="";
        for(let attempt=0;attempt<120;attempt++){
@@ -245,8 +251,9 @@
        }
        throw Error("Historical film is still processing. No automatic retry was made; avoid a second submission.");
      }
-     message("Sending your photo for one AI transformation. This may take a minute…");
-     const task=await post("era-owner-test",{action:"image_start",photo:img,era:chosen,consent:true});
+     message("Keeping your original composition while transforming the era and capturing an action scene…");
+     const task=await post("era-owner-test",{action:"image_start",photo:img,era:chosen,consent:true,
+       aspect:sourceAspect,motion:motion.value,look:look.value});
      if(task.status!=="SUBMITTED"||!task.jobId||!task.accessToken)throw Error("Generation did not start.");
      for(let attempt=0;attempt<60;attempt++){
        await new Promise(resolve=>setTimeout(resolve,5000));
@@ -338,12 +345,22 @@
    clearResult();
    consent.checked=false;
    message(dataUri?next==="video"
-     ?"Film mode: one tap will create a historical scene and animate it, if the test budget allows."
-     :"Photo mode: transform your current photo, if the test budget allows.":"Choose a photo to start.");
+     ?"Film mode: one tap transforms the scene and animates the selected action, if the budget allows."
+     :"Photo mode: transform your current photo into an active scene, if the budget allows.":"Choose a photo to start.");
    updateChoice();
  }
  $("photo-choice").addEventListener("click",()=>chooseProduct("photo"));
  $("film-choice").addEventListener("click",()=>chooseProduct("video"));
+ function creativeChanged(){
+   if(busy)return;
+   clearResult();
+   consent.checked=false;
+   message(dataUri?"Creative choices updated. Tick the consent box before another generation."
+     :"Choose a photo to start.");
+   state();
+ }
+ look.addEventListener("change",creativeChanged);
+ motion.addEventListener("change",creativeChanged);
  photo.addEventListener("change",()=>onSelect(photo.files?.[0]));
  era.addEventListener("change",()=>{clearResult();message(dataUri?"Era selected. Ready when you are.":"Choose a photo to start.");});
  consent.addEventListener("change",state);
