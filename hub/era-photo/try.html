@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#101522">
+<title>KIVZUNO Era Photo — Private Workflow Test</title>
+<style>
+:root{color-scheme:dark;--bg:#101522;--gold:#f4c879;--text:#f9f7ee;--muted:#bfced5;--line:#ffffff36}*{box-sizing:border-box}
+body{font:16px/1.55 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at 95% 10%,#35415d,transparent 40%),var(--bg);color:var(--text);margin:0}
+main{max-width:850px;margin:auto;padding:23px clamp(16px,4vw,35px) 65px}a{color:var(--gold)}.brand{font-size:24px;letter-spacing:.14em;font-weight:900;text-decoration:none;color:var(--text)}
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:16px}
+h1{font-size:clamp(36px,7vw,58px);line-height:1.05;letter-spacing:-.055em;margin:18px 0}h1 span{color:var(--gold)}
+p{color:var(--muted)}.small{font-size:13px}.tag{display:inline-block;color:var(--gold);letter-spacing:.15em;font-size:12px;font-weight:850}
+.panel{padding:clamp(19px,4vw,26px);border:1px solid var(--line);border-radius:22px;background:#1a2635;margin:22px 0}
+.panel h2{margin:0 0 12px;font-size:22px}.panel h2 span{color:var(--gold)}
+label{display:block;font-weight:750;margin:13px 0 6px}input[type=file],select,textarea{display:block;width:100%;padding:13px;border:1px solid var(--line);border-radius:13px;background:#101a29;color:var(--text);font:inherit}
+textarea{font-size:13px;min-height:220px;resize:vertical}button,.btn{display:inline-block;text-align:center;background:var(--gold);border:none;border-radius:12px;padding:13px 19px;font:800 15px system-ui;color:#1e2633;cursor:pointer;text-decoration:none;margin:10px 7px 0 0}
+button:disabled{opacity:.4;cursor:not-allowed}.secondary{background:#ffffff17;border:1px solid var(--line);color:var(--text)}
+.preview{width:100%;max-height:460px;object-fit:contain;border:1px solid var(--line);border-radius:14px;background:#101522;margin-top:14px}
+.preview[hidden]{display:none}.status{min-height:24px;font-weight:650;color:#bcebd4;font-size:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.warning{border:1px solid #f4c87978;background:#f4c8790a;padding:16px;border-radius:13px}
+footer{margin-top:35px;border-top:1px solid var(--line);padding-top:18px;color:var(--muted);font-size:12px}
+@media(max-width:650px){.grid{grid-template-columns:1fr}}
+</style>
+<script src="./try.js?v=1" defer></script></head><body>
+<main>
+<header><a class="brand" href="/">KIVZUNO</a><a href="./">← Landing page</a></header>
+<p class="tag">OWNER TEST · MANUAL CHATGPT WORKFLOW · NO API COST</p>
+<h1>Test the idea.<br><span>Keep control.</span></h1>
+<p>This is a genuine private test of the photo workflow and branded download — not an automatic KIVZUNO AI generator. You create an image inside ChatGPT using your own access, then bring the result back here to add the small KIVZUNO watermark.</p>
+<div class="warning"><strong>No automatic generation or paid API requests.</strong><p class="small">Your uploads remain in this browser until you choose to share the source photo with ChatGPT yourself. ChatGPT usage is subject to the limits of your account. KIVZUNO does not receive these files.</p></div>
+<section class="panel" aria-label="Prepare image transformation">
+<h2><span>01.</span> Choose a source image and era</h2>
+<label for="source">Original photograph (local preview only)</label>
+<input type="file" id="source" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" aria-describedby="source-help">
+<p id="source-help" class="small">Optional for prompt preparation; upload the actual photo to ChatGPT when you generate.</p>
+<img id="source-preview" class="preview" hidden alt="Original source image preview">
+<label for="era">Historical period</label>
+<select id="era">
+<option value="viking">Viking Age</option><option value="medieval">Medieval</option><option value="west">Wild West</option><option value="victorian">Victorian</option><option value="rome">Ancient Rome</option><option value="jazz">1920s</option>
+</select>
+<label for="style">Cinematic direction</label>
+<select id="style"><option value="cinematic">Cinematic — natural action</option><option value="faithful">Faithful — maximum resemblance</option><option value="epic">Epic — dramatic atmosphere</option></select>
+<button type="button" id="prepare">Prepare ChatGPT prompt</button>
+<label for="prompt">Editing instructions — copy into ChatGPT with your original photo</label>
+<textarea id="prompt" readonly aria-label="AI image editing prompt"></textarea>
+<button type="button" class="secondary" id="copy" disabled>Copy prompt</button>
+<a class="btn secondary" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">Open ChatGPT ↗</a>
+<p id="prompt-status" class="status" role="status">Choose a period and prepare the prompt. Nothing is uploaded or generated here.</p>
+</section>
+<section class="panel" aria-label="Watermark your completed image">
+<h2><span>02.</span> Add the KIVZUNO signature</h2>
+<p>After generating the historical image in ChatGPT, save it to your phone and select it below. A small KIVZUNO mark will be embedded in the lower-right corner of the downloaded JPEG.</p>
+<label for="result">AI-generated image (from ChatGPT)</label>
+<input type="file" id="result" accept="image/jpeg,image/png,image/webp,image/heic,image/heif">
+<img id="result-preview" class="preview" hidden alt="Completed image with watermark preview">
+<div><button type="button" id="watermark" disabled>Apply KIVZUNO watermark — free</button><button type="button" id="save" class="secondary" disabled>Save watermarked photo ↓</button></div>
+<p id="result-status" class="status" role="status">No result selected. This tool cannot generate a historical scene by itself.</p>
+</section>
+<section class="panel" aria-label="Quality checklist">
+<h2><span>03.</span> Check the result</h2>
+<div class="grid">
+<label><input type="checkbox"> Same people and pets, recognisable faces</label>
+<label><input type="checkbox"> Correct animal count and original layout</label>
+<label><input type="checkbox"> Full historical transformation (no modern artefacts)</label>
+<label><input type="checkbox"> Interesting action, natural anatomy</label>
+</div>
+<p class="small">This is a visual checklist for your own review, not automatic quality certification.</p>
+</section>
+<footer>Private concept test only · English-language interface · No ads, payments, automatic AI generation, photo collection or publication.</footer>
+</main></body></html>
