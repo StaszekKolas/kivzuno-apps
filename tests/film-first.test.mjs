@@ -33,7 +33,7 @@ test("film prompts ask for real action, never just subtle still-frame movement",
     assert.match(api,new RegExp(motion+":"));
   }
   assert.match(api,/legs and paws moving/);
-  assert.match(api,/wheels or hooves visibly turn/);
+  assert.match(api,/wheels or hooves visibly turn/i);
   assert.match(api,/!Object\.hasOwn\(FILM_MOTIONS,body\.motion\)/);
   assert.match(ui,/Check that subjects REALLY MOVE/);
   assert.match(ui,/not passed motion-quality inspection/);
