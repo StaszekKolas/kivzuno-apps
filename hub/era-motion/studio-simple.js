@@ -9,6 +9,7 @@
  const MAX_FILE=12*1024*1024;
  let dataUri="",sourceAspect="portrait",busy=false,aiEnabled=false,generationVersion=0;
  let ownerKey="",selectedProduct="video",ownerBudgetRemaining=null;
+ let currentScene=null,sceneLookupReady=false,sceneImageValid=false;
  const motion=$("motion"),look=$("look");
  function message(value,kind=""){msg.textContent=value;msg.dataset.kind=kind;}
  function blockReason(){
@@ -18,26 +19,32 @@
      return "Film AI needs owner access. Unlock the test at the top of this page.";
    if(aiEnabled&&!Number.isInteger(ownerBudgetRemaining))
      return "Owner access is open but the remaining test budget could not be checked. No credits will be spent. Ask for a budget diagnostic.";
-   const required=selectedProduct==="video"?27:2;
+   if(selectedProduct==="video"&&!sceneLookupReady)
+     return "Checking whether your previously approved historical scene can be reused. This lookup is free.";
+   const required=selectedProduct==="video"&&currentScene?.approved?25:2;
    if(aiEnabled&&ownerBudgetRemaining<required)
      return "KIVZUNO's approved test budget has only "+ownerBudgetRemaining+
-       " reservation credits left; this "+(selectedProduct==="video"?"film needs 27":"photo needs 2")+
+       " reservation credits left; this step needs "+required+
        ". The Runway Dev balance is separate. No generation was submitted.";
    return "";
  }
  function state(){
    // Do not make a locked budget look like a broken button: clicking shows the
    // blocking reason but never calls the paid provider if a prerequisite fails.
-   go.disabled=busy||!dataUri;
+   go.disabled=busy||!dataUri||(selectedProduct==="video"&&!!currentScene&&!currentScene.approved);
    const reason=blockReason();
    const diag=$("generation-diagnostic");
    diag.textContent=busy?"Generation in progress…":
-     reason||"Ready: your selected AI generator can start after you confirm.";
+     selectedProduct==="video"&&currentScene&&!currentScene.approved
+       ?"Your picture is ready. Check it below and click Approve for Film before spending another 25 credits."
+       :reason||"Ready: confirm once before spending credits on this step.";
    diag.dataset.kind=reason?"warning":"success";
-   go.textContent=busy ? (selectedProduct==="video"?"Creating your AI film…":aiEnabled?"Creating your AI photo…":"Checking your photo…")
+   go.textContent=busy ? (selectedProduct==="video"&&currentScene?.approved?"Creating your film…":"Preparing historical scene…")
      :!dataUri?"Choose a photo first"
-     :selectedProduct==="video"?"Create my historical film (27 credits)"
-     :aiEnabled?"Create my AI photo (2 credits)":"Check my photo — free";
+     :selectedProduct==="video"
+       ?(currentScene?.approved?"Generate 5-second film (25 credits)"
+         :currentScene?"Approve the scene below first":"Prepare historical scene (2 credits)")
+       :aiEnabled?"Create my AI photo (2 credits)":"Check my photo — free";
  }
  function clearResult(){
    generated.hidden=true;generatedImg.hidden=true;generatedImg.removeAttribute("src");
@@ -45,6 +52,11 @@
    $("video-section").hidden=true;
    $("generated-video").pause();$("generated-video").removeAttribute("src");$("generated-video").load();
    $("video-download").hidden=true;
+   $("scene-review").hidden=true;
+   $("approve-scene").disabled=true;
+   $("image-quality").textContent="Check the people, animals, historical objects and composition before approving.";
+   $("approval-state").textContent="Needs your review. No video will start automatically.";
+   $("video-quality").textContent="Video file needs a manual review of motion, appearance and era accuracy.";
  }
  function mode(enabled){
    aiEnabled=Boolean(enabled);
@@ -55,7 +67,7 @@
      banner.textContent="OWNER TEST — Film AI changes the location and era, then animates the scene. Photo AI remains separate. No customer checkout.";
      label.textContent="I agree to send my photo to KIVZUNO and its AI provider for this transformation.";
      $("action-hint").textContent="Images 2 Runway Dev credits each · No daily KIVZUNO limit";
-     $("availability-detail").textContent="Owner preview: Film AI uses an internal historical scene-generation step (2 credits) then animation (25 credits). Total 27 existing Runway Dev API credits. Photo AI remains separate. No public payments or watermarked customer previews.";
+     $("availability-detail").textContent="Owner preview: Film AI prepares one 2-credit scene and STOPS for your approval before any 25-credit animation. Photo AI is separate. Approved scenes can be reused at no image-generation cost. No public payments, ads or customer previews.";
    } else {
      banner.textContent="PUBLIC GENERATION DISABLED — Enter your owner test code to unlock AI images and film.";
      label.textContent="I agree to send my photo to KIVZUNO for a free image-format check. It will be discarded; no AI provider is called.";
@@ -64,7 +76,9 @@
    }
    consent.checked=false;
    clearResult();
+   currentScene=null;sceneImageValid=false;sceneLookupReady=false;
    updateChoice();
+   if(aiEnabled&&dataUri&&selectedProduct==="video")lookupScene();
  }
  function updateChoice(){
    const movie=selectedProduct==="video";
@@ -77,12 +91,12 @@
    $("motion-help").textContent=movie
      ?"Make subjects perform real actions instead of moving a frozen photo."
      :"Capture an exciting split-second of action without losing the original people, pets or camera angle.";
-   $("active-mode").textContent=movie?"🎬 FILM AI — preserve subjects, change era, add action"
+   $("active-mode").textContent=movie?"🎬 FILM AI — approve the historical scene before animating"
      :"📷 PHOTO AI — your original scene becomes an action shot";
    if(movie){
-     label.textContent="I agree to create a historical scene and then animate it into a 5-second film, using up to 27 existing Runway Dev API credits.";
+     label.textContent="I agree to submit only the current step to Runway. Preparing a scene uses 2 existing credits; a separately approved film uses 25.";
      $("action-hint").textContent=aiEnabled
-       ?"One tap · two AI stages · 27 existing Runway Dev API credits"
+       ?"Scene preparation: 2 credits · Approval: free · Film: 25 credits"
        :"Owner access required for films — unlock with your private code.";
    } else if(aiEnabled){
      label.textContent="I agree to send my photo to KIVZUNO and its AI provider for this transformation.";
@@ -164,7 +178,8 @@
  }
  async function onSelect(file){
    const version=++generationVersion;
-   dataUri="";clearResult();preview.hidden=true;empty.hidden=false;
+   dataUri="";currentScene=null;sceneLookupReady=false;sceneImageValid=false;
+   clearResult();preview.hidden=true;empty.hidden=false;
    consent.checked=false;
    state();
    if(!file){message("Choose a photo to start.");return;}
@@ -185,6 +200,7 @@
      message(err.message||"Could not open the photo.","error");
    }
    state();
+   if(aiEnabled&&dataUri&&selectedProduct==="video")await lookupScene();
  }
  async function post(path,body){
    const response=await fetch("/.netlify/functions/"+path,{
@@ -196,91 +212,163 @@
    if(!response.ok)throw Error(String(data.error||response.status));
    return data;
  }
+ async function refreshBudget(){
+   if(!aiEnabled)return;
+   try{
+     const v=await post("era-owner-test",{action:"budget_status"});
+     ownerBudgetRemaining=Number.isSafeInteger(v.remaining)?v.remaining:null;
+   }catch{ownerBudgetRemaining=null;}
+   state();
+ }
+ function showScene(scene){
+   currentScene=scene;sceneImageValid=false;sceneLookupReady=true;
+   generated.hidden=false;generatedImg.hidden=false;
+   $("scene-review").hidden=false;
+   $("approve-scene").disabled=true;
+   $("approval-state").textContent=scene.approved
+     ?"Approved for this photograph, era and style. No new image needed."
+     :"Needs your approval. No video has started.";
+   generatedImg.onload=()=>{
+     const wide=generatedImg.naturalWidth>=generatedImg.naturalHeight;
+     const good=wide===(sourceAspect==="landscape");
+     sceneImageValid=good;
+     $("image-quality").textContent=good
+       ?"Format check passed. VISUALLY inspect identity, count, era accuracy, no modern objects and action. Automatic visual checks are not available."
+       :"WRONG IMAGE ORIENTATION — do not approve this scene. Needs Review.";
+     $("approve-scene").disabled=!good||scene.approved||!scene.accessToken;
+     state();
+   };
+   generatedImg.onerror=()=>{
+     sceneImageValid=false;$("image-quality").textContent=
+       "Preview image could not load or provider link expired. No paid retry will happen.";
+     $("approve-scene").disabled=true;
+   };
+   generatedImg.src=scene.imageUrl;
+   const link=$("generated-download");link.href=scene.imageUrl;link.hidden=false;
+   state();
+ }
+ async function lookupScene(){
+   if(!aiEnabled||!dataUri||selectedProduct!=="video")return;
+   const version=generationVersion,chosen=era.value,style=look.value,action=motion.value;
+   if(currentScene){sceneLookupReady=true;showScene(currentScene);return;}
+   sceneLookupReady=false;state();
+   try{
+     const info=await post("era-owner-test",{action:"scene_lookup",
+       photo:dataUri,era:chosen,look:style,motion:action,aspect:sourceAspect});
+     if(version!==generationVersion||chosen!==era.value||style!==look.value||
+        action!==motion.value||selectedProduct!=="video")return;
+     sceneLookupReady=true;
+     if(info.status==="ALREADY_APPROVED"&&/^https:\/\//.test(info.imageUrl)){
+       showScene({approved:true,imageUrl:info.imageUrl,jobId:info.jobId});
+       message("Found your earlier approved scene. No image credits spent.","success");
+     }else{
+       state();
+       message("No approved scene found. Prepare ONE image for 2 credits, review it, then decide about the film.");
+     }
+   }catch(e){
+     if(version!==generationVersion)return;
+     sceneLookupReady=false;
+     message("Cannot check previously approved scenes. No generation is permitted until lookup works: "+String(e.message),"error");
+     state();
+   }
+ }
+ async function pollJob(task,version){
+   for(let attempt=0;attempt<90;attempt++){
+     await new Promise(resolve=>setTimeout(resolve,5000));
+     if(version!==generationVersion)throw Error("Photo changed. No automatic retry.");
+     const update=await post("era-owner-test",{
+       action:"status",jobId:task.jobId,accessToken:task.accessToken});
+     if(update.status==="FAILED"||
+       (update.status==="REVIEW_REQUIRED"&&!update.videoUrl))
+       throw Error("Provider task requires review or failed. No automatic retry.");
+     if(update.status==="SUCCEEDED"||update.videoUrl)return update;
+   }
+   throw Error("Provider processing timeout. Do NOT start a duplicate paid task.");
+ }
  async function run(){
    if(busy||!dataUri)return;
    const reason=blockReason();
-   if(reason){
-     message(reason,"error");
-     state();
-     return;
+   if(reason){message(reason,"error");state();return;}
+   if(selectedProduct==="video"&&currentScene&&!currentScene.approved){
+     message("First review and approve the scene below, free of charge.","error");return;
    }
-   busy=true;state();clearResult();
-   const img=dataUri,chosen=era.value,version=generationVersion;
+   busy=true;state();
+   const img=dataUri,chosen=era.value,version=generationVersion,style=look.value,action=motion.value;
    try{
      if(!aiEnabled){
        message("Checking photo compatibility…");
        const result=await post("runway-handoff",{action:"preflight",image:img,era:chosen});
-       if(result.ready!==true||result.photoTransferred!==true||result.charged!==false)throw Error("Unexpected server response.");
-       if(version!==generationVersion)throw Error("Photo changed during the check.");
-       message("✓ Your photo passed! KIVZUNO received and validated it. No AI image was generated, no credits used and no payment made.","success");
+       if(result.ready!==true||result.photoTransferred!==true||result.charged!==false)
+         throw Error("Unexpected validation response.");
+       message("Photo compatibility confirmed. No AI credits used.","success");
        return;
      }
-     if(selectedProduct==="video"){
-       if(!window.confirm("Create ONE 5-second historical film in "+look.options[look.selectedIndex].text+" style? The historical action scene is generated first (2 credits), then animated (25 credits). Total 27 existing Runway Dev API credits. Identity and motion quality are not guaranteed. No top-ups."))
+     if(selectedProduct==="video"&&currentScene?.approved){
+       if(!sceneImageValid)throw Error("Scene preview has not passed orientation check.");
+       if(!window.confirm("Spend exactly 25 existing Runway Dev API credits for ONE 5-second film from the APPROVED scene? This is a separate task, with no retry, no top-up and no automatic purchase."))
          return;
-       message("Stage 1 of 2: Rebuilding your photo into the selected historical era…");
-       const task=await post("era-owner-test",{action:"scene_video_start",photo:img,era:chosen,
-         aspect:sourceAspect,motion:motion.value,look:look.value,consent:true});
-       if(task.status!=="SUBMITTED"||!task.jobId||!task.accessToken)throw Error("Film generation did not start.");
-       let priorStage="";
-       for(let attempt=0;attempt<120;attempt++){
-         await new Promise(resolve=>setTimeout(resolve,5000));
-         if(version!==generationVersion||selectedProduct!=="video")throw Error("Photo or generator changed during film creation.");
-         const progress=await post("era-owner-test",{
-           action:"status",jobId:task.jobId,accessToken:task.accessToken
-         });
-         if(progress.status==="PROCESSING" && progress.stage!==priorStage){
-           priorStage=progress.stage;
-           message(priorStage==="MOVIE"
-             ?"Stage 2 of 2: The historical setting is ready. Animating people, animals and camera…"
-             :"Stage 1 of 2: Rebuilding the entire scene in the chosen era…");
-         }
-         if(progress.status==="FAILED"||progress.status==="REVIEW_REQUIRED")
-           throw Error("Film could not complete. No automatic retry.");
-         if(progress.status==="SUCCEEDED"){
-           if(typeof progress.videoUrl!=="string"||!/^https:\/\//.test(progress.videoUrl))
-             throw Error("Provider did not return a video.");
-           const player=$("generated-video");player.src=progress.videoUrl;player.load();
-           $("video-section").hidden=false;
-           const link=$("video-download");link.href=progress.videoUrl;link.hidden=false;
-           message("Your historical film has been generated. Confirm that the era really changed, faces and animals look natural, and the video has genuine motion. This result has NOT been quality-certified.","success");
-           return;
-         }
-       }
-       throw Error("Historical film is still processing. No automatic retry was made; avoid a second submission.");
+       message("Starting only the 25-credit animation of your approved scene…");
+       const task=await post("era-owner-test",{action:"film_start",photo:img,era:chosen,
+         aspect:sourceAspect,motion:action,look:style,consent:true});
+       await refreshBudget();
+       const final=await pollJob(task,version);
+       if(!final.videoUrl)throw Error("No video file returned. Check job history.");
+       const player=$("generated-video");
+       player.onloadedmetadata=()=>{
+         const d=player.duration,valid=Number.isFinite(d)&&Math.abs(d-5)<=0.8;
+         $("video-quality").textContent=valid
+           ?"Duration check: ~5 seconds. NEEDS REVIEW: watch for real subject movement, stable faces, exact animal count and correct era."
+           :"NEEDS REVIEW: clip duration is not approximately 5 seconds. Do not sell this output.";
+       };
+       player.src=final.videoUrl;player.load();
+       $("video-section").hidden=false;
+       const link=$("video-download");link.href=final.videoUrl;link.hidden=false;
+       message("Film file delivered — NEEDS REVIEW. Check movement, scene continuity and faces. Do not assume API success means good motion.","success");
+       return;
      }
-     message("Keeping your original composition while transforming the era and capturing an action scene…");
-     const task=await post("era-owner-test",{action:"image_start",photo:img,era:chosen,consent:true,
-       aspect:sourceAspect,motion:motion.value,look:look.value});
-     if(task.status!=="SUBMITTED"||!task.jobId||!task.accessToken)throw Error("Generation did not start.");
-     for(let attempt=0;attempt<60;attempt++){
-       await new Promise(resolve=>setTimeout(resolve,5000));
-       if(version!==generationVersion)throw Error("Photo changed while generating.");
-       const status=await post("era-owner-test",{action:"status",jobId:task.jobId,accessToken:task.accessToken});
-       if(status.status==="FAILED"||status.status==="REVIEW_REQUIRED")throw Error("Image generation failed. We did not retry or charge again.");
-       if(status.status==="SUCCEEDED"){
-         if(typeof status.imageUrl!=="string"||!/^https:\/\//.test(status.imageUrl))throw Error("Provider did not supply an image.");
-         generatedImg.src=status.imageUrl;
-         generatedImg.hidden=false;
-         generated.hidden=false;
-         const link=$("generated-download");link.href=status.imageUrl;link.hidden=false;
-         message("✓ Your new AI image is ready. Open or save it below.","success");
-         return;
-       }
+     if(!window.confirm("Generate ONE historical "+(selectedProduct==="video"?"scene for review":"AI photo")+
+       " for 2 existing Runway Dev API credits? No automatic retries or video will follow."))
+       return;
+     clearResult();
+     currentScene=null;sceneImageValid=false;
+     message("Generating only the historical image. It will NOT start video automatically…");
+     const task=await post("era-owner-test",{
+       action:selectedProduct==="video"?"scene_prepare":"image_start",
+       photo:img,era:chosen,aspect:sourceAspect,motion:action,look:style,consent:true
+     });
+     if(task.status==="ALREADY_APPROVED"){
+       showScene({approved:true,imageUrl:task.imageUrl,jobId:task.jobId});
+       message("Reused previously approved scene for free. No image credits spent.","success");return;
      }
-     throw Error("Generation is taking longer than expected. Please do not retry automatically.");
-   }catch(err){
-     const reason=String(err?.message||err);
-     if(reason==="owner_credit_budget_exhausted"){
-       ownerBudgetRemaining=0;
-       message("KIVZUNO safety limit reached: this test has insufficient reserved credits for another request. "+
-         "This does NOT mean your Runway balance is empty. No new Runway job was submitted. "+
-         "Check Runway Dev Billing and stop retrying until the limit is reviewed.","error");
-     }else{
-       message("Could not complete this step: "+reason.slice(0,130),"error");
-     }
+     if(task.status!=="SUBMITTED"||!task.jobId||!task.accessToken)
+       throw Error("Image task not submitted.");
+     await refreshBudget();
+     const result=await pollJob(task,version);
+     if(!result.imageUrl)throw Error("Provider returned no image.");
+     showScene({approved:false,jobId:task.jobId,accessToken:task.accessToken,
+       imageUrl:result.imageUrl});
+     message("Scene created — NEEDS REVIEW. Check subjects, history and composition; approve only if satisfied.","success");
+   }catch(e){
+     const reason=String(e?.message||e);
+     message("Could not complete this step: "+reason.slice(0,180)+". No automatic retry.","error");
    }finally{busy=false;state();}
  }
+ $("approve-scene").addEventListener("click",async()=>{
+   if(!aiEnabled||!currentScene||currentScene.approved||!sceneImageValid||
+      !currentScene.accessToken||busy)return;
+   if(!window.confirm("Approve this historical picture for your Film AI? Approval costs ZERO credits. Film generation will still need a separate 25-credit confirmation."))return;
+   busy=true;state();
+   try{
+     const result=await post("era-owner-test",{action:"scene_approve",
+       jobId:currentScene.jobId,accessToken:currentScene.accessToken});
+     if(result.status!=="ALREADY_APPROVED")throw Error("Scene approval was not confirmed.");
+     currentScene={...currentScene,approved:true};
+     $("approve-scene").disabled=true;
+     $("approval-state").textContent="Approved. You may now generate the film using 25 credits, or return later and reuse this scene.";
+     message("Scene approved for film. NO video credits were spent by this approval.","success");
+   }catch(e){message("Could not approve the scene: "+String(e.message),"error");}
+   finally{busy=false;state();}
+ });
  $("audit-button").addEventListener("click",async()=>{
    const button=$("audit-button"),display=$("audit-report");
    if(!aiEnabled||!ownerKey){
@@ -340,27 +428,29 @@
  function chooseProduct(next){
    if(busy||!["photo","video"].includes(next)||selectedProduct===next)return;
    selectedProduct=next;
-   clearResult();
    consent.checked=false;
-   message(dataUri?next==="video"
-     ?"Film mode: one tap transforms the scene and animates the selected action, if the budget allows."
-     :"Photo mode: transform your current photo into an active scene, if the budget allows.":"Choose a photo to start.");
+   clearResult();
    updateChoice();
+   if(currentScene)showScene(currentScene);
+   else if(next==="video"&&aiEnabled&&dataUri)lookupScene();
+   else state();
+   message(dataUri?"Selected "+(next==="video"?"Film AI":"Photo AI")+
+     ". You are in control of each paid generation.":"Choose a photo to start.");
  }
  $("photo-choice").addEventListener("click",()=>chooseProduct("photo"));
  $("film-choice").addEventListener("click",()=>chooseProduct("video"));
  function creativeChanged(){
    if(busy)return;
-   clearResult();
-   consent.checked=false;
-   message(dataUri?"Creative choices updated. Tick the consent box before another generation."
-     :"Choose a photo to start.");
-   state();
+   currentScene=null;sceneLookupReady=false;sceneImageValid=false;
+   clearResult();consent.checked=false;
+   message(dataUri?"Changed the era, style or action. The previous scene cannot be reused with different settings.":"Choose a photo to start.");
+   if(aiEnabled&&selectedProduct==="video"&&dataUri)lookupScene();
+   else state();
  }
  look.addEventListener("change",creativeChanged);
  motion.addEventListener("change",creativeChanged);
  photo.addEventListener("change",()=>onSelect(photo.files?.[0]));
- era.addEventListener("change",()=>{clearResult();message(dataUri?"Era selected. Ready when you are.":"Choose a photo to start.");});
+ era.addEventListener("change",creativeChanged);
  consent.addEventListener("change",state);
  form.addEventListener("submit",ev=>{ev.preventDefault();run();});
  checkMode();
