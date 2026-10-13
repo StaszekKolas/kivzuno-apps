@@ -42,9 +42,18 @@ const hash=s=>createHash("sha256").update(s).digest();
 const tokenHash=s=>createHash("sha256").update(s).digest("hex");
 const validId=s=>typeof s==="string" && /^[0-9a-f-]{36}$/i.test(s);
 const validTaskToken=s=>typeof s==="string" && /^[0-9a-f]{64}$/i.test(s);
+// Owner explicitly approved an ADDITIONAL 200 existing Runway Dev credits for
+// this private PR #26 beta on 2026-10-13. The original approved 100 reservations
+// are kept intact, unchanged and fully traceable. This code must never be merged
+// to production or enabled for public customers.
+const OWNER_EXTRA_CREDITS_APPROVED=200;
 function cap(){
-  const n=Number(process.env.KIVZUNO_OWNER_TEST_BUDGET_CREDITS);
-  return Number.isSafeInteger(n)&&n>=25&&n<=1000?n:0;
+  const base=Number(process.env.KIVZUNO_OWNER_TEST_BUDGET_CREDITS);
+  if(!Number.isSafeInteger(base)||base<25||base>1000)return 0;
+  // Fail closed unless the originally reviewed budget is still exactly 100.
+  // Higher or unexpected env values do not silently authorize more testing.
+  if(base!==100)return 0;
+  return base+OWNER_EXTRA_CREDITS_APPROVED;
 }
 function enabled(){
   const secret=process.env.KIVZUNO_OWNER_TEST_TOKEN||"";
@@ -239,7 +248,10 @@ export default async function handler(request){
   if(body?.action==="capabilities"){
     return reply({available:owner(request),ownerOnly:true,
       imageCredits:IMAGE_CREDITS,videoCredits:SCENE_FILM_CREDITS,videoSeconds:DURATION,
-      budgetCapCredits:owner(request)?cap():null,customerPrice:0,
+      budgetCapCredits:owner(request)?cap():null,
+      originalBudgetCredits:owner(request)?100:null,
+      addedBudgetCredits:owner(request)?OWNER_EXTRA_CREDITS_APPROVED:null,
+      customerPrice:0,
       note:"Uses existing Runway Dev API credits; no purchases or auto-top-ups are performed."});
   }
   if(!enabled())return reply({error:"owner_beta_not_configured"},503);
@@ -248,7 +260,9 @@ export default async function handler(request){
     try{
       const state=await reservationState();
       return reply({cap:state.max,reserved:state.reserved,
-        remaining:state.remaining,filmRequired:SCENE_FILM_CREDITS,
+        remaining:state.remaining,
+        originalBudget:100,additionalApproved:OWNER_EXTRA_CREDITS_APPROVED,
+        filmRequired:SCENE_FILM_CREDITS,
         imageRequired:IMAGE_CREDITS,
         note:"Reservations shared across previews, NOT actual provider spending. No change to approved cap."});
     }catch{return reply({error:"budget_store_unavailable"},503);}
