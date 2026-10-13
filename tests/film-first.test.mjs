@@ -25,7 +25,7 @@ test("independent film internally creates a historical still before animation",(
   assert.match(flow,/parseImage\(body\.photo\)/);
   assert.match(flow,/createJob\("scene_video",body\.era,SCENE_FILM_CREDITS/);
   assert.match(flow,/\/v1\/text_to_image/);
-  assert.match(flow,/sceneImagePrompt\(body\.era\)/);
+  assert.match(flow,/scenePrompt\(body\.era,body\.motion,look\)/);
   assert.match(api,/const SCENE_FILM_CREDITS=IMAGE_CREDITS\+VIDEO_CREDITS/);
   assert.match(api,/scene-video-transition\/"/);
   assert.match(api,/onlyIfNew:true/);
@@ -33,13 +33,13 @@ test("independent film internally creates a historical still before animation",(
   assert.doesNotMatch(api,/body\?\.action==="direct_video_start"/);
 });
 test("film prompts ask for real action, never just subtle still-frame movement",()=>{
-  assert.match(api,/const FILM_MOTIONS=/);
+  assert.match(api,/const ACTIONS=Object\.freeze/);
   for(const motion of ["walk","animals","gesture","ride","camera"]){
     assert.match(api,new RegExp(motion+":"));
   }
-  assert.match(api,/legs and paws moving/);
-  assert.match(api,/wheels or hooves visibly turn/i);
-  assert.match(api,/!Object\.hasOwn\(FILM_MOTIONS,body\.motion\)/);
+  assert.match(api,/paw and leg motion/);
+  assert.match(api,/wheels visibly rotate or hooves take steps/i);
+  assert.match(api,/validCreative\(body\.era,body\.motion,look,body\.aspect\)/);
   assert.match(ui,/genuine motion/);
   assert.match(ui,/has NOT been quality-certified/);
   assert.doesNotMatch(api,/very subtle subject movement/i);
