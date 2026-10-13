@@ -51,6 +51,8 @@
  function mode(enabled){
    aiEnabled=Boolean(enabled);
    ownerBudgetRemaining=null;
+   $("credit-audit").hidden=!aiEnabled;
+   $("audit-report").textContent="No audit requested yet.";
    if(aiEnabled){
      banner.textContent="OWNER TEST — Film AI changes the location and era, then animates the scene. Photo AI remains separate. No customer checkout.";
      label.textContent="I agree to send my photo to KIVZUNO and its AI provider for this transformation.";
@@ -272,6 +274,54 @@
      }
    }finally{busy=false;state();}
  }
+ $("audit-button").addEventListener("click",async()=>{
+   const button=$("audit-button"),display=$("audit-report");
+   if(!aiEnabled||!ownerKey){
+     display.textContent="Audit unavailable: unlock owner access first.";
+     return;
+   }
+   button.disabled=true;
+   display.textContent="Reading historical reservations (no Runway calls)…";
+   try{
+     const audit=await post("era-owner-test",{action:"audit_reservations"});
+     const safe=n=>Number.isSafeInteger(n)?String(n):"unknown";
+     const group=(title,value)=>title+": "+safe(value?.credits)+" reserved credits / "+safe(value?.jobs)+" jobs";
+     display.textContent=[
+       "KIVZUNO READ-ONLY AUDIT",
+       "Approved budget: "+safe(audit.cap),
+       "Reserved: "+safe(audit.reservedCredits),
+       "Still free: "+safe(audit.remainingCredits),
+       "Recorded job count: "+safe(audit.jobCount),
+       "",
+       "Breakdown by request:",
+       group("Photo AI",audit.byKind?.image),
+       group("Legacy film",audit.byKind?.video),
+       group("Historical two-stage film",audit.byKind?.scene_video),
+       group("Unknown",audit.byKind?.unknown),
+       "",
+       "Last saved job state (NOT billing result):",
+       group("Reserved only",audit.bySavedState?.RESERVED),
+       group("Submitted",audit.bySavedState?.SUBMITTED),
+       group("Review required",audit.bySavedState?.REVIEW_REQUIRED),
+       group("Missing job",audit.bySavedState?.missing_job),
+       group("Unexpected",audit.bySavedState?.unexpected_state),
+       "",
+       "Credits with saved provider task ID: "+safe(audit.withSavedProviderTaskCredits),
+       "Credits without saved provider task ID: "+safe(audit.withoutSavedProviderTaskCredits),
+       "Partial reservation jobs: "+safe(audit.partialReservationJobs),
+       "Partial reservation credits: "+safe(audit.partialReservationCredits),
+       "Unreadable slots: "+safe(audit.missingSlotEntries),
+       "Invalid reservation records: "+safe(audit.invalidReservationRecords),
+       "",
+       "Actual Runway credits charged: NOT VERIFIED BY THIS AUDIT.",
+       "This view did not start generations, reset credits or change any saved data.",
+       "A missing provider ID is NOT proof of zero billing."
+     ].join("\n");
+   }catch(e){
+     display.textContent="Audit unavailable: "+String(e?.message||"storage_read_failed")+
+       ". No reservation changes or new Runway jobs were made.";
+   }finally{button.disabled=false;}
+ });
  $("owner-unlock").addEventListener("click",async()=>{
    const input=$("owner-key");
    ownerKey=input.value.trim();
