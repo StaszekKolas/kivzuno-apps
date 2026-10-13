@@ -77,6 +77,19 @@
           <p class="helper">The selected era guides the AI photo or film.</p>
         </section>
 
+        <section class="form-step">
+          <div class="step-heading"><span class="count">✦</span><h2>How should the film move?</h2></div>
+          <label class="sr-only" for="motion">Film motion</label>
+          <select id="motion" name="motion">
+            <option value="walk">🚶 Walking — visible subject movement</option>
+            <option value="animals" selected>🐕 Animals walking — legs, paws, ears move</option>
+            <option value="gesture">👋 Turn and wave — head and hands move</option>
+            <option value="ride">🐎 Ride or drive — wheels, hooves, movement</option>
+            <option value="camera">🎥 Moving camera — tracking shot</option>
+          </select>
+          <p class="helper">Applies only to Film AI. The result must show actual movement, not a still image playing as a video.</p>
+        </section>
+
         <section class="form-step last-step">
           <div class="step-heading"><span class="count">3</span><h2>Ready?</h2></div>
           <label class="consent"><input type="checkbox" id="consent"><span id="consent-label">I agree to send my chosen photo to KIVZUNO for a free format check. It will be discarded immediately.</span></label>
@@ -86,7 +99,7 @@
         </section>
         <section class="owner-video" id="owner-video" hidden>
           <h2>Optional: animate the AI photo you just made</h2>
-          <p class="helper">Five seconds of Runway Gen-4 Turbo video costs about 25 Runway Dev API credits. No charge from KIVZUNO, and no automatic top-ups.</p>
+          <p class="helper">Choose a movement above. Five seconds of Runway Gen-4 Turbo video costs about 25 Runway Dev API credits. No charge from KIVZUNO, and no automatic top-ups.</p>
           <label class="consent"><input type="checkbox" id="video-consent"><span>I agree to spend approximately 25 existing Runway Dev API credits on this single film.</span></label>
           <button class="primary" type="button" id="video-go" disabled>Create my 5-second film (25 credits)</button>
           <p class="result-message" id="video-message" role="status" aria-live="polite">Generate an AI image first, then choose to animate it.</p>
