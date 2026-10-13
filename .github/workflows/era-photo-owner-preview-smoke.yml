@@ -28,7 +28,7 @@ jobs:
               if(pages.some(r=>!r.ok))throw Error("HTTP statuses: "+pages.map(r=>r.status).join(","));
               const [hub,landing,test,script]=await Promise.all(pages.map(r=>r.text()));
               if(!hub.includes("/era-photo/"))throw Error("new homepage card missing");
-              if(!landing.includes('href="./try.html"'))throw Error("owner test link missing");
+              if(!landing.includes('href="./try.html"'))throw Error("owner test link missing; final="+pages[1].url+"; htmlsize="+landing.length+"; snippets="+JSON.stringify((landing.match(/.{0,80}(?:era-photo|try\.html|ERA PHOTO).{0,80}/g)||[]).slice(0,5))+"; first="+landing.slice(0,150));
               if(!test.includes("MANUAL CHATGPT WORKFLOW"))throw Error("workflow page not ready");
               if(!script.includes("embedWatermark(ctx,w,h)"))throw Error("watermark generator missing");
               if(script.includes("fetch("))throw Error("unexpected external API request");
