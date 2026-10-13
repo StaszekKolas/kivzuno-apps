@@ -262,6 +262,20 @@ async function createJob(kind,era,amount,makeProviderTask,metadata={}){
     const task=await makeProviderTask();
     if(!validId(task?.id))throw Error("invalid_task");
     await store.setJSON("task/"+jobId,{...job,ownerTask:task.id,state:"SUBMITTED"});
+    if(["image","scene_prepare"].includes(kind)&&!metadata.hasCompanion&&
+      typeof metadata.photoHash==="string"&&metadata.photoHash.length===64){
+      const identity=creativeIdentity(metadata.photoHash,era,metadata.motion,
+        metadata.look,metadata.aspect);
+      try{
+        // This index records a PREPARED scene, not visual approval. Reading it
+        // later never starts a new paid request; the original image can be
+        // reviewed after an iPhone tab reload.
+        await store.setJSON("latest-scene/"+identity,{jobId,createdAt:job.createdAt});
+      }catch{
+        // The provider might already have charged. Preserve its task instead of
+        // discarding the successful submission and tempting an auto retry.
+      }
+    }
     return reply({status:"SUBMITTED",jobId,accessToken,kind,estimatedCredits:amount},202);
   }catch{
     // Runway might have accepted the task before the network/storage failed.
@@ -287,6 +301,23 @@ function creativeIdentity(photoHash,era,motion,look,aspect){
   return createHash("sha256").update([photoHash,era,motion,look,aspect].join("|")).digest("hex");
 }
 function approvedIndexKey(identity){return "approved-scene/"+identity;}
+async function latestPreparedScene(input,era,motion,look,aspect){
+  const identity=creativeIdentity(input.sha256,era,motion,look,aspect);
+  const index=await jobs().get("latest-scene/"+identity,{type:"json",consistency:"strong"});
+  if(!index||!validId(index.jobId))return null;
+  const job=await jobs().get("task/"+index.jobId,{type:"json",consistency:"strong"});
+  if(!job||!["image","scene_prepare"].includes(job.kind)||job.hasCompanion||
+    job.photoHash!==input.sha256||job.era!==era||job.look!==look||
+    job.motion!==motion||job.aspect!==aspect)
+    return null;
+  if(!validId(job.ownerTask))return {status:"REVIEW_REQUIRED",jobId:index.jobId};
+  const task=await runway("GET","/v1/tasks/"+encodeURIComponent(job.ownerTask));
+  if(task.status==="FAILED")return {status:"REVIEW_REQUIRED",jobId:index.jobId};
+  if(task.status!=="SUCCEEDED")return {status:"PROCESSING",jobId:index.jobId};
+  const imageUrl=taskOutput(task);
+  if(!imageUrl)return {status:"REVIEW_REQUIRED",jobId:index.jobId};
+  return {status:"PREPARED_NEEDS_REVIEW",jobId:index.jobId,imageUrl};
+}
 async function approvedSceneFor(input,era,motion,look,aspect){
   const identity=creativeIdentity(input.sha256,era,motion,look,aspect);
   const index=await jobs().get(approvedIndexKey(identity),{type:"json",consistency:"strong"});
@@ -377,6 +408,10 @@ export default async function handler(request){
     try{existing=await approvedSceneFor(source,body.era,body.motion,look,body.aspect);}
     catch{return reply({error:"scene_lookup_unavailable"},503);}
     if(existing)return reply({status:"ALREADY_APPROVED",kind:"scene_prepare",...existing,estimatedCredits:0},200);
+    let previous;
+    try{previous=await latestPreparedScene(source,body.era,body.motion,look,body.aspect);}
+    catch{return reply({error:"scene_history_unavailable"},503);}
+    if(previous)return reply({...previous,estimatedCredits:0},200);
     const text=scenePrompt(body.era,body.motion,look);
     if(text.length>1000)return reply({error:"image_prompt_too_long"},400);
     return createJob("scene_prepare",body.era,IMAGE_CREDITS,
@@ -395,11 +430,29 @@ export default async function handler(request){
     catch{return reply({error:"image_invalid"},400);}
     try{
       const approved=await approvedSceneFor(source,body.era,body.motion,look,body.aspect);
-      return reply(approved?{status:"ALREADY_APPROVED",...approved}:{status:"NONE"});
+      if(approved)return reply({status:"ALREADY_APPROVED",...approved});
+      const latest=await latestPreparedScene(source,body.era,body.motion,look,body.aspect);
+      return reply(latest||{status:"NONE"});
     }catch{return reply({error:"scene_lookup_unavailable"},503);}
   }
   if(body?.action==="scene_approve"){
-    const source=await readAuthorizedJob(body.jobId,body.accessToken).catch(()=>null);
+    let source=await readAuthorizedJob(body.jobId,body.accessToken).catch(()=>null);
+    // After Safari restarts the ephemeral job token is lost. The owner may
+    // still approve the exact same source photo/era/style/action via its
+    // SHA-256 index, never by guessing an unrelated job id.
+    if(!source&&body.photo){
+      let input;
+      try{input=parseImage(body.photo);}catch{return reply({error:"approval_photo_invalid"},400);}
+      const look=body.look||"cinematic";
+      if(!validCreative(body.era,body.motion,look,body.aspect))
+        return reply({error:"approval_options_invalid"},400);
+      const identity=creativeIdentity(input.sha256,body.era,body.motion,look,body.aspect);
+      try{
+        const indexed=await jobs().get("latest-scene/"+identity,{type:"json",consistency:"strong"});
+        if(indexed?.jobId===body.jobId&&validId(body.jobId))
+          source=await jobs().get("task/"+body.jobId,{type:"json",consistency:"strong"});
+      }catch{return reply({error:"approval_storage_unavailable"},503);}
+    }
     if(!source||!["image","scene_prepare"].includes(source.kind)||source.hasCompanion||
       !validId(source.ownerTask)||!source.photoHash||!source.look||!source.motion||!source.aspect)
       return reply({error:"approval_source_invalid"},403);
