@@ -227,7 +227,7 @@
  const approvalChecks=["check-subjects","check-history","check-action"];
  function updateApproval(){
    $("approve-scene").disabled=busy||!sceneImageValid||!currentScene||
-     currentScene.approved||!currentScene.accessToken||
+     currentScene.approved||(!currentScene.accessToken&&!currentScene.restored)||
      !approvalChecks.every(id=>$(id).checked);
  }
  approvalChecks.forEach(id=>$(id).addEventListener("change",updateApproval));
@@ -273,9 +273,23 @@
      if(info.status==="ALREADY_APPROVED"&&/^https:\/\//.test(info.imageUrl)){
        showScene({approved:true,imageUrl:info.imageUrl,jobId:info.jobId});
        message("Found your earlier approved scene. No image credits spent.","success");
+     }else if(info.status==="PREPARED_NEEDS_REVIEW"&&/^https:\/\//.test(info.imageUrl)){
+       showScene({approved:false,restored:true,imageUrl:info.imageUrl,jobId:info.jobId});
+       message("Restored the scene from your previous session. Review it without paying another 2 credits.","success");
+     }else if(info.status==="PROCESSING"){
+       sceneLookupReady=false;
+       message("A previous image generation is still processing. Checking again automatically without submitting a new paid job.");
+       state();
+       setTimeout(()=>{
+         if(version===generationVersion&&selectedProduct==="video"&&
+           style===look.value&&action===motion.value&&chosen===era.value)lookupScene();
+       },5000);
+     }else if(info.status==="REVIEW_REQUIRED"){
+       sceneLookupReady=false;state();
+       message("An earlier image request requires review. No duplicate paid request will be started. Check the Runway task before trying again.","error");
      }else{
        state();
-       message("No approved scene found. Prepare ONE image for 2 credits, review it, then decide about the film.");
+       message("No prepared scene found. Generate ONE image for 2 credits, review it, then decide about a film.");
      }
    }catch(e){
      if(version!==generationVersion)return;
@@ -352,6 +366,15 @@
        showScene({approved:true,imageUrl:task.imageUrl,jobId:task.jobId});
        message("Reused previously approved scene for free. No image credits spent.","success");return;
      }
+     if(task.status==="PREPARED_NEEDS_REVIEW"&&/^https:\/\//.test(task.imageUrl)){
+       showScene({approved:false,restored:true,imageUrl:task.imageUrl,jobId:task.jobId});
+       message("Restored a previously generated scene without charging another 2 credits.","success");return;
+     }
+     if(task.status==="PROCESSING"||task.status==="REVIEW_REQUIRED"){
+       sceneLookupReady=false;
+       message("An earlier image request is still processing or needs review. No duplicate generation started.","error");
+       return;
+     }
      if(task.status!=="SUBMITTED"||!task.jobId||!task.accessToken)
        throw Error("Image task not submitted.");
      await refreshBudget();
@@ -367,12 +390,15 @@
  }
  $("approve-scene").addEventListener("click",async()=>{
    if(!aiEnabled||!currentScene||currentScene.approved||!sceneImageValid||
-      !currentScene.accessToken||busy||!approvalChecks.every(id=>$(id).checked))return;
+      (!currentScene.accessToken&&!currentScene.restored)||busy||
+      !approvalChecks.every(id=>$(id).checked))return;
    if(!window.confirm("Approve this historical picture for your Film AI? Approval costs ZERO credits. Film generation will still need a separate 25-credit confirmation."))return;
    busy=true;state();
    try{
      const result=await post("era-owner-test",{action:"scene_approve",
-       jobId:currentScene.jobId,accessToken:currentScene.accessToken});
+       jobId:currentScene.jobId,accessToken:currentScene.accessToken,
+       photo:dataUri,era:era.value,aspect:sourceAspect,
+       motion:motion.value,look:look.value});
      if(result.status!=="ALREADY_APPROVED")throw Error("Scene approval was not confirmed.");
      currentScene={...currentScene,approved:true};
      $("approve-scene").disabled=true;
