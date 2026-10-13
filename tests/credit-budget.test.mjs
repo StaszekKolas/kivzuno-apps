@@ -67,12 +67,12 @@ test("owner-approved 200 EXTRA credits raise preview reservation cap from 100 to
   assert.deepEqual(ctx.read(),{reserved:100,writes:0,providerCalls:0});
 });
 
-test("not enough credits for 27-credit film causes zero new reservations and zero provider calls",async()=>{
-  const ctx=setup({reserved:281});
-  const result=await ctx.handler(ctx.request("scene_video_start"));
+test("not enough credits for 2-credit scene causes zero new reservations and zero provider calls",async()=>{
+  const ctx=setup({reserved:299});
+  const result=await ctx.handler(ctx.request("scene_prepare"));
   assert.equal(result.status,429);
   assert.equal(result.body.error,"owner_credit_budget_exhausted");
-  assert.deepEqual(ctx.read(),{reserved:281,writes:1,providerCalls:0});
+  assert.deepEqual(ctx.read(),{reserved:299,writes:1,providerCalls:0});
   // One bookkeeping job may be recorded but not sent to Runway.
 });
 
@@ -89,7 +89,7 @@ test("the iPhone UI disables generation when the reserved budget cannot cover it
   assert.match(frontend,/action:"budget_status"/);
   assert.match(frontend,/ownerBudgetRemaining<required/);
   assert.match(frontend,/This is NOT your Runway Dev balance/);
-  assert.match(frontend,/No new Runway job was submitted/);
+  assert.match(frontend,/No generation was submitted/);
 });
 
 test("unexpected settings do not authorize hidden extensions or new provider calls",async()=>{
