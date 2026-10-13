@@ -8,8 +8,8 @@
 <meta property="og:title" content="KIVZUNO Era Motion — One photo. Another era.">
 <meta property="og:description" content="A simple photo studio. No accounts, confusing credits or hidden purchases.">
 <title>Era Motion — KIVZUNO Photo Studio</title>
-<link rel="stylesheet" href="./style.css?v=4">
-<script src="./studio-simple.js?v=4" defer></script>
+<link rel="stylesheet" href="./style.css?v=5">
+<script src="./studio-simple.js?v=5" defer></script>
 </head>
 <body>
 <div class="shell">
@@ -96,6 +96,7 @@
           <label class="consent"><input type="checkbox" id="consent"><span id="consent-label">I agree to send my chosen photo to KIVZUNO for a free format check. It will be discarded immediately.</span></label>
           <button class="primary" id="go" type="submit" disabled>Choose a photo to begin</button>
           <p class="helper" id="action-hint">No login · No credits · No payment</p>
+          <p id="generation-diagnostic" class="generation-diagnostic" role="status" aria-live="polite">Choose a photo to begin.</p>
           <p class="result-message" id="message" role="status" aria-live="polite">Choose a photo to start.</p>
         </section>
       </form>
