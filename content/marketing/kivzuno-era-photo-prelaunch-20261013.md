@@ -1,5 +1,5 @@
 # KIVZUNO Era Photo — owner-review marketing kit
-**13 October 2026 · DRAFT ONLY · NOT approved for posting or paid promotion**
+**13 October 2026 · ENGLISH-ONLY COPY · DRAFT ONLY · NOT approved for posting or paid promotion**
 
 ## Product status and language we may safely use
 - KIVZUNO Era Photo is **in development**. The real AI image-editing backend is **not publicly connected**.
@@ -23,7 +23,7 @@
 **Eras:** Viking Age, Medieval, Wild West, Victorian, Ancient Rome, 1920s  
 **Required distinction:** The KIVZUNO watermark belongs *in actual downloaded output*, not merely overlaid by CSS. Backend implementation pending.
 
-## English posts — prelaunch, ready for approval
+## English-only posts — prelaunch, ready for approval
 
 ### Post 1 — Hero teaser
 **On graphic:** YOUR PHOTO. ANOTHER ERA. / KIVZUNO ERA PHOTO / IN DEVELOPMENT  
@@ -92,66 +92,12 @@ The product is still in development — we're working on the AI results before o
 Would you prefer Viking, Ancient Rome or 1920s for your first test photo?
 #KIVZUNO #EraPhoto #BuildingInPublic #ComingSoon
 
-## English short captions — five alternatives
+## Short English captions — five alternatives
 1. Your photo. Another era. ⏳ KIVZUNO Era Photo is in development. Which world would you choose? #KIVZUNO #EraPhoto
 2. Vikings or the Wild West? 🛡️🤠 We're building an imaginative new photo experience. Follow @kivzuno for updates.
 3. From everyday moments to cinematic worlds — that's the idea behind KIVZUNO Era Photo. Still testing. Still dreaming. ✨
 4. Your dog in another century? 🐾 One of the scenes we're imagining for KIVZUNO Era Photo. Coming later.
 5. A new era is taking shape. ⏳ KIVZUNO Era Photo: concept preview, generator not yet available. #ComingSoon
-
-## Polish posts — owner-ready drafts
-
-### Post 1
-**Tekst na grafice:** TWOJE ZDJĘCIE. INNA EPOKA. / KIVZUNO ERA PHOTO / W PRZYGOTOWANIU  
-**Opis:**
-A gdyby jedno zwykłe zdjęcie mogło przenieść Cię do zupełnie innego świata? 🛡️✨
-
-Wikingowie, średniowieczne ulice, Dziki Zachód… Pracujemy nad **KIVZUNO Era Photo** — pomysłem na filmowe przeróbki zdjęć z różnych epok.
-
-Na razie dopracowujemy technologię. Generator nie jest jeszcze publicznie dostępny.
-
-**Do której epoki przeniósłbyś swoje zdjęcie?** 👇
-#KIVZUNO #EraPhoto #SztucznaInteligencja #WPrzygotowaniu
-
-### Post 2
-**Tekst na grafice:** JEDNO ZDJĘCIE. SZEŚĆ ŚWIATÓW.
-**Opis:**
-Wybierz swoją epokę: 🛡️ Wikingowie · 🏰 Średniowiecze · 🤠 Dziki Zachód · 🎩 Epoka wiktoriańska · 🏛️ Starożytny Rzym · ✨ Lata 20.
-
-To kierunki, które rozwijamy w KIVZUNO Era Photo. Projekt nadal jest w fazie testów.
-
-**Którą wybierasz?** Wpisz emoji w komentarzu.
-#KIVZUNO #Historia #KreatywneAI
-
-### Post 3
-**Tekst na grafice:** TO NADAL MA BYĆ TWOJE ZDJĘCIE.
-**Opis:**
-Ładna grafika AI to jedno. Ale chcemy czegoś więcej — żeby po przeniesieniu do innej epoki nadal było widać znajomych ludzi, zwierzęta i charakter oryginalnej chwili.
-
-Właśnie nad tym pracujemy w KIVZUNO Era Photo. Publiczny generator jeszcze nie działa.
-
-**Co jest dla Ciebie ważniejsze: podobieństwo czy widowiskowość?**
-#KIVZUNO #ZdjeciaAI #BehindTheScenes
-
-### Post 4
-**Tekst na grafice:** TWÓJ PIES. INNE STULECIE. 🐕
-**Opis:**
-Wyobraź sobie swojego psa jako towarzysza wyprawy wikingów. 🐺🛡️
-
-Takie sceny inspirują nas przy tworzeniu KIVZUNO Era Photo. Na razie pokazujemy pomysł — dopracowujemy samą technologię.
-
-**Wiking czy Dziki Zachód?** 🤠
-#KIVZUNO #Psy #EraPhoto
-
-### Post 5
-**Tekst na grafice:** MAŁY ZNAK. WIELKA PRZYGODA.
-**Opis:**
-Mamy już jeden charakterystyczny detal przyszłej aplikacji: niewielki znak **KIVZUNO** w prawym dolnym rogu gotowego zdjęcia.
-
-Dyskretny podpis marki, bez zasłaniania całej fotografii. ✨
-
-KIVZUNO Era Photo wciąż powstaje. Śledź nas, jeśli chcesz zobaczyć, jak rozwija się pomysł.
-#KIVZUNO #EraPhoto #NowyProjekt
 
 ## Instagram Stories — four slides (English)
 1. **What if your photo belonged to another century?** ⏳ [Visual: conceptual era landscape, label "CONCEPT"]
@@ -180,7 +126,6 @@ KIVZUNO Era Photo wciąż powstaje. Śledź nas, jeśli chcesz zobaczyć, jak ro
 
 ## Launch-day copy — DISABLED UNTIL verified (DO NOT POST)
 **English:** "KIVZUNO Era Photo is live. Upload your picture, choose an era and generate a free watermarked AI transformation."  
-**Polish:** "KIVZUNO Era Photo już działa! Wrzuć zdjęcie, wybierz epokę i wygeneruj darmową przeróbkę AI ze znakiem wodnym."
 
 **Mandatory launch conditions:** 1) working historical image edit, not simple tint/filter, 2) owner visual QA on original photos, 3) approved API costs with hard limits, 4) real watermark burned into downloadable pixels, 5) privacy review, 6) explicit owner production authorization, 7) public deploy verified and separate social-post approval.
 
