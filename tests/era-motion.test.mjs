@@ -45,7 +45,7 @@ test("Javascript parses and API features are enabled only when confirmed by the 
   assert.match(script,/aiEnabled=Boolean\(enabled\)/);
   assert.match(script,/if\(!aiEnabled\)/);
   assert.match(script,/action:"preflight",image:img,era:chosen/);
-  assert.match(script,/action:"image_start",photo:img,era:chosen,consent:true/);
+  assert.match(script,/action:selectedProduct==="video"\?"scene_prepare":"image_start"/);
   assert.match(script,/action:"status",jobId:task\.jobId,accessToken:task\.accessToken/);
   assert.match(script,/result\.charged!==false/);
   assert.match(script,/mode\(false\)/);
