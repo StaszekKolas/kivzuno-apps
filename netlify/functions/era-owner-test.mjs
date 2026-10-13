@@ -311,7 +311,9 @@ export default async function handler(request){
   try{body=await parse(request);}catch{return reply({error:"invalid_body"},400);}
   if(body?.action==="capabilities"){
     return reply({available:owner(request),ownerOnly:true,
-      imageCredits:IMAGE_CREDITS,videoCredits:SCENE_FILM_CREDITS,videoSeconds:DURATION,
+      imageCredits:IMAGE_CREDITS,scenePreparationCredits:IMAGE_CREDITS,
+      videoCredits:VIDEO_CREDITS,filmTotalIfNewScene:SCENE_FILM_CREDITS,
+      videoSeconds:DURATION,
       budgetCapCredits:owner(request)?cap():null,
       originalBudgetCredits:owner(request)?100:null,
       addedBudgetCredits:owner(request)?OWNER_EXTRA_CREDITS_APPROVED:null,
@@ -326,7 +328,9 @@ export default async function handler(request){
       return reply({cap:state.max,reserved:state.reserved,
         remaining:state.remaining,
         originalBudget:100,additionalApproved:OWNER_EXTRA_CREDITS_APPROVED,
-        filmRequired:SCENE_FILM_CREDITS,
+        filmRequired:VIDEO_CREDITS,
+        scenePreparationRequired:IMAGE_CREDITS,
+        filmTotalIfNewScene:SCENE_FILM_CREDITS,
         imageRequired:IMAGE_CREDITS,
         note:"Reservations shared across previews, NOT actual provider spending. No change to approved cap."});
     }catch{return reply({error:"budget_store_unavailable"},503);}
