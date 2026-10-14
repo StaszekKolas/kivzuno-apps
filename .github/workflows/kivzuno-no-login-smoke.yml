@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "netlify/functions/era-image-task.mjs"
+      - "netlify/functions/era-image-quota-identity.mjs"
       - "netlify/functions/lemon-*.mjs"
       - "hub/era-motion/**"
       - "tests/no-login-lemon-pipeline.test.mjs"
@@ -18,7 +19,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "22"
-      - name: Verify both real Netlify services refuse unconfigured spending
+      - name: Verify preview no-charge capabilities, whether AI is enabled or disabled
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
@@ -40,11 +41,11 @@ jobs:
                 });
                 const data=await res.json();
                 if(!res.ok)throw new Error(path+" response "+res.status+" "+JSON.stringify(data));
-                if(path==="era-image-task" && (data.available!==false || data.billingActive!==false))
-                  throw new Error("image endpoint activated without owner approval");
+                if(path==="era-image-task" && (typeof data.available!=="boolean" || data.billingActive!==false || data.customerPrice!==0 || data.loginRequired!==false || data.dailyPerBrowser!==1 || data.sharedDailyLimit!==3))
+                  throw new Error("unexpected image endpoint configuration or budget guard");
                 if(path==="lemon-readiness" && (data.paymentActive!==false || data.checkoutReady!==false))
                   throw new Error("unexpected live checkout");
-                console.log("VERIFIED_NO_CHARGE "+path+" configuration remains disabled");
+                console.log("VERIFIED_READ_ONLY "+path+" image_available="+String(data.available===true)+"; no AI generation or checkout invoked");
               }
               process.exit(0);
             }catch(e){last=String(e?.message||e);console.log("Attempt "+attempt+": "+last);}
