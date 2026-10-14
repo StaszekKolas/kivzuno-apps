@@ -43,6 +43,37 @@ jobs:
                 if(!res.ok)throw new Error(path+" response "+res.status+" "+JSON.stringify(data));
                 if(path==="era-image-task" && (typeof data.available!=="boolean" || data.billingActive!==false || data.customerPrice!==0 || data.loginRequired!==false || data.dailyPerBrowser!==1 || data.sharedDailyLimit!==3))
                   throw new Error("unexpected image endpoint configuration or budget guard");
+                if(path==="era-image-task" && data.available===true){
+                  // Only capabilities + eligibility; NEVER action=start or any image upload.
+                  const getCookie=r=>{
+                    const header=r.headers.get("set-cookie")||"";
+                    if(!header.startsWith("__Host-kivzuno-era-id=")||!header.includes("HttpOnly")||!header.includes("Secure"))
+                      throw new Error("secure browser cookie missing");
+                    return header.split(";")[0];
+                  };
+                  const cookieA=getCookie(res);
+                  const second=await fetch(base+"/.netlify/functions/era-image-task",{
+                    method:"POST",headers:{"origin":base,"content-type":"application/json"},
+                    body:JSON.stringify({action:"capabilities"}),signal:AbortSignal.timeout(14000)
+                  });
+                  if(!second.ok)throw new Error("second independent browser capabilities failed");
+                  const cookieB=getCookie(second);
+                  if(cookieA===cookieB)throw new Error("independent browsers received the same ID");
+                  const check=async cookie=>{
+                    const response=await fetch(base+"/.netlify/functions/era-image-task",{
+                      method:"POST",headers:{"origin":base,"content-type":"application/json","cookie":cookie},
+                      body:JSON.stringify({action:"eligibility"}),signal:AbortSignal.timeout(14000)
+                    });
+                    const result=await response.json();
+                    if(!response.ok||typeof result.eligible!=="boolean")throw new Error("invalid read-only eligibility: "+JSON.stringify(result));
+                    if(result.reason==="one_image_per_day")throw new Error("brand-new browser unexpectedly quota exhausted");
+                    if(!result.eligible&&result.reason!=="daily_free_image_limit")throw new Error("unexpected denial: "+JSON.stringify(result));
+                    return result;
+                  };
+                  const a=await check(cookieA),b=await check(cookieB);
+                  if(a.eligible!==b.eligible)throw new Error("two fresh browsers got different eligibility");
+                  console.log("VERIFIED_INDEPENDENT_BROWSER_QUOTA_CHECK free_capacity="+a.eligible);
+                }
                 if(path==="lemon-readiness" && (data.paymentActive!==false || data.checkoutReady!==false))
                   throw new Error("unexpected live checkout");
                 console.log("VERIFIED_READ_ONLY "+path+" image_available="+String(data.available===true)+"; no AI generation or checkout invoked");
