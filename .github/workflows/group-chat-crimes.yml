@@ -1,0 +1,34 @@
+name: KIVZUNO Group Chat Crimes tests
+on:
+  pull_request:
+    paths:
+      - "hub/group-chat-crimes/**"
+      - "tests/group-chat-crimes.test.mjs"
+      - ".github/workflows/group-chat-crimes.yml"
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify gameplay logic without paid services
+        run: node --test tests/group-chat-crimes.test.mjs
+      - name: Verify Netlify PR Preview serves the playable game
+        shell: bash
+        run: |
+          url="https://deploy-preview-${{ github.event.pull_request.number }}--kivzuno-hub.netlify.app/group-chat-crimes/"
+          for attempt in {1..12}; do
+            if curl --fail --silent --show-error --location --max-time 15 "$url" -o "$RUNNER_TEMP/kivzuno-game.html"; then
+              if grep -q 'PUT ME ON TRIAL' "$RUNNER_TEMP/kivzuno-game.html" && grep -q 'SAVE A STORY CARD' "$RUNNER_TEMP/kivzuno-game.html"; then
+                echo "PASS: preview HTML serves playable game source at $url"
+                exit 0
+              fi
+            fi
+            sleep 10
+          done
+          echo "::error::KIVZUNO Group Chat Crimes preview route could not be verified"
+          exit 1
