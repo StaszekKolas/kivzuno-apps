@@ -28,7 +28,12 @@ jobs:
               if(pages.some(r=>!r.ok))throw Error("HTTP statuses: "+pages.map(r=>r.status).join(","));
               const [hub,landing,test,script]=await Promise.all(pages.map(r=>r.text()));
               if(!hub.includes("/era-photo/"))throw Error("new homepage card missing");
-              if(!/href=['"](?:\.\/try\.html|\/era-photo\/try(?:\.html)?)['"]/.test(landing))throw Error("owner test link missing or wrong");
+              const link=landing.match(/href=['"]([^'"]*(?:\/era-photo\/try(?:\.html)?|\.\/try\.html))['"]/);
+              if(!link)throw Error("owner test link missing or wrong");
+              const clickedUrl=new URL(link[1],pages[1].url);
+              const clicked=await fetch(clickedUrl,{signal:AbortSignal.timeout(10000),cache:"no-store"});
+              if(!clicked.ok||!(await clicked.text()).includes("MANUAL CHATGPT WORKFLOW"))
+                throw Error("REAL CTA DOES NOT WORK: "+clickedUrl.href+" HTTP "+clicked.status);
               if(!test.includes("MANUAL CHATGPT WORKFLOW"))throw Error("workflow page not ready");
               if(!script.includes("embedWatermark(ctx,w,h)"))throw Error("watermark generator missing");
               if(script.includes("fetch("))throw Error("unexpected external API request");
