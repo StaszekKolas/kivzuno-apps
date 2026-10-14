@@ -51,7 +51,7 @@ test("single-screen browser validates selected photo without billable provider c
   assert.ok(frontend.includes('action:"preflight",image:img,era:chosen'));
   assert.ok(frontend.includes('dataUri=""'));
   assert.ok(frontend.includes('result.charged!==false'));
-  assert.ok(frontend.includes('!dataUri||!consent.checked'));
+  assert.ok(frontend.includes('if(!consent.checked)return "Tick the consent checkbox above."'));
   assert.ok(frontend.includes('canvas.toDataURL("image/jpeg",quality)'));
   assert.ok(!frontend.includes("RUNWAYML_API_SECRET"));
   assert.ok(!frontend.includes("localStorage"));
@@ -71,5 +71,5 @@ test("server preflight cannot bill; actual generation has secret+owner approval+
   assert.match(backend,/new URL\(request\.url\)\.origin/);
   assert.match(backend,/model:MODEL,promptImage:image\.dataUri/);
   assert.match(frontend,/if\(!aiEnabled\)/);
-  assert.match(frontend,/action:"start",photo:img,era:chosen,consent:true/);
+  assert.match(frontend,/action:selectedProduct==="video"\?"scene_prepare":"image_start"/);
 });
