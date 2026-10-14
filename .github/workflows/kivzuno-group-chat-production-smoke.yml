@@ -1,0 +1,39 @@
+name: KIVZUNO Group Chat Crimes production smoke
+on:
+  push:
+    branches: [main]
+    paths:
+      - "hub/group-chat-crimes/**"
+      - "hub/media/group-chat-crimes-promo.mp4"
+      - "hub/index.html"
+      - ".github/workflows/kivzuno-group-chat-production-smoke.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Verify actual deployed site, game and public MP4
+        shell: bash
+        run: |
+          set -euo pipefail
+          origin="https://kivzuno-hub.netlify.app"
+          for attempt in {1..24}; do
+            echo "Production smoke attempt $attempt/24 (no AI or paid APIs)"
+            if curl --fail --silent --show-error --location --max-time 20 "$origin/group-chat-crimes/" -o /tmp/kivzuno-game.html &&
+               curl --fail --silent --show-error --location --max-time 20 "$origin/" -o /tmp/kivzuno-home.html &&
+               curl --fail --silent --show-error --location --max-time 25 "$origin/media/group-chat-crimes-promo.mp4" -o /tmp/kivzuno-video.mp4 &&
+               grep -q 'PUT ME ON TRIAL' /tmp/kivzuno-game.html &&
+               grep -q 'SAVE A STORY CARD' /tmp/kivzuno-game.html &&
+               grep -q 'Group Chat Crimes' /tmp/kivzuno-home.html &&
+               test "$(wc -c </tmp/kivzuno-video.mp4)" -gt 50000 &&
+               test "$(dd if=/tmp/kivzuno-video.mp4 bs=1 skip=4 count=4 status=none)" = "ftyp"; then
+              echo "PASS: live homepage game link, actual quiz HTML, and valid publicly served MP4"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::Live Netlify homepage / game / promo MP4 not verified. Do NOT launch posts until repaired."
+          exit 1
