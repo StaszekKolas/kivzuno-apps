@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0c1122">
-<meta name="description" content="KIVZUNO Era Motion: choose one photo and one era. Free photo compatibility testing now; AI generation will be available when activated.">
+<meta name="description" content="KIVZUNO Era Motion: choose one photo and one era. Public AI generation locked. Owner-only image and video testing with explicit credits budget.">
 <meta property="og:title" content="KIVZUNO Era Motion — One photo. Another era.">
 <meta property="og:description" content="A simple photo studio. No accounts, confusing credits or hidden purchases.">
 <title>Era Motion — KIVZUNO Photo Studio</title>
@@ -23,6 +23,16 @@
       <h1>One photo.<br><em>Another era.</em></h1>
       <p class="lead">Pick a favourite photo and a time in history. Everything happens in one place.</p>
       <p id="mode-banner" class="mode-banner" role="status">Checking what’s available…</p>
+    </section>
+
+    <section class="owner-access" aria-label="Private owner beta login">
+      <div><strong>PRIVATE OWNER BETA</strong><p>Only the owner can unlock AI generation. The code stays in this tab and is not saved on your device.</p></div>
+      <label for="owner-key">Owner test code</label>
+      <div class="owner-login">
+        <input id="owner-key" type="password" autocomplete="off" spellcheck="false" placeholder="Enter private owner code">
+        <button id="owner-unlock" type="button">Unlock test</button>
+      </div>
+      <p id="owner-state" role="status">Owner-only generation is locked. No generation or payment is happening.</p>
     </section>
 
     <section class="workspace" aria-label="Era Motion photo studio">
@@ -64,6 +74,13 @@
           <p class="helper" id="action-hint">No login · No credits · No payment</p>
           <p class="result-message" id="message" role="status" aria-live="polite">Choose a photo to start.</p>
         </section>
+        <section class="owner-video" id="owner-video" hidden>
+          <h2>4. Turn your AI photo into a film</h2>
+          <p class="helper">Five seconds of Runway Gen-4 Turbo video costs about 25 Runway Dev API credits. No charge from KIVZUNO, and no automatic top-ups.</p>
+          <label class="consent"><input type="checkbox" id="video-consent"><span>I agree to spend approximately 25 existing Runway Dev API credits on this single film.</span></label>
+          <button class="primary" type="button" id="video-go" disabled>Create my 5-second film (25 credits)</button>
+          <p class="result-message" id="video-message" role="status" aria-live="polite">Generate an AI image first, then choose to animate it.</p>
+        </section>
       </form>
 
       <aside class="preview" aria-label="Your photo preview">
@@ -79,13 +96,18 @@
           <img id="generated-image" alt="Your historical AI scene" hidden>
           <a id="generated-download" href="#" target="_blank" rel="noopener noreferrer" hidden>Open or save your AI image ↗</a>
         </div>
-        <p class="privacy">Only submit photos you are entitled to use. We do not save the photo during the free format test.</p>
+        <div class="generated" id="video-section" hidden>
+          <p class="eyebrow">YOUR 5-SECOND AI FILM</p>
+          <video id="generated-video" controls playsinline preload="none" aria-label="Your generated Runway film"></video>
+          <a id="video-download" href="#" target="_blank" rel="noopener noreferrer" hidden>Open or save your film ↗</a>
+        </div>
+        <p class="privacy">Only submit photos you are entitled to use. The free format test discards the upload. Generated image and video links expire; save your results to your device.</p>
       </aside>
     </section>
 
     <section class="simple-note">
       <strong>What works today?</strong>
-      <p id="availability-detail">The free photo upload and format check. It does <strong>not</strong> create a new AI image or a video. Photo generation, paid movies and checkout stay off until tested and approved.</p>
+      <p id="availability-detail">Without the private owner's code, only the free upload and format check works. AI generation is disabled for visitors. There is no public launch or checkout.</p>
     </section>
   </main>
   <footer>© KIVZUNO · Photo studio preview · <a href="/">Home</a></footer>
