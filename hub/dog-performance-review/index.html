@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0e19">
+<meta name="description" content="Your dog is now HR. Get your free, hilariously unfair performance review. No login, no AI, just chaos. KIVZUNO.">
+<meta property="og:title" content="My Dog Just Rated Me One Star — KIVZUNO">
+<meta property="og:description" content="Walks? Treats? Sofa privileges? Let your dog review your work. Play free.">
+<title>Dog Performance Review — KIVZUNO</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0e19;--surface:#191e30;--surface2:#22283e;--edge:#434959;--ink:#f9f9ff;--dim:#c5cad8;--lime:#d5ff6b;--pink:#ff9bc9;--orange:#ffc981;--radius:24px}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse 90% 42% at 48% -10%,#45305a 1%,transparent 88%),radial-gradient(ellipse 40% 40% at 100% 74%,#203f36 0%,transparent 90%),var(--bg);color:var(--ink);font:16px/1.52 system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100svh}
+button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--lime);outline-offset:4px}a{color:inherit;text-decoration:none}.shell{width:min(100%,680px);margin:auto;padding:calc(16px + env(safe-area-inset-top)) 18px calc(40px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;justify-content:space-between;gap:14px}.brand{font-size:17px;letter-spacing:.12em;font-weight:950}.brand b{color:var(--lime)}.free{font-size:10px;font-weight:900;letter-spacing:.07em;color:var(--lime);border:1px solid #d5ff6b85;background:#d5ff6b12;border-radius:99px;padding:8px 11px}
+.hero{text-align:center;padding:40px 0 29px}.dog-illustration{position:relative;width:143px;height:137px;margin:0 auto 12px;display:grid;place-items:center;transform:rotate(-6deg);filter:drop-shadow(0 17px 18px #0008)}.dog-head{font-size:104px;line-height:1}.badge-woof{position:absolute;right:-31px;top:7px;transform:rotate(15deg);background:var(--lime);color:#161a20;border:3px solid #0b0e19;border-radius:10px;padding:8px 10px;font-weight:1000;line-height:1;font-size:10px;letter-spacing:.03em}
+.eyebrow{font-size:12px;letter-spacing:.16em;color:var(--lime);font-weight:950;margin:0 0 10px;text-transform:uppercase}h1{font-size:clamp(43px,10vw,76px);line-height:.96;letter-spacing:-.07em;margin:0;font-weight:1000}h1 em{color:var(--lime);font-style:normal}.lede{max-width:460px;color:var(--dim);font-size:16px;line-height:1.6;margin:20px auto 0}
+.review-form{border-radius:var(--radius);border:1px solid #72718a55;background:linear-gradient(150deg,#22243c,#181b2d);padding:clamp(17px,4vw,28px);box-shadow:0 18px 54px #0007}.form-head{display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid #a4a1b033;padding-bottom:16px;margin-bottom:23px}.form-head strong{font-size:15px;letter-spacing:.035em}.form-head span{color:var(--pink);font-size:11px;font-weight:850;letter-spacing:.05em}.name-label{display:block;font-size:13px;color:var(--dim);font-weight:800;letter-spacing:.05em;margin-bottom:9px}#dog-name{border:1px solid #77798c;background:#0e1220;border-radius:14px;padding:14px 16px;color:var(--ink);width:100%;font-size:16px}#dog-name::placeholder{color:#8c92a8}.hint{font-size:12px;color:#afb6ca;margin:9px 0 20px}
+.metric{background:#101524;border:1px solid #42485b;border-radius:17px;padding:16px 18px;margin:12px 0}.metric-head{display:flex;align-items:flex-start;gap:12px}.metric-emoji{font-size:27px;line-height:1.2}.metric-title{flex:1}.metric-title h2{font-size:16px;font-weight:900;margin:0;line-height:1.25}.metric-title p{font-size:12px;color:var(--dim);margin:4px 0 0}.metric-number{min-width:62px;text-align:right;color:var(--lime);font-size:22px;font-weight:950;letter-spacing:-.04em;font-variant-numeric:tabular-nums}.metric-number small{font-size:12px;color:var(--dim)}
+.range{width:100%;height:29px;margin:12px 0 0;accent-color:var(--lime);cursor:pointer;touch-action:pan-y}.range:focus-visible{outline-offset:0}.scale{display:flex;justify-content:space-between;color:#9fa9c0;font-size:10px;font-weight:800;letter-spacing:.04em;margin-top:-3px}
+.primary{display:flex;align-items:center;justify-content:center;text-align:center;width:100%;border:0;border-radius:15px;padding:18px 16px;margin-top:20px;background:var(--lime);color:#141a18;font-size:17px;line-height:1.2;font-weight:1000;box-shadow:0 6px 0 #728d39;transition:transform .15s,box-shadow .15s}.primary:active{transform:translateY(4px);box-shadow:0 2px 0 #728d39}.reset{display:block;margin:15px auto 0;color:var(--dim);background:none;border:0;border-bottom:1px dashed var(--dim);padding:3px;font-size:12px}
+.result{margin-top:25px;padding:23px;background:linear-gradient(145deg,#30213f,#1a2231);border:1px solid #bc86d3;border-radius:var(--radius);box-shadow:0 22px 55px #0006;animation:rise .3s ease-out}.result[hidden]{display:none}.stamp{display:inline-flex;align-items:center;gap:5px;border:2px solid var(--pink);border-radius:8px;padding:7px 10px;font-size:11px;font-weight:1000;letter-spacing:.1em;color:var(--pink);transform:rotate(-4deg)}.result-top{display:flex;justify-content:space-between;align-items:center;gap:15px}.result-icon{font-size:45px}.result-kicker{font-size:11px;letter-spacing:.18em;color:var(--lime);font-weight:900;margin:24px 0 8px}.result h2{font-size:clamp(32px,8vw,52px);line-height:1;letter-spacing:-.06em;margin:0 0 10px}.grade{font-size:clamp(50px,12vw,74px);letter-spacing:-.08em;line-height:1;font-weight:1000;color:var(--lime);margin:13px 0 16px}.grade small{font-size:22px;color:#ded4f3;letter-spacing:0}.detail{font-size:16px;color:#e3dff3;line-height:1.6;margin:0 0 21px}.report-details{display:grid;gap:8px}.report-row{padding:13px 14px;background:#100f1a9c;border:1px solid #6a596d;border-radius:12px}.report-row-top{display:flex;align-items:baseline;justify-content:space-between;gap:11px;font-weight:900;font-size:13px}.report-row-top strong{color:var(--lime);font-size:16px}.report-row p{color:#cfc4dc;font-size:12px;margin:5px 0 0;line-height:1.4}.boss{font-size:13px;color:#ddc7ef;margin:18px 0 0}.secondary{width:100%;padding:14px 15px;margin-top:16px;border:1px solid #ad9bc4;background:#ffffff13;border-radius:13px;color:var(--ink);font-weight:900;font-size:14px}.share-status{font-size:12px;min-height:17px;text-align:center;color:var(--lime);margin-top:8px}
+.fineprint{text-align:center;font-size:12px;color:#aeb5c7;max-width:500px;margin:22px auto 0;line-height:1.6}.footer{display:flex;gap:12px;justify-content:space-between;margin-top:35px;border-top:1px solid #ffffff27;padding-top:19px;color:#8e99aa;font-size:11px;letter-spacing:.04em}.footer a{text-decoration:underline;text-underline-offset:2px}
+@keyframes rise{from{opacity:0;transform:translateY(13px)}to{opacity:1;transform:translateY(0)}}@media(max-width:360px){.shell{padding-left:12px;padding-right:12px}.review-form{padding:15px}.metric{padding:13px}.free{font-size:9px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body><main class="shell">
+<header class="top"><a href="/" class="brand" aria-label="KIVZUNO home">KIV<b>ZUNO ✳</b></a><span class="free">FREE · NO AI · NO LOGIN</span></header>
+<section class="hero">
+<div class="dog-illustration" aria-hidden="true"><span class="dog-head">🐶</span><span class="badge-woof">THE BOSS</span></div>
+<p class="eyebrow">Welcome to Pawformance Reviews™</p>
+<h1>YOUR DOG<br>JUST <em>RATED YOU.</em></h1>
+<p class="lede">Walks. Treats. Sofa privileges. Your dog has notes about your job performance — and they're not holding back. 🐾</p>
+</section>
+<form class="review-form" id="review-form">
+<div class="form-head"><strong>📋 HUMAN PERFORMANCE REPORT</strong><span>STRICTLY UNOFFICIAL</span></div>
+<label class="name-label" for="dog-name">YOUR FOUR-LEGGED MANAGER (OPTIONAL)</label>
+<input id="dog-name" name="dogName" type="text" maxlength="24" autocomplete="off" placeholder="e.g. Sir Barks-a-Lot" aria-describedby="name-hint">
+<p class="hint" id="name-hint">No data is sent or saved. Name stays on this screen.</p>
+<div class="metric">
+<div class="metric-head"><span class="metric-emoji" aria-hidden="true">🦮</span><div class="metric-title"><h2><label for="walks">Walks</label></h2><p>How good is the daily adventure service?</p></div><output class="metric-number" for="walks" id="walks-value">2 <small>/10</small></output></div>
+<input class="range" type="range" id="walks" name="walks" min="0" max="10" step="1" value="2"><div class="scale"><span>OUTRAGEOUS</span><span>GOOD HUMAN</span></div>
+</div>
+<div class="metric">
+<div class="metric-head"><span class="metric-emoji" aria-hidden="true">🦴</span><div class="metric-title"><h2><label for="treats">Treats</label></h2><p>Does the biscuit department deliver?</p></div><output class="metric-number" for="treats" id="treats-value">9 <small>/10</small></output></div>
+<input class="range" type="range" id="treats" name="treats" min="0" max="10" step="1" value="9"><div class="scale"><span>EMPTY BOWL</span><span>ALL THE SNACKS</span></div>
+</div>
+<div class="metric">
+<div class="metric-head"><span class="metric-emoji" aria-hidden="true">🛋️</span><div class="metric-title"><h2><label for="sofa">Sofa sharing</label></h2><p>Who actually owns the best seat?</p></div><output class="metric-number" for="sofa" id="sofa-value">1 <small>/10</small></output></div>
+<input class="range" type="range" id="sofa" name="sofa" min="0" max="10" step="1" value="1"><div class="scale"><span>MY SOFA</span><span>YOUR SOFA TOO</span></div>
+</div>
+<button class="primary" type="submit">GET MY PERFORMANCE REVIEW →</button>
+<button class="reset" type="button" id="video-preset">↺ Try the exact ratings from the video</button>
+</form>
+<section class="result" id="result" hidden tabindex="-1" aria-label="Your dog performance review">
+<div class="result-top"><span class="stamp">OFFICIAL DOG REPORT · NOT REALLY</span><span class="result-icon" id="result-icon" aria-hidden="true">🚨</span></div>
+<p class="result-kicker" id="result-boss">SIGNED BY: YOUR DOG</p>
+<h2 id="result-title">ON PROBATION</h2>
+<p class="grade" id="result-grade">12 <small>/ 30</small></p>
+<p class="detail" id="result-detail"></p>
+<div class="report-details" id="report-details"></div>
+<p class="boss">🐾 Verdict issued by the management team (one dog, zero qualifications).</p>
+<button class="secondary" id="share-button" type="button">↗ SHARE MY DOG'S VERDICT</button>
+<p class="share-status" id="share-status" role="status" aria-live="polite"></p>
+</section>
+<p class="fineprint">For entertainment only — not an actual dog opinion. Your choices and optional pet name stay in your browser. Sharing only includes scores and the result, never the entered pet name.</p>
+<footer class="footer"><span>MADE FOR CHAOS · © KIVZUNO 2026</span><a href="/">MORE MINIAPPS ↗</a></footer>
+</main>
+<script type="module">
+import { CATEGORIES, DEFAULT_SCORES, evaluate, shareText } from './game.mjs';
+const $=id=>document.getElementById(id);
+const form=$('review-form'), result=$('result');
+let currentReview=null;
+for(const {id} of CATEGORIES){
+  $(id).addEventListener('input',()=>{
+    $(id+'-value').replaceChildren(document.createTextNode($(id).value+' '));
+    const small=document.createElement('small');small.textContent='/10';$(id+'-value').append(small);
+  });
+}
+function showReview(review){
+ currentReview=review;
+ $('result-icon').textContent=review.emoji;
+ $('result-title').textContent=review.label;
+ $('result-grade').replaceChildren(document.createTextNode(String(review.total)+' '));
+ const small=document.createElement('small');small.textContent='/ '+review.max;$('result-grade').append(small);
+ $('result-detail').textContent=review.detail;
+ const name=$('dog-name').value.trim().slice(0,24);
+ $('result-boss').textContent='SIGNED BY: '+(name||'YOUR DOG').toLocaleUpperCase('en');
+ const rows=$('report-details');rows.replaceChildren();
+ for(const c of CATEGORIES){
+   const card=document.createElement('div');card.className='report-row';
+   const top=document.createElement('div');top.className='report-row-top';
+   const label=document.createElement('span');label.textContent=c.emoji+' '+c.label;
+   const score=document.createElement('strong');score.textContent=review.scores[c.id]+'/10';
+   top.append(label,score);
+   const note=document.createElement('p');note.textContent=review.comments[c.id];
+   card.append(top,note);rows.append(card);
+ }
+ $('share-status').textContent='';result.hidden=false;
+ result.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+ result.focus({preventScroll:true});
+}
+form.addEventListener('submit',event=>{
+ event.preventDefault();
+ const scores=Object.fromEntries(CATEGORIES.map(({id})=>[id,Number($(id).value)]));
+ showReview(evaluate(scores));
+});
+$('video-preset').addEventListener('click',()=>{
+ for(const c of CATEGORIES){const slider=$(c.id);slider.value=String(DEFAULT_SCORES[c.id]);slider.dispatchEvent(new Event('input',{bubbles:true}));}
+ showReview(evaluate(DEFAULT_SCORES));
+});
+$('share-button').addEventListener('click',async()=>{
+ if(!currentReview)return;
+ const text=shareText(currentReview);
+ if(navigator.share){
+   try{await navigator.share({title:'KIVZUNO Dog Performance Review',text});$('share-status').textContent='Share sheet opened.';return;}
+   catch(err){if(err?.name==='AbortError')return;}
+ }
+ try{await navigator.clipboard.writeText(text);$('share-status').textContent='Copied! Send it to your fellow dog employees.';}
+ catch{$('share-status').textContent='Sharing is unavailable here. You can copy your result manually.';}
+});
+</script>
+</body></html>
