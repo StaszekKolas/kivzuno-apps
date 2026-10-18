@@ -11,6 +11,7 @@ on:
       - 'scripts/check-live-kivzuno.mjs'
       - 'tests/site-release-gate.test.mjs'
       - 'tests/text-decoder.test.mjs'
+      - 'tests/dog-performance-review.test.mjs'
       - '.github/workflows/kivzuno-release-validation.yml'
   workflow_dispatch:
     inputs:
@@ -49,6 +50,7 @@ jobs:
           node --check scripts/check-live-kivzuno.mjs
           node --test tests/site-release-gate.test.mjs
           node --test tests/text-decoder.test.mjs
+          node --test tests/dog-performance-review.test.mjs
           node scripts/site-release-gate.mjs
       - name: Verify public Netlify deployment (optional, read-only)
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.verify_live == true }}
