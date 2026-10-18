@@ -43,7 +43,7 @@ test('share has fixed secure URL and no pet names / private inputs', () => {
   assert.ok(text.includes('ON PROBATION'));
   assert.ok(!text.includes('src='));
   assert.ok(!text.includes('#x'));
-  assert.equal((text.match(/https:\/\/ /g)||[]).length,0);
+  assert.equal(text.split('https://').length - 1, 1);
   assert.ok(text.includes('https://kivzuno-hub.netlify.app/dog-performance-review/'));
   assert.throws(() => shareText(review,'http://example.com'));
   assert.throws(() => shareText(null));
