@@ -31,7 +31,8 @@ test("owner-funded images remain disabled until credentials and spending ceiling
   assert.match(img,/daily_free_image_limit/);
   assert.match(img,/model:"gen4_image_turbo"/);
   assert.match(img,/referenceImages/);
-  assert.match(img,/x-nf-client-connection-ip/);
+  assert.match(img,/dailyBrowserKey/);
+  assert.match(img,/getBrowserId/);
   assert.match(img,/authHash:tokenHash\(secret\)/);
   assert.match(img,/tokenHash\(body\.accessToken\)!==job\.authHash/);
 });
