@@ -10,7 +10,10 @@ const MAX_DAY=3;
 const KEY="RUNWAYML_API_SECRET";
 const store=()=>getStore({name:"kivzuno-image-jobs-v1",region:"eu-central-1",consistency:"strong"});
 const quota=()=>getStore({name:"kivzuno-image-quota-v1",region:"eu-central-1",consistency:"strong"});
-const enabled=()=>process.env.KIVZUNO_SERVER_IMAGE_ENABLED==="owner-approved" &&
+// Never serve public AI jobs during private owner testing. Existing flags alone
+// are insufficient: only a later, separately approved public launch may enable this.
+const enabled=()=>process.env.KIVZUNO_PUBLIC_IMAGE_ENABLED==="owner-approved" &&
+  process.env.KIVZUNO_SERVER_IMAGE_ENABLED==="owner-approved" &&
   !!process.env[KEY] && !!process.env.KIVZUNO_IMAGE_QUOTA_SECRET &&
   process.env.KIVZUNO_IMAGE_MAX_DAILY==="3";
 const tokenHash=s=>createHash("sha256").update(s).digest("hex");
