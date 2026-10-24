@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="theme-color" content="#0c1122">
-<meta name="description" content="KIVZUNO Era Motion: choose one photo and one era. Free photo compatibility testing now; AI generation will be available when activated.">
+<meta name="description" content="KIVZUNO private owner testing studio for AI images and short videos. Not publicly available for customers.">
 <meta property="og:title" content="KIVZUNO Era Motion — One photo. Another era.">
 <meta property="og:description" content="A simple photo studio. No accounts, confusing credits or hidden purchases.">
 <title>Era Motion — KIVZUNO Photo Studio</title>
@@ -54,7 +55,7 @@
             <option value="neon">⚡ 1980s neon</option>
             <option value="future">🌆 Futuristic city</option>
           </select>
-          <p class="helper">A new AI scene is available only when generation is activated.</p>
+          <p class="helper">Choose a setting for your photo. A new scene is generated only when you tap the main button.</p>
         </section>
 
         <section class="form-step last-step">
@@ -75,9 +76,27 @@
           <div class="empty" id="empty"><span aria-hidden="true">✦</span><strong>Your photo appears here</strong><small>Nothing is generated or charged just by selecting a file.</small></div>
         </div>
         <div class="generated" id="generated-section" hidden>
-          <p class="eyebrow">GENERATED AI IMAGE</p>
-          <img id="generated-image" alt="Your historical AI scene" hidden>
-          <a id="generated-download" href="#" target="_blank" rel="noopener noreferrer" hidden>Open or save your AI image ↗</a>
+          <p class="eyebrow">YOUR NEW ERA PHOTO</p>
+          <p class="generated-era" id="generated-era">Your new historical scene</p>
+          <img id="generated-image" alt="Your new AI-generated historical scene" hidden>
+          <div class="generated-actions">
+            <a id="generated-download" class="save-image" href="#" target="_blank" rel="noopener noreferrer" hidden>↗ Open full-size image</a>
+            <button type="button" id="change-era" class="another-era">↻ Choose another era</button>
+          </div>
+          <p class="save-help">On iPhone, tap <strong>Open full-size image</strong>, then touch and hold it to save to Photos. Image links can expire, so save it promptly.</p>
+          <p class="helper">Another era means another AI generation and uses the limited daily allowance. Nothing runs automatically.</p>
+          <section class="private-video" id="private-video" hidden>
+            <h3>🎬 Turn this image into a 5-second video</h3>
+            <p class="helper">Private owner test only. No checkout. Runway uses approximately 25 of your existing API credits for each 5-second attempt.</p>
+            <label class="consent"><input type="checkbox" id="video-consent"><span>I agree to spend approximately 25 Runway API credits on ONE 5-second video test. Do not start any other videos automatically.</span></label>
+            <button class="primary" id="make-video" type="button" disabled>Create my 5-second video</button>
+            <p class="helper" id="video-status" role="status" aria-live="polite">Video generation is not activated yet.</p>
+            <div id="video-result" hidden>
+              <video id="generated-video" controls playsinline preload="metadata" aria-label="Your generated 5-second film"></video>
+              <a class="save-image" id="video-download" href="#" target="_blank" rel="noopener noreferrer" hidden>↗ Open or save full video</a>
+              <p class="helper">Save promptly: the Runway video download link expires.</p>
+            </div>
+          </section>
         </div>
         <p class="privacy">Only submit photos you are entitled to use. We do not save the photo during the free format test.</p>
       </aside>
