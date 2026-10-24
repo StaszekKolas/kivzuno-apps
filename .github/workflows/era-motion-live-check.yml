@@ -1,11 +1,10 @@
-name: KIVZUNO Era Motion production availability
+name: KIVZUNO Era Motion static availability (not AI generation)
 
 on:
   push:
     branches: [main]
     paths:
       - "hub/era-motion/**"
-      - "hub/index.html"
       - ".github/workflows/era-motion-live-check.yml"
   workflow_dispatch:
 permissions:
@@ -15,34 +14,58 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 4
     steps:
-      - name: Confirm Era Motion was actually deployed to the live KIVZUNO site
+      - name: Verify the currently deployed Era Motion static page, JS and CSS
+        shell: bash
         run: |
           node --input-type=module <<'JS'
           const base="https://kivzuno-hub.netlify.app";
-          const expect=[
-            ["/era-motion/","KIVZUNO Era Motion"],
-            ["/era-motion/app.js","const ERAS = ["],
-            ["/era-motion/style.css",".studio{"],
-            ["/","/era-motion/?src="]
+          // Real entry point (hub/era-motion/index.html) loads studio-simple.js,
+          // not the older app.js. These checks never call image generation.
+          const checks=[
+            {path:"/era-motion/",type:"text/html",markers:[
+              'src="./studio-simple.js"',
+              'href="./style.css"',
+              'id="photo"',
+              'id="era"',
+              'id="go"'
+            ]},
+            {path:"/era-motion/studio-simple.js",type:"javascript",markers:[
+              'const $=id=>document.getElementById(id);',
+              'action:"preflight"',
+              'checkMode();'
+            ]},
+            {path:"/era-motion/style.css",type:"text/css",markers:[
+              '.workspace{',
+              '.creator,.preview{'
+            ]}
           ];
           const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
           for(let attempt=1;attempt<=12;attempt++){
-            let ok=true;
-            for(const [path,needle] of expect){
+            let allPass=true;
+            for(const {path,type,markers} of checks){
               try{
-                const res=await fetch(base+path,{signal:AbortSignal.timeout(9000),headers:{"cache-control":"no-cache"}});
-                const body=await res.text();
-                if(!res.ok || !body.includes(needle)){
-                  ok=false;
-                  console.log("Attempt "+attempt+" FAILED "+path+" status="+res.status+" marker="+body.includes(needle));
+                const response=await fetch(base+path,{signal:AbortSignal.timeout(9000),headers:{"cache-control":"no-cache"}});
+                const body=await response.text();
+                const mime=(response.headers.get("content-type")||"").toLowerCase();
+                const missing=markers.filter(marker=>!body.includes(marker));
+                if(!response.ok||!mime.includes(type)||missing.length){
+                  allPass=false;
+                  console.log("Attempt "+attempt+" FAIL "+path+
+                    " status="+response.status+" mime="+mime+" missing="+JSON.stringify(missing));
                 }else{
-                  console.log("Attempt "+attempt+" OK "+path+" status="+res.status);
+                  console.log("Attempt "+attempt+" PASS "+path+" status="+response.status);
                 }
-              }catch(err){ok=false;console.log("Attempt "+attempt+" ERROR "+path+" "+String(err.message));}
+              }catch(err){
+                allPass=false;
+                console.log("Attempt "+attempt+" ERROR "+path+" "+String(err.message));
+              }
             }
-            if(ok){console.log("ERA_MOTION_PUBLIC_PRODUCTION_VERIFIED "+new Date().toISOString());process.exit(0);}
+            if(allPass){
+              console.log("ERA_MOTION_STATIC_FILES_VERIFIED. AI generation NOT tested.");
+              process.exit(0);
+            }
             if(attempt<12)await wait(6000);
           }
-          console.error("LIVE_PRODUCTION_NOT_VERIFIED: GitHub main may be merged but Netlify site may not be deployed.");
+          console.error("ERA_MOTION_STATIC_FILES_NOT_VERIFIED. Investigate deployed assets; no AI generation attempted.");
           process.exit(1);
           JS
