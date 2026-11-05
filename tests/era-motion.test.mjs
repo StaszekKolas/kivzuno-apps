@@ -56,7 +56,7 @@ test("photo is prepared locally, re-encoded and sent only after explicit consent
   assert.match(script,/canvas\.toDataURL\("image\/jpeg",quality\)/);
   assert.match(script,/JPEG|jpeg/i);
   assert.match(script,/URL\.revokeObjectURL/);
-  assert.match(script,/if\(busy\|\|!dataUri\|\|!consent\.checked\)return/);
+  assert.match(script,/if\(busy\|\|!dataUri\|\|!consent\.checked\|\|\(aiEnabled&&!quotaEligible\)\)return/);
   assert.match(script,/body:JSON\.stringify\(body\)/);
   assert.doesNotMatch(script,/new Image\(\).*\.src="https/i);
 });
