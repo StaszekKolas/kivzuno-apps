@@ -1,0 +1,76 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import {randomBytes} from "node:crypto";
+import {OWNER_SESSION_MS,ownerSignature,verifyOwnerCookie,ownerConfigured,requirePrivateOwner} from "../netlify/functions/owner-session-core.mjs";
+
+const edge=readFileSync("netlify/edge-functions/private-era-gate.js","utf8");
+const video=readFileSync("netlify/functions/owner-video-task.mjs","utf8");
+const photo=readFileSync("netlify/functions/era-image-task.mjs","utf8");
+const studio=readFileSync("hub/era-motion/studio-simple.js","utf8");
+const html=readFileSync("hub/era-motion/index.html","utf8");
+
+test("owner session uses a short-lived signed cookie, not a public IP or embedded secret",()=>{
+ const secret=randomBytes(40).toString("hex");
+ const env={KIVZUNO_PRIVATE_BETA_ENABLED:"owner-approved",KIVZUNO_OWNER_TEST_SECRET:secret};
+ assert.equal(ownerConfigured(env),true);
+ assert.equal(ownerConfigured({...env,KIVZUNO_OWNER_TEST_SECRET:"short"}),false);
+ const now=Date.now(),exp=now+OWNER_SESSION_MS-1000;
+ const sig=ownerSignature(exp,secret);
+ const cookie="kz_owner="+exp+"."+sig;
+ assert.equal(verifyOwnerCookie(cookie,secret,now),true);
+ assert.equal(verifyOwnerCookie(cookie,secret+"other",now),false);
+ assert.equal(verifyOwnerCookie(cookie,secret,exp+1),false);
+ assert.equal(verifyOwnerCookie(cookie+"; kz_owner="+exp+"."+sig,secret,now),false);
+ assert.equal(verifyOwnerCookie("kz_owner="+(now+OWNER_SESSION_MS+30000)+"."+sig,secret,now),false);
+ assert.deepEqual(requirePrivateOwner({headers:{get:()=>cookie}},env),{ok:true});
+ assert.equal(requirePrivateOwner({headers:{get:()=>""}},env).status,401);
+ assert.equal(requirePrivateOwner({headers:{get:()=>""}},{...env,KIVZUNO_PRIVATE_BETA_ENABLED:""}).status,503);
+});
+test("Netlify edge protects all studio/static and expensive API endpoints; no token is bundled",()=>{
+ assert.match(edge,/\/era-motion\/\*/);
+ assert.match(edge,/\.netlify\/functions\/era-image-task/);
+ assert.match(edge,/\.netlify\/functions\/owner-video-task/);
+ assert.match(edge,/\.netlify\/functions\/runway-handoff/);
+ assert.match(edge,/KIVZUNO_OWNER_TEST_SECRET/);
+ assert.match(edge,/KIVZUNO_PRIVATE_BETA_ENABLED/);
+ assert.match(edge,/HttpOnly; Secure; SameSite=Strict/);
+ assert.match(edge,/Max-Age=43200/);
+ assert.match(edge,/context\.next\(\)/);
+ assert.match(edge,/status:401/);
+ assert.match(edge,/status:503/);
+ assert.doesNotMatch(edge,/RUNWAYML_API_SECRET/);
+});
+test("billable photo and video requests independently enforce owner session",()=>{
+ assert.match(photo,/requirePrivateOwner\(request\)/);
+ assert.match(video,/requirePrivateOwner\(request\)/);
+ assert.match(photo,/if\(!owner\.ok\)return reply\(\{error:owner\.error\},owner\.status\)/);
+ assert.match(video,/if\(!owner\.ok\)return reply\(\{error:owner\.error\},owner\.status\)/);
+ assert.match(photo,/OWNER_IMAGE_MAX_DAY=10/);
+ assert.match(photo,/private-img\/"/);
+ assert.match(photo,/onlyIfNew:true/);
+ assert.match(video,/MAX_OWNER_VIDEOS_DAILY=2/);
+ assert.match(video,/owner_video_daily_budget/);
+ assert.match(video,/KIVZUNO_OWNER_VIDEO_TEST_ENABLED==="owner-approved"/);
+ assert.match(video,/onlyIfNew:true/);
+ assert.match(video,/source\.status!=="SUCCEEDED"/);
+ assert.match(video,/photo\.authHash!==hash\(body\.imageAccessToken\)/);
+ assert.match(video,/model:MODEL,promptImage:imageUrl,promptText:promptForEra\(body\.era\)/);
+ assert.match(video,/duration:DURATION/);
+ assert.match(video,/video_already_requested_for_photo/);
+ assert.doesNotMatch(video,/LEMON_SQUEEZY_API_KEY|STRIPE_SECRET_KEY|checkout\.create/);
+});
+test("no second upload, only a manual paid call with explicit credit consent",()=>{
+ assert.match(html,/id="make-video"/);
+ assert.match(html,/id="video-consent"/);
+ assert.match(html,/25 of your existing API credits/);
+ assert.match(html,/id="generated-video"/);
+ assert.match(studio,/videoConsent\.checked/);
+ assert.match(studio,/makeVideo\.addEventListener\("click",startVideo\)/);
+ assert.match(studio,/action:"start",\.\.\.videoInput,consent:true/);
+ assert.match(studio,/imageJobId:task\.jobId,imageAccessToken:task\.accessToken/);
+ assert.match(studio,/videoCreated=true/);
+ assert.match(studio,/action:"status",videoJobId:task\.videoJobId/);
+ assert.match(studio,/player\.src=result\.videoUrl/);
+ assert.doesNotMatch(studio,/puter\.ai\.txt2vid|StripeCheckout/);
+});
