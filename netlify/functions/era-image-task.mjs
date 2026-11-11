@@ -1,6 +1,7 @@
 import { getStore } from "@netlify/blobs";
 import { randomUUID, randomBytes, createHash, createHmac } from "node:crypto";
 import {parseImage,ERAS,reply} from "./runway-handoff-core.mjs";
+import {createImagePrompt} from "./era-photo-prompts.mjs";
 
 // READY FOR OWNER'S FUTURE RUNWAY API KEY; ZERO SPEND WHILE DISABLED.
 // Images always go through KIVZUNO, with no Puter account, only after explicit upload consent.
@@ -24,13 +25,6 @@ async function parse(req) {
   if(body.length>9_500_000)throw new Error("size");
   return JSON.parse(body);
 }
-const prompt=(e,hasSecond)=>[
-  "@main is the primary real subject. Create a completely NEW photorealistic cinematic portrait set in "+ERAS[e]+".",
-  hasSecond?"@companion is a second real subject who must appear together with @main, naturally in the same scene.":"",
-  "Replace the original landscape, location, attire and background with an era-appropriate scene; do not add borders or captions.",
-  "Preserve original person facial identity and pet markings wherever possible. No extra limbs, duplicated heads or split-screen.",
-  "Cinematic atmosphere, vertical composition, beautiful natural lighting and photorealistic details."
-].filter(Boolean).join(" ");
 async function runway(method,path,body) {
   const res=await fetch(API+path,{method,headers:authHeaders(),body:body?JSON.stringify(body):undefined,
     signal:AbortSignal.timeout(22000)});
@@ -56,6 +50,29 @@ async function capacity(req) {
   throw new Error("daily_free_image_limit");
 }
 
+// Read-only quota check. No AI provider calls and no slot claims.
+// Generation still uses the atomic capacity() gate to handle race conditions.
+const quotaDay=()=>new Date().toISOString().slice(0,10);
+function nextResetAt(day=quotaDay()){
+  return new Date(Date.parse(day+"T00:00:00.000Z")+24*60*60*1000).toISOString();
+}
+async function allowance(req){
+  const day=quotaDay();
+  const resetAt=nextResetAt(day);
+  const ip=req.headers.get("x-nf-client-connection-ip");
+  if(!ip || !/^[0-9a-f:.]{2,80}$/i.test(ip))return {eligible:false,reason:"source_ip_unknown",resetAt};
+  const pseudonym=createHmac("sha256",process.env.KIVZUNO_IMAGE_QUOTA_SECRET).update(day+":"+ip).digest("hex");
+  const q=quota();
+  const alreadyUsed=await q.get("person/"+day+"/"+pseudonym,{type:"json",consistency:"strong"});
+  if(alreadyUsed)return {eligible:false,reason:"one_image_per_day",resetAt};
+  const slots=await Promise.all(Array.from({length:MAX_DAY},(_,i)=>
+    q.get("daily/"+day+"/slot/"+(i+1),{type:"json",consistency:"strong"})
+  ));
+  const remaining=slots.filter(x=>!x).length;
+  if(remaining===0)return {eligible:false,reason:"daily_free_image_limit",resetAt};
+  return {eligible:true,remainingShared:remaining,resetAt};
+}
+
 export default async function handler(request) {
   if(request.method!=="POST")return reply({error:"method"},405);
   if(!sameOrigin(request))return reply({error:"origin"},403);
@@ -70,6 +87,11 @@ export default async function handler(request) {
     billingActive:false, // image generation is funded by the owner (only after explicit owner approval)
     note:"Runway server-side API is disabled until credentials and owner-approved spend cap are configured."
   });
+  if(action==="eligibility"){
+    if(!enabled())return reply({eligible:false,reason:"image_ai_not_configured"});
+    try {return reply(await allowance(request));}
+    catch{return reply({eligible:false,reason:"quota_check_unavailable"},503);}
+  }
   if(!["start","status"].includes(action))return reply({error:"action"},400);
   if(!enabled())return reply({error:"image_ai_not_configured",message:"No provider API key or approved generation budget is configured."},503);
   if(action==="start"){
@@ -80,7 +102,7 @@ export default async function handler(request) {
       if(body.companion)companion=parseImage(body.companion);
       if(main.dataUri.length+(companion?.dataUri.length||0)>7_000_000)throw new Error("images_too_large");
     }catch(e){return reply({error:String(e.message).slice(0,48)},400);}
-    try {await capacity(request);}catch(e){return reply({error:String(e.message)},429);}
+    try {await capacity(request);}catch(e){return reply({error:String(e.message),resetAt:nextResetAt()},429);}
     const taskId=randomUUID(),secret=randomBytes(32).toString("hex");
     const jobs=store();
     // Keep only a hash of token, never customer photo. Source images are discarded
@@ -96,7 +118,7 @@ export default async function handler(request) {
       if(companion)referenceImages.push({uri:companion.dataUri,tag:"companion"});
       const task=await runway("POST","/v1/text_to_image",{
         model:"gen4_image_turbo",ratio:"720:1280",
-        promptText:prompt(body.era,Boolean(companion)),referenceImages
+        promptText:createImagePrompt(body.era,{hasCompanion:Boolean(companion)}),referenceImages
       });
       if(!idOk(task?.id))throw new Error("provider_task_invalid");
       await jobs.setJSON("image/"+taskId,{
