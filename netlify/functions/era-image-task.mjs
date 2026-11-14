@@ -1,6 +1,7 @@
 import { getStore } from "@netlify/blobs";
-import { randomUUID, randomBytes, createHash, createHmac } from "node:crypto";
+import { randomUUID, randomBytes, createHash } from "node:crypto";
 import {parseImage,ERAS,reply} from "./runway-handoff-core.mjs";
+import {getBrowserId,newBrowserCookie,dailyBrowserKey,utcDay,nextResetAt} from "./era-image-quota-identity.mjs";
 
 // READY FOR OWNER'S FUTURE RUNWAY API KEY; ZERO SPEND WHILE DISABLED.
 // Images always go through KIVZUNO, with no Puter account, only after explicit upload consent.
@@ -39,16 +40,41 @@ async function runway(method,path,body) {
 }
 function idOk(x){return typeof x==="string" && /^[0-9a-f-]{36}$/i.test(x);}
 function tokenOk(x){return typeof x==="string" && /^[a-f0-9]{64}$/.test(x);}
-async function capacity(req) {
-  const ip=req.headers.get("x-nf-client-connection-ip");
-  if(!ip || !/^[0-9a-f:.]{2,80}$/i.test(ip))throw new Error("source_ip_unknown");
-  const day=new Date().toISOString().slice(0,10);
-  const pseudonym=createHmac("sha256",process.env.KIVZUNO_IMAGE_QUOTA_SECRET).update(day+":"+ip).digest("hex");
+// One image per signed browser cookie per UTC day, not per shared Wi-Fi IP.
+// The original global three-image safety ceiling remains fully enforced.
+function browserKey(req,day){
+  const id=getBrowserId(req.headers.get("cookie"),process.env.KIVZUNO_IMAGE_QUOTA_SECRET);
+  if(!id)throw new Error("browser_id_unavailable");
+  return dailyBrowserKey(id,day,process.env.KIVZUNO_IMAGE_QUOTA_SECRET);
+}
+function ensureBrowserCookie(req,response){
+  if(!enabled())return response;
+  const secret=process.env.KIVZUNO_IMAGE_QUOTA_SECRET;
+  if(!getBrowserId(req.headers.get("cookie"),secret)){
+    response.headers.append("set-cookie",newBrowserCookie(secret));
+  }
+  return response;
+}
+async function allowance(req){
+  const day=utcDay(),resetAt=nextResetAt(day);
+  let key;
+  try {key=browserKey(req,day);}catch{return {eligible:false,reason:"browser_id_unavailable",resetAt};}
   const q=quota();
-  const once=await q.setJSON("person/"+day+"/"+pseudonym,{used:true},{onlyIfNew:true});
+  const used=await q.get(key,{type:"json",consistency:"strong"});
+  if(used)return {eligible:false,reason:"one_image_per_day",resetAt};
+  const slots=await Promise.all(Array.from({length:MAX_DAY},(_,i)=>
+    q.get("daily/"+day+"/slot/"+(i+1),{type:"json",consistency:"strong"})
+  ));
+  const remainingShared=slots.filter(x=>!x).length;
+  if(!remainingShared)return {eligible:false,reason:"daily_free_image_limit",resetAt};
+  return {eligible:true,remainingShared,resetAt};
+}
+async function capacity(req) {
+  const day=utcDay(),key=browserKey(req,day),q=quota();
+  const once=await q.setJSON(key,{used:true},{onlyIfNew:true});
   if(!once.modified)throw new Error("one_image_per_day");
   // Race-safe global quota: claim exactly one exclusive slot across three.
-  // We don't retry billable calls after a failed provider response.
+  // No automatic paid retries. Cookie resets cannot increase this ceiling.
   for(let i=1;i<=MAX_DAY;i++){
     const done=await q.setJSON("daily/"+day+"/slot/"+i,{claimed:true},{onlyIfNew:true});
     if(done.modified)return;
@@ -63,13 +89,19 @@ export default async function handler(request) {
   try {body=await parse(request);}catch {return reply({error:"invalid_body"},400);}
   const action=body?.action;
   // This capability check does not open accounts, charge credits, or expose a secret.
-  if(action==="capabilities")return reply({
+  if(action==="capabilities")return ensureBrowserCookie(request,reply({
     available:enabled(),provider:"Runway",model:"gen4_image_turbo",
     loginRequired:false,customerPrice:0,limit:MAX_DAY,
+    dailyPerBrowser:1,sharedDailyLimit:MAX_DAY,
     reason:enabled()?"ready_for_limited_beta":"owner_api_configuration_required",
     billingActive:false, // image generation is funded by the owner (only after explicit owner approval)
     note:"Runway server-side API is disabled until credentials and owner-approved spend cap are configured."
-  });
+  }));
+  if(action==="eligibility"){
+    if(!enabled())return reply({eligible:false,reason:"image_ai_not_configured"});
+    try{return reply(await allowance(request));}
+    catch{return reply({eligible:false,reason:"quota_check_unavailable"},503);}
+  }
   if(!["start","status"].includes(action))return reply({error:"action"},400);
   if(!enabled())return reply({error:"image_ai_not_configured",message:"No provider API key or approved generation budget is configured."},503);
   if(action==="start"){
@@ -80,7 +112,7 @@ export default async function handler(request) {
       if(body.companion)companion=parseImage(body.companion);
       if(main.dataUri.length+(companion?.dataUri.length||0)>7_000_000)throw new Error("images_too_large");
     }catch(e){return reply({error:String(e.message).slice(0,48)},400);}
-    try {await capacity(request);}catch(e){return reply({error:String(e.message)},429);}
+    try {await capacity(request);}catch(e){return reply({error:String(e.message),resetAt:nextResetAt()},429);}
     const taskId=randomUUID(),secret=randomBytes(32).toString("hex");
     const jobs=store();
     // Keep only a hash of token, never customer photo. Source images are discarded
@@ -123,4 +155,6 @@ export default async function handler(request) {
     return reply({status:task.status==="FAILED"?"FAILED":"PROCESSING"});
   }catch{return reply({error:"provider_unavailable"},503);}
 }
-export const config={rateLimit:{action:"rate_limit",aggregateBy:"ip",windowSize:60,windowLimit:8}};
+// Status polling can legitimately make several requests per minute per browser.
+// Keep bounded IP protection; separate same-Wi-Fi visitors no longer collide so quickly.
+export const config={rateLimit:{action:"rate_limit",aggregateBy:"ip",windowSize:60,windowLimit:30}};
