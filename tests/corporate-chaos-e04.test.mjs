@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+const e = JSON.parse(readFileSync(new URL('../content/corporate-chaos/s01e04-password-reset.json', import.meta.url), 'utf8'));
+test('unique S01E04 and sequential continuity', () => { assert.equal(e.season,1); assert.equal(e.episode,4); assert.match(e.previous,/S01E03/); assert.match(e.next,/S01E05/); });
+test('portrait, 15-25 seconds, 24 fps', () => { assert.equal(e.width*16,e.height*9); assert.ok(e.durationSeconds>=15 && e.durationSeconds<=25); assert.equal(e.fps,24); });
+test('continuous, non-overlapping timeline', () => { assert.equal(e.scenes[0].start,0); for(let i=0;i<e.scenes.length;i++){assert.ok(e.scenes[i].end>e.scenes[i].start); if(i)assert.equal(e.scenes[i].start,e.scenes[i-1].end);} assert.equal(e.scenes.at(-1).end,e.durationSeconds); });
+test('English subtitles present throughout', () => { assert.ok(e.scenes.length>=6); for(const s of e.scenes){ assert.ok(s.subtitle.length>8); assert.ok([...s.subtitle].every(ch => ch.charCodeAt(0) >= 32 && ch.charCodeAt(0) <= 126)); }});
+test('single soundtrack, no voiceover, original/licensed assets', () => { assert.equal(e.audioTracks,1); assert.equal(e.voiceover,false); assert.match(e.musicAndSfx,/Original/); assert.ok(e.assetLicences.some(x=>x.includes('Open Font License'))); });
+test('no publication or cost permission', () => { assert.equal(e.costGBP,0); assert.match(e.status,/HOLD/); });
