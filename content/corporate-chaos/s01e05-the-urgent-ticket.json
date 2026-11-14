@@ -1,0 +1,89 @@
+{
+  "series": "KIVZUNO Originals / Corporate Chaos",
+  "season": 1,
+  "episode": 5,
+  "title": "THE URGENT TICKET",
+  "previous": "S01E04 PASSWORD RESET",
+  "next": "S01E06 MANDATORY FUN",
+  "format": {
+    "width": 720,
+    "height": 1280,
+    "fps": 24,
+    "durationSeconds": 23,
+    "videoCodec": "H.264",
+    "audioCodec": "AAC",
+    "audioChannels": 1,
+    "voiceover": false
+  },
+  "character": "KIV: white rounded robot, black screen face, cyan eyes, KIV chest label",
+  "assets": {
+    "graphics": "Original locally drawn procedural 2D shapes",
+    "audio": "Original procedural electronic beat and effects, single mono mix",
+    "font": "Lato (SIL OFL 1.1, Debian fonts-lato copyright)",
+    "watermark": "KIVZUNO lower-right"
+  },
+  "scenes": [
+    {
+      "start": 0,
+      "end": 2.5,
+      "headline": "YOUR PASSWORD / IS STILL BROKEN.",
+      "caption": "KIV JUST WANTS TO WORK."
+    },
+    {
+      "start": 2.5,
+      "end": 5.5,
+      "headline": "NO PROBLEM. / OPEN A TICKET.",
+      "caption": "PRIORITY: URGENT"
+    },
+    {
+      "start": 5.5,
+      "end": 8.5,
+      "headline": "GOOD NEWS! / PRIORITY ONE.",
+      "caption": "FINALLY, SOME HELP!"
+    },
+    {
+      "start": 8.5,
+      "end": 12,
+      "headline": "ESTIMATED WAIT: / 14 BUSINESS DAYS.",
+      "caption": "...EXCUSE ME?"
+    },
+    {
+      "start": 12,
+      "end": 15.5,
+      "headline": "NEED IT / FASTER?",
+      "caption": "KIV: I ALREADY DID."
+    },
+    {
+      "start": 15.5,
+      "end": 19.5,
+      "headline": "TO TRACK / YOUR TICKET...",
+      "caption": "KIV: THAT IS THE PROBLEM."
+    },
+    {
+      "start": 19.5,
+      "end": 23,
+      "headline": "TICKET CLOSED. / USER INACTIVE.",
+      "caption": "THE SYSTEM IS PERFECT."
+    }
+  ],
+  "costGBP": 0,
+  "release": "HOLD — owner approval and independent QA required",
+  "productionArtifact": "Local owner-review MP4 only; binary not committed",
+  "platforms": {
+    "instagram": {
+      "lastVerified": "2026-10-26",
+      "lastEpisode": "S01E04",
+      "nextSuggested": "Verified free miniapp promo"
+    },
+    "facebook": {
+      "lastVerified": "2026-10-25",
+      "lastEpisode": "S01E03",
+      "nextSuggested": "Verified free miniapp promo"
+    },
+    "tiktok": {
+      "lastVerified": "2026-10-25",
+      "lastEpisode": "S01E03",
+      "nextSuggested": "Verified free miniapp promo"
+    }
+  }
+}
