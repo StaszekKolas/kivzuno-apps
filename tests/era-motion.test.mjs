@@ -26,11 +26,11 @@ test("a single photo studio without legacy providers, vendor login or checkout",
 });
 test("the page tells the truth about inactive AI creation and separate upload test",()=>{
   assert.match(html,/PHOTO STUDIO|photo studio/i);
-  assert.match(html,/It does <strong>not<\/strong> create a new AI image or a video/i);
+  assert.match(html,/Without the private owner's code/i);
   assert.match(html,/No login/);
   assert.match(html,/No credits/);
   assert.match(html,/No payment/);
-  assert.match(html,/Photo generation, paid movies and checkout stay off until tested and approved/i);
+  assert.match(html,/There is no public launch or checkout/i);
 });
 test("all 12 historical scenes map to the secure server era allow-list",async()=>{
   const {ERAS}=await import("../netlify/functions/runway-handoff-core.mjs");
@@ -44,11 +44,11 @@ test("Javascript parses and API features are enabled only when confirmed by the 
   assert.match(script,/aiEnabled=Boolean\(enabled\)/);
   assert.match(script,/if\(!aiEnabled\)/);
   assert.match(script,/action:"preflight",image:img,era:chosen/);
-  assert.match(script,/action:"start",photo:img,era:chosen,consent:true/);
+  assert.match(script,/action:"image_start",photo:img,era:chosen,consent:true/);
   assert.match(script,/action:"status",jobId:task\.jobId,accessToken:task\.accessToken/);
   assert.match(script,/result\.charged!==false/);
   assert.match(script,/mode\(false\)/);
-  assert.match(script,/go\.disabled=busy \|\| !dataUri \|\| !consent\.checked/);
+  assert.match(script,/go\.disabled=busy \|\| videoBusy \|\| !dataUri \|\| !consent\.checked/);
   assert.doesNotMatch(script,/Puter|stripe|lemon|runwayml\.com|localStorage|sessionStorage/i);
 });
 test("photo is prepared locally, re-encoded and sent only after explicit consent",()=>{

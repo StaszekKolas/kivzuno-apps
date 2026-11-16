@@ -1,0 +1,60 @@
+name: KIVZUNO owner-only preview smoke
+on:
+  pull_request:
+    paths:
+      - "hub/era-motion/**"
+      - "netlify/functions/era-owner-test.mjs"
+      - "netlify/functions/era-image-task.mjs"
+      - ".github/workflows/kivzuno-owner-preview-smoke.yml"
+permissions:
+  contents: read
+jobs:
+  owner-access-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Verify no unauthenticated AI call can consume credits
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          node --input-type=module <<'JS'
+          const base="https://deploy-preview-"+process.env.PR_NUMBER+"--kivzuno-hub.netlify.app";
+          let last="";
+          const post=async (fn,body)=>{
+            const response=await fetch(base+"/.netlify/functions/"+fn,{
+              method:"POST",
+              headers:{"content-type":"application/json",origin:base},
+              body:JSON.stringify(body),
+              signal:AbortSignal.timeout(12000)
+            });
+            return {status:response.status,body:await response.json()};
+          };
+          for(let attempt=0;attempt<14;attempt++){
+            try{
+              const page=await fetch(base+"/era-motion/",{signal:AbortSignal.timeout(10000)});
+              const html=await page.text();
+              if(!page.ok||!html.includes('id="owner-key"')||!html.includes('id="video-go"'))
+                throw Error("private owner studio not deployed yet");
+              const capabilities=await post("era-owner-test",{action:"capabilities"});
+              if(capabilities.status!==200||capabilities.body.available!==false)
+                throw Error("anonymous capabilities must be unavailable");
+              for(const action of ["image_start","video_start"]){
+                const result=await post("era-owner-test",{action,consent:true,era:"west",photo:"dummy"});
+                if(![403,503].includes(result.status) ||
+                   !["owner_authorization_required","owner_beta_not_configured"].includes(result.body?.error))
+                  throw Error("unprotected "+action+": "+JSON.stringify(result));
+              }
+              const publicImage=await post("era-image-task",{action:"capabilities"});
+              if(publicImage.status!==200||publicImage.body.available!==false)
+                throw Error("public image beta unexpectedly enabled");
+              console.log("PASS: no unauthenticated billable image/video job");
+              process.exit(0);
+            }catch(e){last=String(e?.message||e); console.log("attempt "+(attempt+1)+": "+last);}
+            if(attempt<13)await new Promise(resolve=>setTimeout(resolve,8000));
+          }
+          console.error("PRIVATE_PREVIEW_UNVERIFIED: "+last);
+          process.exit(1);
+          JS

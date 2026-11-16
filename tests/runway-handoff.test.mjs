@@ -71,5 +71,5 @@ test("server preflight cannot bill; actual generation has secret+owner approval+
   assert.match(backend,/new URL\(request\.url\)\.origin/);
   assert.match(backend,/model:MODEL,promptImage:image\.dataUri/);
   assert.match(frontend,/if\(!aiEnabled\)/);
-  assert.match(frontend,/action:"start",photo:img,era:chosen,consent:true/);
+  assert.match(frontend,/action:"image_start",photo:img,era:chosen,consent:true/);
 });
