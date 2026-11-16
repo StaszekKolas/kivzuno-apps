@@ -26,15 +26,16 @@ test("a single photo studio without legacy providers, vendor login or checkout",
 });
 test("the page tells the truth about inactive AI creation and separate upload test",()=>{
   assert.match(html,/PHOTO STUDIO|photo studio/i);
-  assert.match(html,/It does <strong>not<\/strong> create a new AI image or a video/i);
+  assert.match(html,/Without the private owner's code/i);
   assert.match(html,/No login/);
   assert.match(html,/No credits/);
   assert.match(html,/No payment/);
-  assert.match(html,/Photo generation, paid movies and checkout stay off until tested and approved/i);
+  assert.match(html,/There is no public launch or checkout/i);
 });
 test("all 12 historical scenes map to the secure server era allow-list",async()=>{
   const {ERAS}=await import("../netlify/functions/runway-handoff-core.mjs");
-  const selected=[...html.matchAll(/<option value="([^"]+)"/g)].map(x=>x[1]);
+  const eraSelect=html.match(/<select id="era"[\s\S]*?<\/select>/)?.[0]||"";
+  const selected=[...eraSelect.matchAll(/<option value="([^"]+)"/g)].map(x=>x[1]);
   assert.equal(selected.length,12);
   assert.deepEqual(new Set(selected),new Set(Object.keys(ERAS)));
 });
@@ -44,11 +45,13 @@ test("Javascript parses and API features are enabled only when confirmed by the 
   assert.match(script,/aiEnabled=Boolean\(enabled\)/);
   assert.match(script,/if\(!aiEnabled\)/);
   assert.match(script,/action:"preflight",image:img,era:chosen/);
-  assert.match(script,/action:"start",photo:img,era:chosen,consent:true/);
+  assert.match(script,/action:selectedProduct==="video"\?"scene_prepare":"image_start"/);
   assert.match(script,/action:"status",jobId:task\.jobId,accessToken:task\.accessToken/);
   assert.match(script,/result\.charged!==false/);
   assert.match(script,/mode\(false\)/);
-  assert.match(script,/go\.disabled=busy \|\| !dataUri \|\| !consent\.checked/);
+  assert.match(script,/go\.disabled=busy\|\|!dataUri/);
+  assert.match(script,/const reason=blockReason\(\)/);
+  assert.match(script,/if\(reason\)\{/);
   assert.doesNotMatch(script,/Puter|stripe|lemon|runwayml\.com|localStorage|sessionStorage/i);
 });
 test("photo is prepared locally, re-encoded and sent only after explicit consent",()=>{
@@ -56,7 +59,9 @@ test("photo is prepared locally, re-encoded and sent only after explicit consent
   assert.match(script,/canvas\.toDataURL\("image\/jpeg",quality\)/);
   assert.match(script,/JPEG|jpeg/i);
   assert.match(script,/URL\.revokeObjectURL/);
-  assert.match(script,/if\(busy\|\|!dataUri\|\|!consent\.checked\)return/);
+  assert.match(script,/if\(busy\|\|!dataUri\)return/);
+  assert.match(script,/if\(!consent\.checked\)return "Tick the consent checkbox above."/);
+  assert.match(script,/if\(reason\)\{/);
   assert.match(script,/body:JSON\.stringify\(body\)/);
   assert.doesNotMatch(script,/new Image\(\).*\.src="https/i);
 });

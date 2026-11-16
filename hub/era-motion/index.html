@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0c1122">
-<meta name="description" content="KIVZUNO Era Motion: choose one photo and one era. Free photo compatibility testing now; AI generation will be available when activated.">
+<meta name="description" content="KIVZUNO Era Motion: choose one photo and one era. Public AI generation locked. Owner-only image and video testing with explicit credits budget.">
 <meta property="og:title" content="KIVZUNO Era Motion — One photo. Another era.">
 <meta property="og:description" content="A simple photo studio. No accounts, confusing credits or hidden purchases.">
 <title>Era Motion — KIVZUNO Photo Studio</title>
-<link rel="stylesheet" href="./style.css">
-<script src="./studio-simple.js" defer></script>
+<link rel="stylesheet" href="./style.css?v=10">
+<script src="./studio-simple.js?v=10" defer></script>
 </head>
 <body>
 <div class="shell">
@@ -25,8 +25,33 @@
       <p id="mode-banner" class="mode-banner" role="status">Checking what’s available…</p>
     </section>
 
+    <section class="owner-access" aria-label="Private owner beta login">
+      <div><strong>PRIVATE OWNER BETA</strong><p>Only the owner can unlock AI generation. The code stays in this tab and is not saved on your device.</p></div>
+      <label for="owner-key">Owner test code</label>
+      <div class="owner-login">
+        <input id="owner-key" type="password" autocomplete="off" spellcheck="false" placeholder="Enter private owner code">
+        <button id="owner-unlock" type="button">Unlock test</button>
+      </div>
+      <p id="owner-state" role="status">Owner-only generation is locked. No generation or payment is happening.</p>
+      <div id="credit-audit" class="credit-audit" hidden>
+        <button type="button" id="audit-button" class="audit-button">Audit reserved test credits (read only)</button>
+        <pre id="audit-report" class="audit-report" aria-live="polite">No audit requested yet.</pre>
+        <p class="helper">This checks KIVZUNO's reservation records only. No API generations, refunds, resets or purchases.</p>
+      </div>
+    </section>
+
+    <section class="product-choice" aria-label="Choose AI photo or independent AI film">
+      <p class="eyebrow">CHOOSE WHAT YOU WANT TO CREATE</p>
+      <div class="product-choice-buttons">
+        <button type="button" id="film-choice" aria-pressed="true"><span aria-hidden="true">🎬</span><strong>AI Film</strong><small>Main feature — step into a historical scene that comes alive</small></button>
+        <button type="button" id="photo-choice" aria-pressed="false"><span aria-hidden="true">📷</span><strong>AI Photo</strong><small>Explore a new look and preview the style</small></button>
+      </div>
+      <p class="helper">Choose one: Choose Photo AI or Film AI independently. Film AI first prepares a historical picture, then WAITS for your approval before any video credits are spent.</p>
+    </section>
+
     <section class="workspace" aria-label="Era Motion photo studio">
       <form class="creator" id="creator" novalidate>
+        <p class="eyebrow" id="creator-purpose">Film AI — historical scene plus real movement</p>
         <section class="form-step">
           <div class="step-heading"><span class="count">1</span><h2>Your photo</h2></div>
           <label class="upload" for="photo">
@@ -54,14 +79,40 @@
             <option value="neon">⚡ 1980s neon</option>
             <option value="future">🌆 Futuristic city</option>
           </select>
-          <p class="helper">A new AI scene is available only when generation is activated.</p>
+          <p class="helper">Keep the original people, pets, framing and vehicle position while changing the time period.</p>
+        </section>
+
+        <section class="form-step" id="look-step">
+          <div class="step-heading"><span class="count">✦</span><h2>How dramatic should it look?</h2></div>
+          <label class="sr-only" for="look">Visual transformation style</label>
+          <select id="look" name="look">
+            <option value="faithful">Faithful — keep the original framing and details</option>
+            <option value="cinematic" selected>Cinematic — original photo with vivid action</option>
+            <option value="epic">Epic — heightened drama, recognizable subjects</option>
+          </select>
+          <p class="helper">All three aim to keep the original people, animals and their positions. Cinematic is recommended. AI resemblance cannot be guaranteed.</p>
+        </section>
+
+        <section class="form-step" id="motion-step">
+          <div class="step-heading"><span class="count">✦</span><h2 id="motion-title">How should the scene move?</h2></div>
+          <label class="sr-only" for="motion">Film motion</label>
+          <select id="motion" name="motion">
+            <option value="walk" selected>🚶 Walking — visible subject movement</option>
+            <option value="animals">🐕 Animals walking — legs, paws, ears move</option>
+            <option value="gesture">👋 Turn and wave — head and hands move</option>
+            <option value="ride">🐎 Ride or drive — wheels, hooves, movement</option>
+            <option value="camera">🎥 Moving camera — tracking shot</option>
+          </select>
+          <p id="motion-help" class="helper">Make subjects perform visible actions. A still photo should capture the action mid-moment.</p>
         </section>
 
         <section class="form-step last-step">
           <div class="step-heading"><span class="count">3</span><h2>Ready?</h2></div>
+          <p class="active-mode" id="active-mode">🎬 FILM AI — review scene before spending video credits</p>
           <label class="consent"><input type="checkbox" id="consent"><span id="consent-label">I agree to send my chosen photo to KIVZUNO for a free format check. It will be discarded immediately.</span></label>
-          <button class="primary" id="go" type="submit" disabled>Check my photo — free</button>
+          <button class="primary" id="go" type="submit" disabled>Choose a photo to begin</button>
           <p class="helper" id="action-hint">No login · No credits · No payment</p>
+          <p id="generation-diagnostic" class="generation-diagnostic" role="status" aria-live="polite">Choose a photo to begin.</p>
           <p class="result-message" id="message" role="status" aria-live="polite">Choose a photo to start.</p>
         </section>
       </form>
@@ -75,17 +126,33 @@
           <div class="empty" id="empty"><span aria-hidden="true">✦</span><strong>Your photo appears here</strong><small>Nothing is generated or charged just by selecting a file.</small></div>
         </div>
         <div class="generated" id="generated-section" hidden>
-          <p class="eyebrow">GENERATED AI IMAGE</p>
-          <img id="generated-image" alt="Your historical AI scene" hidden>
+          <p class="eyebrow">HISTORICAL SCENE — NEEDS YOUR REVIEW</p>
+          <img id="generated-image" alt="Historical scene needing owner approval" hidden>
+          <p id="image-quality" class="helper" aria-live="polite">Check the people, animals, historical objects and composition before approving.</p>
           <a id="generated-download" href="#" target="_blank" rel="noopener noreferrer" hidden>Open or save your AI image ↗</a>
+          <section id="scene-review" class="scene-review" hidden>
+            <h3>Approve this picture before making a film</h3>
+            <p>Approval costs zero credits and never starts a video. Check the image and confirm all three conditions before approval.</p>
+            <label class="review-check"><input type="checkbox" id="check-subjects"> Same people and animals, correct count and believable anatomy</label>
+            <label class="review-check"><input type="checkbox" id="check-history"> No modern vehicle, asphalt or other era-breaking objects</label>
+            <label class="review-check"><input type="checkbox" id="check-action"> Original composition remains and the scene tells an interesting story</label>
+            <button id="approve-scene" type="button" disabled>Approve for Film — free</button>
+            <p id="approval-state" role="status">Needs your review. No video will start automatically.</p>
+          </section>
         </div>
-        <p class="privacy">Only submit photos you are entitled to use. We do not save the photo during the free format test.</p>
+        <div class="generated" id="video-section" hidden>
+          <p class="eyebrow">YOUR 5-SECOND AI FILM</p>
+          <video id="generated-video" controls playsinline preload="none" aria-label="Your generated Runway film"></video>
+          <p id="video-quality" class="helper" role="status">Video file needs a manual review of motion, appearance and era accuracy.</p>
+          <a id="video-download" href="#" target="_blank" rel="noopener noreferrer" hidden>Open or save your film ↗</a>
+        </div>
+        <p class="privacy">Only submit photos you are entitled to use. The free format test discards the upload. Generated image and video links expire; save your results to your device.</p>
       </aside>
     </section>
 
     <section class="simple-note">
-      <strong>What works today?</strong>
-      <p id="availability-detail">The free photo upload and format check. It does <strong>not</strong> create a new AI image or a video. Photo generation, paid movies and checkout stay off until tested and approved.</p>
+      <strong>Private owner test — no customer checkout</strong>
+      <p id="availability-detail">Without the private owner's code, only the free upload and format check works. AI generation is disabled for visitors. There is no public launch or checkout.</p>
     </section>
   </main>
   <footer>© KIVZUNO · Photo studio preview · <a href="/">Home</a></footer>
