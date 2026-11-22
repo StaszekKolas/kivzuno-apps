@@ -1,51 +1,56 @@
-name: KIVZUNO Runway handoff preview smoke
+name: KIVZUNO private owner gate preview smoke
 
 on:
   pull_request:
     paths:
       - "hub/era-motion/**"
       - "netlify/functions/runway-handoff*.mjs"
-      - "tests/runway-handoff.test.mjs"
+      - "netlify/functions/owner-*.mjs"
+      - "netlify/edge-functions/**"
       - ".github/workflows/runway-handoff-smoke.yml"
 permissions:
   contents: read
 jobs:
-  preflight-only:
+  private-gate:
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 5
     steps:
       - uses: actions/setup-node@v5
         with:
           node-version: "22"
-      - name: Verify Netlify receives photo without billing or calling Runway
+      - name: Verify anonymous users cannot see private studio or start a paid job
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           node --input-type=module <<'JS'
-          const base = "https://deploy-preview-"+process.env.PR_NUMBER+"--kivzuno-hub.netlify.app";
-          const image = Buffer.concat([Buffer.from([255,216,255,224]),Buffer.alloc(3500,37),Buffer.from([255,217])]);
-          const body = JSON.stringify({action:"preflight",era:"west",image:"data:image/jpeg;base64,"+image.toString("base64")});
+          const base="https://deploy-preview-"+process.env.PR_NUMBER+"--kivzuno-hub.netlify.app";
           let last="";
-          for(let attempt=1;attempt<=16;attempt++) {
-            try {
-              const homepage = await fetch(base+"/era-motion/",{signal:AbortSignal.timeout(9000)});
-              const html=await homepage.text();
-              if(!homepage.ok || !html.includes("studio-simple.js"))throw new Error("new app not yet deployed");
-              const response = await fetch(base+"/.netlify/functions/runway-handoff",{
-                method:"POST",
-                headers:{"origin":base,"content-type":"application/json"},
-                body,
-                signal:AbortSignal.timeout(14000)
-              });
-              const data=await response.json();
-              if(!response.ok || data?.ready!==true || data?.photoTransferred!==true || data?.charged!==false || data?.paymentActive!==false){
-                throw new Error("handoff failed "+response.status+" "+JSON.stringify(data));
+          for(let attempt=1;attempt<=12;attempt++){
+            try{
+              const page=await fetch(base+"/era-motion/",{signal:AbortSignal.timeout(10000)});
+              const text=await page.text();
+              if(![401,503].includes(page.status))throw new Error("Private studio not protected, status="+page.status);
+              if(text.includes("studio-simple.js"))throw new Error("Unauthenticated studio HTML leaked");
+              const endpoints=[
+                ["era-image-task",{action:"capabilities"}],
+                ["owner-video-task",{action:"capabilities"}],
+                ["owner-video-task",{action:"start",imageJobId:"test",consent:true}],
+                ["runway-handoff",{action:"preflight",era:"medieval",image:"invalid"}]
+              ];
+              for(const [name,body] of endpoints){
+                const res=await fetch(base+"/.netlify/functions/"+name,{
+                  method:"POST",
+                  headers:{origin:base,"content-type":"application/json"},
+                  body:JSON.stringify(body),
+                  signal:AbortSignal.timeout(10000)
+                });
+                if(![401,503].includes(res.status))
+                  throw new Error(name+" allowed unauthenticated use, status="+res.status);
               }
-              console.log("VERIFIED: Netlify preflight received photo bytes without generating a paid video",data.bytes,data.model,data.duration);
+              console.log("VERIFIED_PRIVATE_GATE: all anonymous image/video endpoints denied; no AI task called");
               process.exit(0);
-            }catch(err){last=String(err.message).slice(0,200);console.log("Try "+attempt+": "+last);}
-            if(attempt<16)await new Promise(resolve=>setTimeout(resolve,8000));
+            }catch(e){last=String(e.message||e);console.log("Attempt "+attempt+": "+last);}
+            if(attempt<12)await new Promise(r=>setTimeout(r,6000));
           }
-          console.error("Handoff preview not verified: "+last);
-          process.exit(1);
+          throw Error("Private gate not verified: "+last);
           JS
