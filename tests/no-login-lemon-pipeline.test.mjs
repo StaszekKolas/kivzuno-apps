@@ -25,13 +25,13 @@ test("owner-funded images remain disabled until credentials and spending ceiling
   assert.match(img,/KIVZUNO_IMAGE_MAX_DAILY==="3"/);
   assert.match(img,/const MAX_DAY=3/);
   assert.match(img,/RUNWAYML_API_SECRET/);
-  assert.match(img,/if\(!enabled\(\)\)return reply\(\{error:"image_ai_not_configured"/);
+  assert.match(img,/if\(!enabled\(\) \|\| !ownerConfigured\(\)\)return reply\(\{error:"owner_mode_not_ready"/);
   assert.match(img,/onlyIfNew:true/);
   assert.match(img,/one_image_per_day/);
   assert.match(img,/daily_free_image_limit/);
   assert.match(img,/model:"gen4_image_turbo"/);
   assert.match(img,/referenceImages/);
-  assert.match(img,/x-nf-client-connection-ip/);
+  assert.match(img,/ownerAuthorized\(request\)/);
   assert.match(img,/authHash:tokenHash\(secret\)/);
   assert.match(img,/tokenHash\(body\.accessToken\)!==job\.authHash/);
 });
